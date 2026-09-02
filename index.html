@@ -1,0 +1,2587 @@
+<title>Rootloop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --soil-900:#141010; --soil-850:#191413; --soil-800:#1E1917; --soil-750:#25201C;
+  --soil-700:#2E2721; --soil-600:#3B322A; --bark:#54473B;
+  --wheat:#EDDCC3; --wheat-dim:#B0A08B; --wheat-faint:#7C7062;
+  --chloro:#8FC93A; --chloro-deep:#5F8F22; --amber:#E9A23B; --water:#57B6C7;
+  --rust:#D4573A; --gold:#F0C852; --bone:#DCD2BE;
+  --r-s:6px; --r-m:10px; --r-l:16px;
+  --f-disp:'Chakra Petch',ui-sans-serif,system-ui,sans-serif;
+  --f-body:'Archivo',ui-sans-serif,system-ui,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0;background:var(--soil-900);color:var(--wheat);
+  font-family:var(--f-body);font-size:14px;line-height:1.45;
+  overscroll-behavior:none;
+}
+button,input,textarea,select{font-family:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--chloro);outline-offset:2px}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--soil-600);border-radius:99px}
+::-webkit-scrollbar-track{background:transparent}
+
+#app{display:flex;flex-direction:column;height:100dvh;max-width:1400px;margin:0 auto}
+
+/* ---------- HUD ---------- */
+.hud{
+  display:flex;align-items:center;gap:10px;padding:8px 10px 6px;
+  background:linear-gradient(var(--soil-850),var(--soil-900));
+  border-bottom:1px solid var(--soil-700);flex:none;
+}
+.brand{display:flex;align-items:center;gap:7px;flex:none}
+.mark{width:18px;height:18px;border-radius:4px;flex:none;
+  background:conic-gradient(from 45deg,var(--chloro),var(--amber),var(--chloro-deep),var(--chloro));
+  box-shadow:0 0 0 1px var(--soil-600), 0 0 12px -2px var(--chloro)}
+.brand h1{font-family:var(--f-disp);font-size:15px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;margin:0;white-space:nowrap}
+.strip{display:flex;gap:6px;overflow-x:auto;flex:1;padding-bottom:2px;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.chip{
+  display:flex;align-items:center;gap:5px;flex:none;padding:3px 8px 3px 6px;
+  background:var(--soil-800);border:1px solid var(--soil-700);border-radius:99px;
+  font-family:var(--f-mono);font-size:11.5px;font-weight:500;font-variant-numeric:tabular-nums;
+  color:var(--wheat-dim);white-space:nowrap;
+}
+.chip b{color:var(--wheat);font-weight:700}
+.chip .dot{width:8px;height:8px;border-radius:2px;flex:none}
+.chip.pulse{animation:pop .4s ease}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.09);border-color:var(--chloro)}100%{transform:scale(1)}}
+
+/* ---------- Field ---------- */
+.field{
+  position:relative;flex:none;height:min(38dvh,88vw);min-height:180px;
+  margin:8px 8px 0;border-radius:var(--r-l);
+  background:var(--soil-850);
+  border:1px solid var(--soil-700);
+  box-shadow:inset 0 0 0 4px var(--soil-850), inset 0 2px 24px rgba(0,0,0,.6);
+  overflow:hidden;
+}
+.field canvas{display:block;width:100%;height:100%;touch-action:none}
+.field::after{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:var(--r-l);
+  background:radial-gradient(120% 90% at 50% 40%,transparent 55%,rgba(0,0,0,.45) 100%);
+}
+.readout{
+  position:absolute;left:8px;bottom:8px;display:flex;gap:6px;pointer-events:none;
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.03em;
+}
+.readout span{background:rgba(15,12,11,.72);border:1px solid var(--soil-700);
+  padding:2px 6px;border-radius:var(--r-s);color:var(--wheat-dim)}
+.readout b{color:var(--chloro);font-weight:500}
+.flag{
+  position:absolute;right:8px;top:8px;padding:3px 8px;border-radius:99px;
+  font-family:var(--f-disp);font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  border:1px solid var(--soil-600);background:rgba(15,12,11,.78);color:var(--wheat-faint);
+}
+.flag.on{color:var(--chloro);border-color:var(--chloro-deep);box-shadow:0 0 14px -4px var(--chloro)}
+.flag.err{color:var(--rust);border-color:var(--rust)}
+
+/* ---------- Run bar ---------- */
+.runbar{
+  display:flex;align-items:center;gap:8px;padding:8px;flex:none;
+}
+.btn{
+  border:1px solid var(--soil-600);background:var(--soil-750);color:var(--wheat);
+  border-radius:var(--r-m);padding:9px 12px;font-size:13px;font-weight:600;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;transition:transform .08s ease,background .15s ease;
+}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.primary{background:linear-gradient(var(--chloro),var(--chloro-deep));border-color:#43690f;color:#12180a;
+  box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 6px 18px -10px var(--chloro)}
+.btn.stop{color:var(--rust)}
+.btn.small{padding:5px 9px;font-size:12px;border-radius:var(--r-s)}
+.speedwrap{display:flex;align-items:center;gap:7px;flex:1;min-width:0;
+  background:var(--soil-800);border:1px solid var(--soil-700);border-radius:var(--r-m);padding:5px 10px}
+.speedwrap label{font-family:var(--f-disp);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--wheat-faint)}
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:40px;height:20px;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:99px;background:var(--soil-600)}
+input[type=range]::-moz-range-track{height:4px;border-radius:99px;background:var(--soil-600)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-6px;
+  border-radius:50%;background:var(--amber);border:2px solid var(--soil-900);box-shadow:0 0 10px -2px var(--amber)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border:2px solid var(--soil-900);border-radius:50%;background:var(--amber)}
+.tps{font-family:var(--f-mono);font-size:11px;color:var(--amber);font-variant-numeric:tabular-nums;min-width:52px;text-align:right}
+
+/* ---------- Tabs ---------- */
+.tabs{display:flex;gap:2px;padding:0 8px;flex:none;border-bottom:1px solid var(--soil-700)}
+.tab{
+  flex:1;background:none;border:none;border-bottom:2px solid transparent;padding:9px 4px 8px;
+  font-family:var(--f-disp);font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--wheat-faint);cursor:pointer;position:relative;
+}
+.tab.active{color:var(--wheat);border-bottom-color:var(--chloro)}
+.tab .badge{position:absolute;top:4px;right:6px;min-width:15px;height:15px;border-radius:99px;
+  background:var(--amber);color:#20170a;font-family:var(--f-body);font-size:9.5px;font-weight:700;line-height:15px}
+.dock{flex:1;min-height:0;position:relative}
+.pane{position:absolute;inset:0;display:none;flex-direction:column;min-height:0}
+.pane.active{display:flex}
+
+/* ---------- Code ---------- */
+.files{display:flex;gap:6px;padding:8px;overflow-x:auto;flex:none;scrollbar-width:none;align-items:center}
+.files::-webkit-scrollbar{display:none}
+.file{
+  flex:none;padding:5px 10px;border-radius:99px;border:1px solid var(--soil-700);background:var(--soil-800);
+  font-family:var(--f-mono);font-size:11.5px;color:var(--wheat-dim);cursor:pointer;white-space:nowrap;
+}
+.file.active{background:var(--soil-700);border-color:var(--bark);color:var(--wheat)}
+.editor{position:relative;flex:1;min-height:0;margin:0 8px;border-radius:var(--r-m);
+  background:var(--soil-850);border:1px solid var(--soil-700);overflow:hidden}
+.editor pre,.editor textarea{
+  margin:0;padding:10px 12px;font-family:var(--f-mono);font-size:13px;line-height:1.55;
+  white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;tab-size:4;
+  border:0;background:transparent;
+}
+.editor pre{position:absolute;inset:0;overflow:auto;pointer-events:none;color:var(--wheat)}
+.editor textarea{
+  position:absolute;inset:0;width:100%;height:100%;resize:none;overflow:auto;
+  color:transparent;caret-color:var(--amber);outline:none;-webkit-text-fill-color:transparent;
+}
+.editor textarea::selection{background:rgba(143,201,58,.3);-webkit-text-fill-color:transparent}
+.tk-kw{color:#E4788F}.tk-def{color:var(--amber)}.tk-num{color:var(--water)}
+.tk-str{color:var(--chloro)}.tk-com{color:var(--wheat-faint);font-style:italic}
+.tk-api{color:#9FD8E6}.tk-const{color:var(--gold)}.tk-op{color:var(--wheat-dim)}
+.keys{display:flex;gap:5px;padding:8px;overflow-x:auto;flex:none;scrollbar-width:none}
+.keys::-webkit-scrollbar{display:none}
+.key{flex:none;padding:7px 10px;border-radius:var(--r-s);border:1px solid var(--soil-700);
+  background:var(--soil-800);font-family:var(--f-mono);font-size:12px;color:var(--wheat-dim);cursor:pointer}
+.key:active{background:var(--soil-700)}
+.key.wide{color:var(--chloro)}
+
+/* ---------- Shop ---------- */
+.paneScroll{overflow-y:auto;padding:10px 8px 24px;flex:1;-webkit-overflow-scrolling:touch}
+.secTitle{font-family:var(--f-disp);font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--wheat-faint);margin:14px 4px 8px;display:flex;align-items:center;gap:8px}
+.secTitle:first-child{margin-top:2px}
+.secTitle::after{content:"";flex:1;height:1px;background:var(--soil-700)}
+.buys{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.buy{
+  display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;
+  padding:10px 11px;border-radius:var(--r-m);background:var(--soil-800);
+  border:1px solid var(--soil-700);
+}
+.buy.owned{background:transparent;border-style:dashed;opacity:.62}
+.buy.locked{opacity:.5}
+.buy h3{grid-column:1;margin:0;font-family:var(--f-disp);font-size:13.5px;font-weight:600;letter-spacing:.02em}
+.buy p{grid-column:1/-1;margin:0;font-size:12px;color:var(--wheat-dim);line-height:1.4}
+.buy .price{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.tag{font-family:var(--f-mono);font-size:11px;padding:1px 6px;border-radius:var(--r-s);
+  background:var(--soil-750);border:1px solid var(--soil-700);color:var(--wheat-dim);font-variant-numeric:tabular-nums}
+.tag.short{color:var(--rust);border-color:#5a2a1e}
+.buy .btn{grid-row:1;grid-column:2}
+.lvl{font-family:var(--f-mono);font-size:11px;color:var(--amber)}
+
+/* ---------- Log ---------- */
+.log{flex:1;overflow-y:auto;padding:10px 12px 20px;font-family:var(--f-mono);font-size:12px;line-height:1.6}
+.log div{white-space:pre-wrap;overflow-wrap:break-word;border-bottom:1px solid rgba(255,255,255,.03);padding:1px 0}
+.log .e{color:var(--rust)}.log .s{color:var(--chloro)}.log .i{color:var(--water)}
+
+/* ---------- Guide ---------- */
+.doc{max-width:66ch}
+.doc h2{font-family:var(--f-disp);font-size:15px;letter-spacing:.03em;margin:20px 0 6px;color:var(--wheat)}
+.doc h2:first-child{margin-top:4px}
+.doc p{margin:0 0 8px;color:var(--wheat-dim);font-size:13px}
+.doc code{font-family:var(--f-mono);font-size:12px;background:var(--soil-800);border:1px solid var(--soil-700);
+  padding:0 4px;border-radius:4px;color:var(--wheat)}
+.doc pre{font-family:var(--f-mono);font-size:12px;background:var(--soil-850);border:1px solid var(--soil-700);
+  border-radius:var(--r-m);padding:10px;overflow-x:auto;color:var(--wheat);line-height:1.55;margin:0 0 10px}
+.api{display:flex;flex-direction:column;gap:0;border:1px solid var(--soil-700);border-radius:var(--r-m);overflow:hidden}
+.api .row{display:grid;grid-template-columns:minmax(140px,auto) 1fr;gap:4px 12px;padding:7px 10px;
+  border-bottom:1px solid var(--soil-800);background:var(--soil-850)}
+.api .row:last-child{border-bottom:0}
+.api .row code{background:none;border:0;padding:0;color:#9FD8E6}
+.api .row span{font-size:12px;color:var(--wheat-dim)}
+.api .row.lk code{color:var(--wheat-faint)}
+.note{border-left:2px solid var(--amber);padding:2px 0 2px 10px;color:var(--wheat-dim);font-size:12.5px;margin:0 0 10px}
+.foot{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+
+@media (min-width:880px){
+  #app{flex-direction:row;gap:0;max-width:none}
+  .left{display:flex;flex-direction:column;flex:1.05;min-width:0;border-right:1px solid var(--soil-700)}
+  .field{flex:1;height:auto;margin:8px}
+  .right{display:flex;flex-direction:column;flex:1;min-width:0;max-width:640px}
+  .hud{position:absolute;top:0;left:0;right:0;z-index:5;background:linear-gradient(var(--soil-900),rgba(20,16,16,.0))}
+  .left{padding-top:44px}
+  .right{padding-top:44px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<style>.left,.right{display:contents}
+@media (min-width:880px){.left,.right{display:flex}}</style>
+
+<div id="app">
+  <header class="hud">
+    <div class="brand"><span class="mark"></span><h1>Rootloop</h1></div>
+    <div class="strip" id="strip"></div>
+  </header>
+
+  <div class="left">
+    <section class="field">
+      <canvas id="field"></canvas>
+      <div class="flag" id="flag">idle</div>
+      <div class="readout" id="readout"></div>
+    </section>
+    <div class="runbar">
+      <button class="btn primary" id="runBtn">▶ Run</button>
+      <button class="btn stop" id="stopBtn" disabled>■ Stop</button>
+      <div class="speedwrap">
+        <label for="speed">Speed</label>
+        <input type="range" id="speed" min="0" max="12" step="1" value="4">
+        <span class="tps" id="tps">10/s</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="right">
+    <nav class="tabs">
+      <button class="tab active" data-pane="code">Code</button>
+      <button class="tab" data-pane="shop">Shop<span class="badge" id="shopBadge" hidden>0</span></button>
+      <button class="tab" data-pane="log">Log</button>
+      <button class="tab" data-pane="guide">Guide</button>
+    </nav>
+    <main class="dock">
+      <section class="pane active" id="pane-code">
+        <div class="files" id="files"></div>
+        <div class="editor">
+          <pre id="hl" aria-hidden="true"></pre>
+          <textarea id="code" spellcheck="false" autocapitalize="off" autocorrect="off"
+            autocomplete="off" wrap="soft" aria-label="Python code editor"></textarea>
+        </div>
+        <div class="keys" id="keys"></div>
+      </section>
+
+      <section class="pane" id="pane-shop">
+        <div class="paneScroll" id="shop"></div>
+      </section>
+
+      <section class="pane" id="pane-log">
+        <div class="log" id="log"></div>
+        <div class="keys">
+          <button class="key wide" id="clearLog">clear log</button>
+          <button class="key" id="resetGlobals">reset globals</button>
+          <button class="key" id="clearFarm">clear farm</button>
+        </div>
+      </section>
+
+      <section class="pane" id="pane-guide">
+        <div class="paneScroll"><div class="doc" id="guide"></div></div>
+      </section>
+    </main>
+  </div>
+</div>
+<script>
+/* ==========================================================================
+   ROOTLOOP — a Python subset: lexer, parser, and a generator-based evaluator
+   that can pause on every drone action so the world can tick.
+   ========================================================================== */
+"use strict";
+
+const KW = new Set(['if','elif','else','while','for','in','def','return','break','continue',
+  'pass','and','or','not','True','False','None','global','nonlocal','try','except','finally',
+  'raise','is','lambda','del','import','from','as','assert','while']);
+
+class PyEx { constructor(type,msg){ this.type=type; this.msg=msg; } toString(){ return this.type+': '+this.msg; } }
+class SyntaxErr extends Error { constructor(msg,line){ super(msg); this.line=line; this.syntax=true; } }
+const err = (t,m)=>{ throw new PyEx(t,m); };
+
+/* ------------------------------- lexer ---------------------------------- */
+const OPS = ['**=','//=','>>=','<<=','**','//','==','!=','<=','>=','+=','-=','*=','/=','%=','&=','|=','^=','->','<<','>>',
+  '(',')','[',']','{','}',',',':','.',';','+','-','*','/','%','<','>','=','~','&','|','^'];
+
+function tokenize(src){
+  src = String(src).replace(/\r\n?/g,'\n');
+  const T=[], stack=[0];
+  let i=0, line=1, depth=0, lineStart=true;
+  const add=(t,v)=>T.push({t,v,line});
+  while(i<src.length){
+    if(lineStart){
+      if(depth>0){ lineStart=false; continue; }
+      let j=i, col=0;
+      while(j<src.length && (src[j]===' '||src[j]==='\t')){ col += src[j]==='\t'?4:1; j++; }
+      if(j>=src.length){ i=j; break; }
+      if(src[j]==='\n'){ i=j+1; line++; continue; }
+      if(src[j]==='#'){ while(j<src.length&&src[j]!=='\n') j++; i=j; continue; }
+      i=j; lineStart=false;
+      const top=stack[stack.length-1];
+      if(col>top){ stack.push(col); add('INDENT'); }
+      else if(col<top){
+        while(col<stack[stack.length-1]){ stack.pop(); add('DEDENT'); }
+        if(col!==stack[stack.length-1]) throw new SyntaxErr('indentation does not match any block',line);
+      }
+      continue;
+    }
+    const c=src[i];
+    if(c==='\n'){ i++; if(depth===0){ add('NEWLINE'); lineStart=true; } line++; continue; }
+    if(c===' '||c==='\t'||c==='\r'){ i++; continue; }
+    if(c==='#'){ while(i<src.length&&src[i]!=='\n') i++; continue; }
+    if(c==='\\'&&src[i+1]==='\n'){ i+=2; line++; continue; }
+
+    const sm = /^([fFrRbBuU]{0,2})('''|"""|'|")/.exec(src.slice(i));
+    if(sm){
+      const pref=sm[1].toLowerCase(), q=sm[2];
+      let j=i+sm[0].length, raw='';
+      while(true){
+        if(j>=src.length) throw new SyntaxErr('unterminated string',line);
+        if(src.startsWith(q,j)){ j+=q.length; break; }
+        if(src[j]==='\\' && !pref.includes('r')){ raw+=src[j]+src[j+1]; if(src[j+1]==='\n') line++; j+=2; continue; }
+        if(src[j]==='\n'){ if(q.length===1) throw new SyntaxErr('unterminated string',line); line++; }
+        raw+=src[j]; j++;
+      }
+      i=j;
+      if(pref.includes('f')) add('FSTR',raw);
+      else add('STR', pref.includes('r') ? raw : unescapeStr(raw));
+      continue;
+    }
+    const nm = /^(0[xX][0-9a-fA-F_]+|(?:\d[\d_]*\.?[\d_]*|\.\d[\d_]*)(?:[eE][+-]?\d+)?)/.exec(src.slice(i));
+    if(nm && /[\d.]/.test(c)){
+      const txt=nm[0].replace(/_/g,'');
+      add('NUM', txt.startsWith('0x')||txt.startsWith('0X') ? parseInt(txt,16) : parseFloat(txt));
+      i+=nm[0].length; continue;
+    }
+    const im = /^[A-Za-z_][A-Za-z0-9_]*/.exec(src.slice(i));
+    if(im){ const w=im[0]; add(KW.has(w)?'KW':'NAME', w); i+=w.length; continue; }
+    let matched=null;
+    for(const op of OPS) if(src.startsWith(op,i)){ matched=op; break; }
+    if(!matched) throw new SyntaxErr('unexpected character '+JSON.stringify(c),line);
+    if('([{'.includes(matched)) depth++;
+    if(')]}'.includes(matched)) depth=Math.max(0,depth-1);
+    add('OP',matched); i+=matched.length; continue;
+  }
+  add('NEWLINE');
+  while(stack.length>1){ stack.pop(); add('DEDENT'); }
+  add('EOF');
+  return T;
+}
+function unescapeStr(s){
+  return s.replace(/\\(u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|.|\n)/g,(m,g)=>{
+    if(g[0]==='u') return String.fromCharCode(parseInt(g.slice(1),16));
+    if(g[0]==='x') return String.fromCharCode(parseInt(g.slice(1),16));
+    return {n:'\n',t:'\t',r:'\r','\\':'\\',"'":"'",'"':'"','0':'\0','\n':''}[g] ?? g;
+  });
+}
+
+/* ------------------------------- parser --------------------------------- */
+function parse(src){
+  const T=tokenize(src);
+  let p=0;
+  const pk=(k=0)=>T[Math.min(p+k,T.length-1)];
+  const at=(t,v)=>{ const x=pk(); return x.t===t && (v===undefined||x.v===v); };
+  const atOp=v=>at('OP',v), atKw=v=>at('KW',v);
+  const next=()=>T[p++];
+  const eat=(t,v)=>{ if(at(t,v)){ return T[p++]; } return null; };
+  const need=(t,v)=>{ if(at(t,v)) return T[p++];
+    throw new SyntaxErr('expected '+(v||t)+', found '+(pk().v??pk().t), pk().line); };
+  const skipNL=()=>{ while(at('NEWLINE')) p++; };
+
+  function block(){
+    need('OP',':');
+    if(at('NEWLINE')){
+      p++; skipNL(); need('INDENT');
+      const body=[];
+      while(!at('DEDENT') && !at('EOF')){ const s=statement(); if(s) body.push(s); skipNL(); }
+      eat('DEDENT');
+      return body;
+    }
+    const body=[]; // inline suite:  if x: y = 1
+    do { const s=simpleStmt(); if(s) body.push(s); } while(eat('OP',';') && !at('NEWLINE'));
+    eat('NEWLINE');
+    return body;
+  }
+
+  function statement(){
+    skipNL();
+    const ln=pk().line;
+    if(atKw('if')) return ifStmt();
+    if(atKw('while')){ p++; const test=expr(); const body=block(); let orelse=[];
+      skipNL(); if(atKw('else')){ p++; orelse=block(); } return {k:'While',test,body,orelse,ln}; }
+    if(atKw('for')){ p++; const tgt=targetList(); need('KW','in'); const iter=exprList(); const body=block();
+      let orelse=[]; skipNL(); if(atKw('else')){ p++; orelse=block(); } return {k:'For',tgt,iter,body,orelse,ln}; }
+    if(atKw('def')){ p++; const name=need('NAME').v; return {k:'Def',name,...params(),body:block(),ln}; }
+    if(atKw('try')) return tryStmt();
+    if(at('NAME') && pk().v==='class') { throw new SyntaxErr('classes are not supported',ln); }
+    const s=simpleStmt();
+    while(eat('OP',';')){ if(at('NEWLINE')) break; const s2=simpleStmt(); if(s2) return {k:'Seq',body:[s,s2],ln}; }
+    eat('NEWLINE');
+    return s;
+  }
+  function ifStmt(){
+    const ln=pk().line; next();
+    const test=expr(), body=block(); let orelse=[];
+    skipNL();
+    if(atKw('elif')) orelse=[ifStmt()];
+    else if(atKw('else')){ p++; orelse=block(); }
+    return {k:'If',test,body,orelse,ln};
+  }
+  function tryStmt(){
+    const ln=pk().line; next();
+    const body=block(); const handlers=[]; let orelse=[],fin=[];
+    skipNL();
+    while(atKw('except')){
+      p++; let type=null,name=null;
+      if(!atOp(':')){ type=expr(); if(atKw('as')){ p++; name=need('NAME').v; } }
+      handlers.push({type,name,body:block()}); skipNL();
+    }
+    if(atKw('else')){ p++; orelse=block(); skipNL(); }
+    if(atKw('finally')){ p++; fin=block(); }
+    return {k:'Try',body,handlers,orelse,fin,ln};
+  }
+  function params(){
+    need('OP','(');
+    const names=[],defs=[]; let star=null;
+    while(!atOp(')')){
+      if(eat('OP','*')){ star=need('NAME').v; }
+      else{
+        names.push(need('NAME').v);
+        if(eat('OP','=')) defs.push(expr()); else if(defs.length) defs.push(null); else defs.push(null);
+      }
+      if(!eat('OP',',')) break;
+    }
+    need('OP',')');
+    if(eat('OP','->')) expr();
+    return {names,defs,star};
+  }
+  function targetList(){
+    const t=[target()];
+    while(eat('OP',',')){ if(atKw('in')) break; t.push(target()); }
+    return t.length===1?t[0]:{k:'Tuple',items:t};
+  }
+  function target(){ return postfix(atom()); }
+
+  function simpleStmt(){
+    const ln=pk().line;
+    if(atKw('pass')){ p++; return {k:'Pass',ln}; }
+    if(atKw('break')){ p++; return {k:'Break',ln}; }
+    if(atKw('continue')){ p++; return {k:'Continue',ln}; }
+    if(atKw('return')){ p++; const v = (at('NEWLINE')||at('EOF')||atOp(';'))?null:exprList(); return {k:'Return',value:v,ln}; }
+    if(atKw('raise')){ p++; const v=(at('NEWLINE')||at('EOF'))?null:expr(); return {k:'Raise',value:v,ln}; }
+    if(atKw('global')||atKw('nonlocal')){ p++; const names=[need('NAME').v];
+      while(eat('OP',',')) names.push(need('NAME').v); return {k:'Global',names,ln}; }
+    if(atKw('del')){ p++; const t=[expr()]; while(eat('OP',',')) t.push(expr()); return {k:'Del',targets:t,ln}; }
+    if(atKw('assert')){ p++; const t=expr(); let m=null; if(eat('OP',',')) m=expr(); return {k:'Assert',test:t,msg:m,ln}; }
+    if(atKw('import')){ while(!at('NEWLINE')&&!at('EOF')) p++; return {k:'Pass',ln}; }
+    if(atKw('from')){ while(!at('NEWLINE')&&!at('EOF')) p++; return {k:'Pass',ln}; }
+    const first=exprList();
+    const aug=['+=','-=','*=','/=','//=','%=','**=','&=','|=','^=','<<=','>>='];
+    for(const a of aug) if(atOp(a)){ p++; const v=exprList(); return {k:'Aug',target:first,op:a.slice(0,-1),value:v,ln}; }
+    if(atOp('=')){
+      const targets=[first];
+      while(eat('OP','=')){ targets.push(exprList()); }
+      const value=targets.pop();
+      return {k:'Assign',targets,value,ln};
+    }
+    return {k:'ExprStmt',value:first,ln};
+  }
+
+  function exprList(){
+    const first=expr();
+    if(!atOp(',')) return first;
+    const items=[first];
+    while(eat('OP',',')){
+      if(at('NEWLINE')||at('EOF')||atOp(')')||atOp(']')||atOp('}')||atOp('=')) break;
+      items.push(expr());
+    }
+    return {k:'Tuple',items};
+  }
+  function expr(){ return ternary(); }
+  function ternary(){
+    const v=orExpr();
+    if(atKw('if')){ p++; const test=orExpr(); need('KW','else'); const other=ternary();
+      return {k:'Cond',test,then:v,other}; }
+    return v;
+  }
+  function orExpr(){ let l=andExpr(); while(atKw('or')){ p++; l={k:'Bool',op:'or',l,r:andExpr()}; } return l; }
+  function andExpr(){ let l=notExpr(); while(atKw('and')){ p++; l={k:'Bool',op:'and',l,r:notExpr()}; } return l; }
+  function notExpr(){ if(atKw('not')){ p++; return {k:'Not',v:notExpr()}; } return comparison(); }
+  function comparison(){
+    let l=arith();
+    const ops=[],rs=[];
+    while(true){
+      let op=null;
+      if(at('OP')&&['<','>','<=','>=','==','!='].includes(pk().v)){ op=pk().v; p++; }
+      else if(atKw('in')){ op='in'; p++; }
+      else if(atKw('not')&&pk(1).t==='KW'&&pk(1).v==='in'){ op='not in'; p+=2; }
+      else if(atKw('is')){ p++; if(atKw('not')){ p++; op='is not'; } else op='is'; }
+      else break;
+      ops.push(op); rs.push(arith());
+    }
+    if(!ops.length) return l;
+    return {k:'Cmp',left:l,ops,rs};
+  }
+  const bin=(sub,list)=>function(){ let l=sub(); while(at('OP')&&list.includes(pk().v)){ const op=next().v; l={k:'Bin',op,l,r:sub()}; } return l; };
+  const bitOr = bin(()=>bitXor(), ['|']);
+  const bitXor = bin(()=>bitAnd(), ['^']);
+  const bitAnd = bin(()=>shift(), ['&']);
+  const shift  = bin(()=>addsub(), ['<<','>>']);
+  const addsub = bin(()=>muldiv(), ['+','-']);
+  const muldiv = bin(()=>unary(), ['*','/','//','%']);
+  function arith(){ return bitOr(); }
+  function unary(){
+    if(atOp('-')){ p++; return {k:'Neg',v:unary()}; }
+    if(atOp('+')){ p++; return unary(); }
+    if(atOp('~')){ p++; return {k:'Inv',v:unary()}; }
+    return power();
+  }
+  function power(){ const b=postfix(atom()); if(atOp('**')){ p++; return {k:'Bin',op:'**',l:b,r:unary()}; } return b; }
+
+  function postfix(node){
+    while(true){
+      if(atOp('(')){
+        p++; const args=[],kw={};
+        while(!atOp(')')){
+          if(at('NAME')&&pk(1).t==='OP'&&pk(1).v==='='&&!(pk(2).t==='OP'&&pk(2).v==='=')){
+            const n=next().v; p++; kw[n]=expr();
+          } else if(atOp('*')){ p++; args.push({k:'Star',v:expr()}); }
+          else args.push(expr());
+          if(!eat('OP',',')) break;
+        }
+        need('OP',')');
+        node={k:'Call',fn:node,args,kw,ln:pk().line};
+      } else if(atOp('[')){
+        p++;
+        let lo=null,hi=null,step=null,isSlice=false;
+        if(!atOp(':')) lo=exprList();
+        if(atOp(':')){ isSlice=true; p++; if(!atOp(']')&&!atOp(':')) hi=expr();
+          if(atOp(':')){ p++; if(!atOp(']')) step=expr(); } }
+        need('OP',']');
+        node = isSlice ? {k:'Slice',obj:node,lo,hi,step} : {k:'Sub',obj:node,idx:lo};
+      } else if(atOp('.')){
+        p++; const name=need('NAME').v; node={k:'Attr',obj:node,name};
+      } else break;
+    }
+    return node;
+  }
+
+  function comprehension(kind,elt,elt2){
+    p++; // 'for'
+    const tgt=targetList(); need('KW','in'); const iter=orExpr();
+    let cond=null; if(atKw('if')){ p++; cond=orExpr(); }
+    return {k:'Comp',kind,elt,elt2,tgt,iter,cond};
+  }
+
+  function atom(){
+    const tk=pk();
+    if(tk.t==='NUM'){ p++; return {k:'Num',v:tk.v}; }
+    if(tk.t==='STR'){ let s=''; while(at('STR')) s+=next().v; return {k:'Str',v:s}; }
+    if(tk.t==='FSTR'){ p++; return fstring(tk.v,tk.line); }
+    if(tk.t==='NAME'){ p++; return {k:'Name',v:tk.v,ln:tk.line}; }
+    if(tk.t==='KW'){
+      if(tk.v==='True'){ p++; return {k:'Const',v:true}; }
+      if(tk.v==='False'){ p++; return {k:'Const',v:false}; }
+      if(tk.v==='None'){ p++; return {k:'Const',v:null}; }
+      if(tk.v==='not'){ return notExpr(); }
+      if(tk.v==='lambda'){ p++; const names=[],defs=[];
+        while(!atOp(':')){ names.push(need('NAME').v); defs.push(eat('OP','=')?expr():null); if(!eat('OP',',')) break; }
+        need('OP',':'); const body=expr();
+        return {k:'Lambda',names,defs,star:null,body}; }
+    }
+    if(atOp('(')){
+      p++;
+      if(atOp(')')){ p++; return {k:'Tuple',items:[]}; }
+      const first=expr();
+      if(atKw('for')){ const c=comprehension('list',first); need('OP',')'); return c; }
+      if(atOp(',')){
+        const items=[first];
+        while(eat('OP',',')){ if(atOp(')')) break; items.push(expr()); }
+        need('OP',')'); return {k:'Tuple',items};
+      }
+      need('OP',')'); return first;
+    }
+    if(atOp('[')){
+      p++;
+      if(atOp(']')){ p++; return {k:'List',items:[]}; }
+      const first=expr();
+      if(atKw('for')){ const c=comprehension('list',first); need('OP',']'); return c; }
+      const items=[first];
+      while(eat('OP',',')){ if(atOp(']')) break; items.push(expr()); }
+      need('OP',']'); return {k:'List',items};
+    }
+    if(atOp('{')){
+      p++;
+      if(atOp('}')){ p++; return {k:'Dict',pairs:[]}; }
+      const first=expr();
+      if(atOp(':')){
+        p++; const v1=expr();
+        if(atKw('for')){ const c=comprehension('dict',first,v1); need('OP','}'); return c; }
+        const pairs=[[first,v1]];
+        while(eat('OP',',')){ if(atOp('}')) break; const k1=expr(); need('OP',':'); pairs.push([k1,expr()]); }
+        need('OP','}'); return {k:'Dict',pairs};
+      }
+      if(atKw('for')){ const c=comprehension('set',first); need('OP','}'); return c; }
+      const items=[first];
+      while(eat('OP',',')){ if(atOp('}')) break; items.push(expr()); }
+      need('OP','}'); return {k:'SetLit',items};
+    }
+    throw new SyntaxErr('unexpected '+(tk.v??tk.t), tk.line);
+  }
+
+  function fstring(raw,line){
+    const parts=[]; let buf='';
+    for(let i=0;i<raw.length;i++){
+      const c=raw[i];
+      if(c==='{'&&raw[i+1]==='{'){ buf+='{'; i++; continue; }
+      if(c==='}'&&raw[i+1]==='}'){ buf+='}'; i++; continue; }
+      if(c==='{'){
+        if(buf){ parts.push({k:'Str',v:unescapeStr(buf)}); buf=''; }
+        let d=1,j=i+1,inner='';
+        while(j<raw.length&&d>0){ if(raw[j]==='{')d++; else if(raw[j]==='}'){d--; if(!d)break;} inner+=raw[j]; j++; }
+        i=j;
+        let spec=null;
+        const cm=/:([^:]*)$/.exec(inner);
+        if(cm && !inner.slice(0,cm.index).includes('[')){ spec=cm[1]; inner=inner.slice(0,cm.index); }
+        if(inner.endsWith('=')){ parts.push({k:'Str',v:inner+' '}); inner=inner.slice(0,-1); }
+        let sub;
+        try{ sub=parse(inner).body[0].value; }
+        catch(e){ throw new SyntaxErr('bad f-string expression: '+inner,line); }
+        parts.push({k:'Fmt',v:sub,spec});
+        continue;
+      }
+      buf+=c;
+    }
+    if(buf) parts.push({k:'Str',v:unescapeStr(buf)});
+    return {k:'JStr',parts};
+  }
+
+  const body=[];
+  skipNL();
+  while(!at('EOF')){ const s=statement(); if(s) body.push(s); skipNL(); }
+  return {k:'Module',body};
+}
+</script>
+<script>
+/* ===================== runtime values & evaluator ======================== */
+class PyDict{
+  constructor(){ this.m=new Map(); }
+  static kk(k){ return (k&&k.__sym) ? 'S:'+k.kind+':'+k.name : (Array.isArray(k)? 'T:'+k.map(PyDict.kk).join('|') : typeof k+':'+k); }
+  get(k,d){ const e=this.m.get(PyDict.kk(k)); return e?e[1]:d; }
+  has(k){ return this.m.has(PyDict.kk(k)); }
+  set(k,v){ this.m.set(PyDict.kk(k),[k,v]); }
+  del(k){ return this.m.delete(PyDict.kk(k)); }
+  get size(){ return this.m.size; }
+  keys(){ return [...this.m.values()].map(e=>e[0]); }
+  values(){ return [...this.m.values()].map(e=>e[1]); }
+  entries(){ return [...this.m.values()].map(e=>tup([e[0],e[1]])); }
+}
+class PySet{
+  constructor(items){ this.m=new Map(); if(items) for(const it of items) this.add(it); }
+  add(v){ this.m.set(PyDict.kk(v),v); }
+  has(v){ return this.m.has(PyDict.kk(v)); }
+  del(v){ return this.m.delete(PyDict.kk(v)); }
+  get size(){ return this.m.size; }
+  items(){ return [...this.m.values()]; }
+}
+class PyRange{
+  constructor(a,b,s){ this.start=a; this.stop=b; this.step=s;
+    this.length=Math.max(0,Math.ceil((b-a)/s)); }
+  at(i){ return this.start+this.step*i; }
+  *[Symbol.iterator](){ for(let i=0;i<this.length;i++) yield this.start+this.step*i; }
+}
+class PyFunc{
+  constructor(name,names,defs,star,body,scope,isLambda){
+    Object.assign(this,{name,names,defs,star,body,scope,isLambda}); }
+}
+class Scope{
+  constructor(parent,globals){ this.v=new Map(); this.parent=parent||null;
+    this.g=globals||(parent?parent.g:this.v); this.decl=null; }
+  lookup(n){
+    let s=this;
+    while(s){ if(s.v.has(n)) return s.v; s=s.parent; }
+    if(this.g.has(n)) return this.g;
+    return null;
+  }
+  get(n){ const m=this.lookup(n); if(!m) err('NameError',"name '"+n+"' is not defined"); return m.get(n); }
+  set(n,val){ if(this.decl&&this.decl.has(n)) this.g.set(n,val); else this.v.set(n,val); }
+}
+const tup=a=>{ a.tup=true; return a; };
+const nat=(name,fn,gen)=>({__nat:true,name,fn,gen:!!gen});
+const sym=(kind,name,data)=>Object.assign({__sym:true,kind,name},data||{});
+const ns=(name,props)=>({__ns:true,name,props});
+
+let RT = null;
+class Ret{ constructor(v){ this.v=v; } }
+const BRK={__brk:1}, CNT={__cnt:1};
+
+function truthy(v){
+  if(v===null||v===false||v===undefined) return false;
+  if(v===true) return true;
+  if(typeof v==='number') return v!==0;
+  if(typeof v==='string') return v.length>0;
+  if(Array.isArray(v)) return v.length>0;
+  if(v instanceof PyDict||v instanceof PySet) return v.size>0;
+  if(v instanceof PyRange) return v.length>0;
+  return true;
+}
+function typeName(v){
+  if(v===null||v===undefined) return 'NoneType';
+  if(typeof v==='boolean') return 'bool';
+  if(typeof v==='number') return Number.isInteger(v)?'int':'float';
+  if(typeof v==='string') return 'str';
+  if(Array.isArray(v)) return v.tup?'tuple':'list';
+  if(v instanceof PyDict) return 'dict';
+  if(v instanceof PySet) return 'set';
+  if(v instanceof PyRange) return 'range';
+  if(v instanceof PyFunc||(v&&v.__nat)) return 'function';
+  if(v&&v.__sym) return v.kind;
+  if(v&&v.__ns) return 'namespace';
+  return 'object';
+}
+function fmtNum(n){
+  if(Number.isNaN(n)) return 'nan';
+  if(!isFinite(n)) return n>0?'inf':'-inf';
+  if(Number.isInteger(n)) return String(n);
+  if(Math.abs(n)>=1e16||(Math.abs(n)<1e-4&&n!==0)) return String(n);
+  return String(parseFloat(n.toFixed(10)));
+}
+function pyStr(v){
+  if(v===null||v===undefined) return 'None';
+  if(v===true) return 'True';
+  if(v===false) return 'False';
+  if(typeof v==='number') return fmtNum(v);
+  if(typeof v==='string') return v;
+  if(Array.isArray(v)) return v.tup ? '('+v.map(pyRepr).join(', ')+(v.length===1?',':'')+')' : '['+v.map(pyRepr).join(', ')+']';
+  if(v instanceof PyDict) return '{'+[...v.m.values()].map(e=>pyRepr(e[0])+': '+pyRepr(e[1])).join(', ')+'}';
+  if(v instanceof PySet) return v.size?'{'+v.items().map(pyRepr).join(', ')+'}':'set()';
+  if(v instanceof PyRange) return 'range('+v.start+', '+v.stop+(v.step!==1?', '+v.step:'')+')';
+  if(v instanceof PyFunc) return '<function '+v.name+'>';
+  if(v&&v.__nat) return '<built-in function '+v.name+'>';
+  if(v&&v.__sym) return v.kind+'.'+v.name;
+  if(v&&v.__ns) return '<'+v.name+'>';
+  return String(v);
+}
+function pyRepr(v){
+  if(typeof v!=='string') return pyStr(v);
+  return "'"+v.split('\\').join('\\\\').split("'").join("\\'").split('\n').join('\\n')+"'";
+}
+function pyEq(a,b){
+  if(a===b) return true;
+  if(a===null||a===undefined||b===null||b===undefined) return (a??null)===(b??null);
+  if(typeof a==='boolean'&&typeof b==='number') return (a?1:0)===b;
+  if(typeof b==='boolean'&&typeof a==='number') return (b?1:0)===a;
+  if(Array.isArray(a)&&Array.isArray(b)) return a.length===b.length&&a.every((x,i)=>pyEq(x,b[i]));
+  if(a&&b&&a.__sym&&b.__sym) return a.kind===b.kind&&a.name===b.name;
+  if(a instanceof PyDict&&b instanceof PyDict){
+    if(a.size!==b.size) return false;
+    for(const [k,e] of a.m){ if(!b.m.has(k)||!pyEq(e[1],b.m.get(k)[1])) return false; }
+    return true;
+  }
+  if(a instanceof PySet&&b instanceof PySet){
+    if(a.size!==b.size) return false;
+    for(const k of a.m.keys()) if(!b.m.has(k)) return false;
+    return true;
+  }
+  return false;
+}
+function cmpVals(a,b){
+  if(typeof a==='boolean') a=a?1:0;
+  if(typeof b==='boolean') b=b?1:0;
+  if(typeof a==='number'&&typeof b==='number') return a<b?-1:a>b?1:0;
+  if(typeof a==='string'&&typeof b==='string') return a<b?-1:a>b?1:0;
+  if(Array.isArray(a)&&Array.isArray(b)){
+    const n=Math.min(a.length,b.length);
+    for(let i=0;i<n;i++){ const c=cmpVals(a[i],b[i]); if(c) return c; }
+    return a.length-b.length;
+  }
+  if(a&&b&&a.__sym&&b.__sym) return a.name<b.name?-1:a.name>b.name?1:0;
+  err('TypeError',"'<' not supported between '"+typeName(a)+"' and '"+typeName(b)+"'");
+}
+function pyLen(v){
+  if(typeof v==='string'||Array.isArray(v)) return v.length;
+  if(v instanceof PyDict||v instanceof PySet) return v.size;
+  if(v instanceof PyRange) return v.length;
+  err('TypeError',"object of type '"+typeName(v)+"' has no len()");
+}
+function toList(v){
+  if(Array.isArray(v)) return v.slice();
+  if(typeof v==='string') return v.split('');
+  if(v instanceof PyRange) return [...v];
+  if(v instanceof PyDict) return v.keys();
+  if(v instanceof PySet) return v.items();
+  err('TypeError',"'"+typeName(v)+"' object is not iterable");
+}
+function contains(box,item){
+  if(typeof box==='string') return typeof item==='string' && box.includes(item);
+  if(Array.isArray(box)) return box.some(x=>pyEq(x,item));
+  if(box instanceof PyDict) return box.has(item);
+  if(box instanceof PySet) return box.has(item);
+  if(box instanceof PyRange){
+    if(typeof item!=='number') return false;
+    const d=(item-box.start)/box.step;
+    return Number.isInteger(d)&&d>=0&&d<box.length;
+  }
+  err('TypeError',"argument of type '"+typeName(box)+"' is not iterable");
+}
+function numOf(v,op){
+  if(typeof v==='number') return v;
+  if(typeof v==='boolean') return v?1:0;
+  err('TypeError',"unsupported operand type for "+op+": '"+typeName(v)+"'");
+}
+function binop(op,a,b){
+  if(op==='+'){
+    if(typeof a==='string'||typeof b==='string'){
+      if(typeof a!=='string'||typeof b!=='string')
+        err('TypeError','can only concatenate str to str');
+      return a+b;
+    }
+    if(Array.isArray(a)&&Array.isArray(b)) return a.concat(b);
+    return numOf(a,'+')+numOf(b,'+');
+  }
+  if(op==='*'){
+    if(typeof a==='string'&&typeof b==='number') return b>0?a.repeat(Math.floor(b)):'';
+    if(typeof b==='string'&&typeof a==='number') return a>0?b.repeat(Math.floor(a)):'';
+    if(Array.isArray(a)&&typeof b==='number'){ let r=[]; for(let i=0;i<Math.floor(b);i++) r=r.concat(a); return r; }
+    if(Array.isArray(b)&&typeof a==='number'){ let r=[]; for(let i=0;i<Math.floor(a);i++) r=r.concat(b); return r; }
+    return numOf(a,'*')*numOf(b,'*');
+  }
+  const x=numOf(a,op), y=numOf(b,op);
+  switch(op){
+    case '-': return x-y;
+    case '/': if(y===0) err('ZeroDivisionError','division by zero'); return x/y;
+    case '//': if(y===0) err('ZeroDivisionError','division by zero'); return Math.floor(x/y);
+    case '%': if(y===0) err('ZeroDivisionError','division by zero'); return x-Math.floor(x/y)*y;
+    case '**': return Math.pow(x,y);
+    case '&': return x&y;
+    case '|': return x|y;
+    case '^': return x^y;
+    case '<<': return x<<y;
+    case '>>': return x>>y;
+  }
+  err('TypeError','unsupported operator '+op);
+}
+function normIdx(i,len,name){
+  let k=Math.trunc(numOf(i,'index'));
+  if(k<0) k+=len;
+  if(k<0||k>=len) err('IndexError',(name||'list')+' index out of range');
+  return k;
+}
+function getItem(obj,idx){
+  if(Array.isArray(obj)) return obj[normIdx(idx,obj.length,typeName(obj))];
+  if(typeof obj==='string') return obj[normIdx(idx,obj.length,'string')];
+  if(obj instanceof PyRange) return obj.at(normIdx(idx,obj.length,'range'));
+  if(obj instanceof PyDict){ if(!obj.has(idx)) err('KeyError',pyRepr(idx)); return obj.get(idx); }
+  err('TypeError',"'"+typeName(obj)+"' object is not subscriptable");
+}
+function setItem(obj,idx,val){
+  if(Array.isArray(obj)){ obj[normIdx(idx,obj.length,'list')]=val; return; }
+  if(obj instanceof PyDict){ obj.set(idx,val); return; }
+  err('TypeError',"'"+typeName(obj)+"' object does not support item assignment");
+}
+function doSlice(obj,lo,hi,step){
+  const isStr = typeof obj==='string';
+  const arr = isStr ? obj.split('') : (Array.isArray(obj)?obj:toList(obj));
+  const n=arr.length;
+  const st = (step===null||step===undefined) ? 1 : Math.trunc(numOf(step,'slice'));
+  if(st===0) err('ValueError','slice step cannot be zero');
+  let a = (lo===null||lo===undefined) ? (st>0?0:n-1) : Math.trunc(numOf(lo,'slice'));
+  let b = (hi===null||hi===undefined) ? (st>0?n:-1) : Math.trunc(numOf(hi,'slice'));
+  if(a<0) a+=n;
+  if(b<0 && !(hi===null||hi===undefined)) b+=n;
+  const out=[];
+  if(st>0){ a=Math.max(0,a); b=Math.min(n,b); for(let i=a;i<b;i+=st) out.push(arr[i]); }
+  else { a=Math.min(n-1,a); for(let i=a;i>b;i+=st) if(i>=0) out.push(arr[i]); }
+  return isStr ? out.join('') : out;
+}
+</script>
+<script>
+/* ---------------------------- attributes -------------------------------- */
+const bnd=(name,fn)=>({__nat:true,name,fn,gen:false});
+const bndg=(name,fn)=>({__nat:true,name,fn,gen:true});
+const arg=(a,i,d)=>(a.length>i?a[i]:d);
+
+function strMethods(s,name){
+  const M={
+    upper:()=>s.toUpperCase(), lower:()=>s.toLowerCase(),
+    strip:a=>a.length?trimSet(s,a[0],3):s.trim(),
+    lstrip:a=>a.length?trimSet(s,a[0],1):s.replace(/^\s+/,''),
+    rstrip:a=>a.length?trimSet(s,a[0],2):s.replace(/\s+$/,''),
+    split:a=>{ const sep=arg(a,0,null);
+      if(sep===null||sep===undefined) return s.split(/\s+/).filter(x=>x.length);
+      return s.split(sep); },
+    join:a=>toList(a[0]).map(x=>{ if(typeof x!=='string') err('TypeError','sequence item is not str'); return x; }).join(s),
+    replace:a=>s.split(a[0]).join(a[1]),
+    startswith:a=>s.startsWith(a[0]), endswith:a=>s.endsWith(a[0]),
+    find:a=>s.indexOf(a[0]),
+    index:a=>{ const i=s.indexOf(a[0]); if(i<0) err('ValueError','substring not found'); return i; },
+    count:a=>a[0]===''?s.length+1:s.split(a[0]).length-1,
+    isdigit:()=>/^[0-9]+$/.test(s), isalpha:()=>/^[A-Za-z]+$/.test(s),
+    isspace:()=>/^\s+$/.test(s), isupper:()=>s===s.toUpperCase()&&/[A-Za-z]/.test(s),
+    islower:()=>s===s.toLowerCase()&&/[A-Za-z]/.test(s),
+    title:()=>s.replace(/\w\S*/g,t=>t[0].toUpperCase()+t.slice(1).toLowerCase()),
+    capitalize:()=>s.charAt(0).toUpperCase()+s.slice(1).toLowerCase(),
+    zfill:a=>s.padStart(a[0],'0'),
+    ljust:a=>s.padEnd(a[0],arg(a,1,' ')), rjust:a=>s.padStart(a[0],arg(a,1,' ')),
+    format:a=>{ let i=0; return s.replace(/\{([^}]*)\}/g,(m,g)=>{
+      if(g==='') return pyStr(a[i++]);
+      if(/^\d+$/.test(g)) return pyStr(a[+g]);
+      return m; }); }
+  };
+  return M[name] ? bnd(name,M[name]) : undefined;
+}
+function trimSet(s,chars,mode){
+  let a=0,b=s.length;
+  if(mode&1) while(a<b&&chars.includes(s[a])) a++;
+  if(mode&2) while(b>a&&chars.includes(s[b-1])) b--;
+  return s.slice(a,b);
+}
+function listMethods(L,name){
+  const M={
+    append:a=>{ L.push(arg(a,0,null)); return null; },
+    extend:a=>{ for(const x of toList(a[0])) L.push(x); return null; },
+    insert:a=>{ let i=Math.trunc(numOf(a[0],'insert')); if(i<0) i=Math.max(0,L.length+i); L.splice(Math.min(i,L.length),0,a[1]); return null; },
+    pop:a=>{ if(!L.length) err('IndexError','pop from empty list');
+      const i=a.length?normIdx(a[0],L.length,'pop'):L.length-1; return L.splice(i,1)[0]; },
+    remove:a=>{ const i=L.findIndex(x=>pyEq(x,a[0])); if(i<0) err('ValueError','list.remove(x): x not in list'); L.splice(i,1); return null; },
+    index:a=>{ const i=L.findIndex(x=>pyEq(x,a[0])); if(i<0) err('ValueError',pyRepr(a[0])+' is not in list'); return i; },
+    count:a=>L.filter(x=>pyEq(x,a[0])).length,
+    reverse:()=>{ L.reverse(); return null; },
+    clear:()=>{ L.length=0; return null; },
+    copy:()=>L.slice()
+  };
+  if(name==='sort') return bndg('sort',function*(a,kw){
+    const arr=yield* sortArr(L,kw); L.length=0; for(const x of arr) L.push(x); return null; });
+  return M[name] ? bnd(name,M[name]) : undefined;
+}
+function* sortArr(items,kw){
+  const key=kw&&kw.key ? kw.key : null;
+  const rev=kw&&kw.reverse ? truthy(kw.reverse) : false;
+  const arr=items.slice();
+  let deco;
+  if(key){ deco=[]; for(const x of arr) deco.push([yield* callValue(key,[x],{}),x]); }
+  else deco=arr.map(x=>[x,x]);
+  deco.sort((p,q)=>cmpVals(p[0],q[0]));
+  if(rev) deco.reverse();
+  return deco.map(p=>p[1]);
+}
+function dictMethods(D,name){
+  const M={
+    keys:()=>D.keys(), values:()=>D.values(), items:()=>D.entries(),
+    get:a=>D.has(a[0])?D.get(a[0]):arg(a,1,null),
+    pop:a=>{ if(!D.has(a[0])){ if(a.length>1) return a[1]; err('KeyError',pyRepr(a[0])); }
+      const v=D.get(a[0]); D.del(a[0]); return v; },
+    setdefault:a=>{ if(!D.has(a[0])) D.set(a[0],arg(a,1,null)); return D.get(a[0]); },
+    update:a=>{ const o=a[0];
+      if(o instanceof PyDict) for(const e of o.m.values()) D.set(e[0],e[1]);
+      else for(const pair of toList(o)) D.set(pair[0],pair[1]);
+      return null; },
+    clear:()=>{ D.m.clear(); return null; },
+    copy:()=>{ const d=new PyDict(); for(const e of D.m.values()) d.set(e[0],e[1]); return d; }
+  };
+  return M[name] ? bnd(name,M[name]) : undefined;
+}
+function setMethods(S,name){
+  const M={
+    add:a=>{ S.add(a[0]); return null; },
+    discard:a=>{ S.del(a[0]); return null; },
+    remove:a=>{ if(!S.del(a[0])) err('KeyError',pyRepr(a[0])); return null; },
+    clear:()=>{ S.m.clear(); return null; },
+    copy:()=>new PySet(S.items()),
+    union:a=>new PySet(S.items().concat(toList(a[0]))),
+    intersection:a=>{ const o=new PySet(toList(a[0])); return new PySet(S.items().filter(x=>o.has(x))); },
+    difference:a=>{ const o=new PySet(toList(a[0])); return new PySet(S.items().filter(x=>!o.has(x))); }
+  };
+  return M[name] ? bnd(name,M[name]) : undefined;
+}
+function getAttr(obj,name){
+  if(obj&&obj.__ns){
+    if(!(name in obj.props)) err('AttributeError',obj.name+' has no attribute '+name);
+    return obj.props[name];
+  }
+  if(typeof obj==='string'){ const m=strMethods(obj,name); if(m) return m; }
+  if(Array.isArray(obj)){ const m=listMethods(obj,name); if(m) return m; }
+  if(obj instanceof PyDict){ const m=dictMethods(obj,name); if(m) return m; }
+  if(obj instanceof PySet){ const m=setMethods(obj,name); if(m) return m; }
+  if(obj&&obj.__sym&&(name in obj)) return obj[name];
+  err('AttributeError',"'"+typeName(obj)+"' object has no attribute '"+name+"'");
+}
+
+/* ----------------------------- evaluator -------------------------------- */
+function* callValue(fn,args,kw,ln){
+  if(fn&&fn.__nat){
+    if(fn.gen) return yield* fn.fn(args,kw||{});
+    return fn.fn(args,kw||{});
+  }
+  if(fn instanceof PyFunc){
+    if(RT.depth>=180) err('RecursionError','maximum recursion depth exceeded');
+    const sc=new Scope(fn.scope,fn.scope.g);
+    const n=fn.names.length;
+    for(let i=0;i<n;i++){
+      const nm=fn.names[i];
+      if(kw&&Object.prototype.hasOwnProperty.call(kw,nm)) sc.v.set(nm,kw[nm]);
+      else if(i<args.length) sc.v.set(nm,args[i]);
+      else if(fn.defs[i]!==null&&fn.defs[i]!==undefined) sc.v.set(nm, yield* ev(fn.defs[i],fn.scope));
+      else err('TypeError',fn.name+"() missing required argument: '"+nm+"'");
+    }
+    if(fn.star) sc.v.set(fn.star,tup(args.slice(n)));
+    else if(args.length>n) err('TypeError',fn.name+'() takes '+n+' arguments but '+args.length+' were given');
+    RT.depth++;
+    try{
+      if(fn.isLambda) return yield* ev(fn.body,sc);
+      yield* execBlock(fn.body,sc);
+      return null;
+    }catch(e){
+      if(e instanceof Ret) return e.v;
+      throw e;
+    }finally{ RT.depth--; }
+  }
+  err('TypeError',"'"+typeName(fn)+"' object is not callable");
+}
+
+function* evalArgs(node,sc){
+  const args=[];
+  for(const a of node.args){
+    if(a.k==='Star'){ for(const x of toList(yield* ev(a.v,sc))) args.push(x); }
+    else args.push(yield* ev(a,sc));
+  }
+  const kw={};
+  for(const k in node.kw) kw[k]=yield* ev(node.kw[k],sc);
+  return [args,kw];
+}
+
+function* assign(target,val,sc){
+  switch(target.k){
+    case 'Name': sc.set(target.v,val); return;
+    case 'Tuple': case 'List': {
+      const items=toList(val);
+      const star=target.items.findIndex(t=>t.k==='Star');
+      if(star<0){
+        if(items.length!==target.items.length)
+          err('ValueError','expected '+target.items.length+' values to unpack, got '+items.length);
+        for(let i=0;i<items.length;i++) yield* assign(target.items[i],items[i],sc);
+      }else{
+        const before=star, after=target.items.length-star-1;
+        for(let i=0;i<before;i++) yield* assign(target.items[i],items[i],sc);
+        yield* assign(target.items[star].v,items.slice(before,items.length-after),sc);
+        for(let i=0;i<after;i++) yield* assign(target.items[star+1+i],items[items.length-after+i],sc);
+      }
+      return;
+    }
+    case 'Sub': setItem(yield* ev(target.obj,sc), yield* ev(target.idx,sc), val); return;
+    case 'Slice': {
+      const obj=yield* ev(target.obj,sc);
+      if(!Array.isArray(obj)) err('TypeError','slice assignment needs a list');
+      const lo=target.lo?yield* ev(target.lo,sc):null;
+      const hi=target.hi?yield* ev(target.hi,sc):null;
+      let a=lo===null?0:Math.trunc(lo), b=hi===null?obj.length:Math.trunc(hi);
+      if(a<0)a+=obj.length; if(b<0)b+=obj.length;
+      obj.splice(a,Math.max(0,b-a),...toList(val));
+      return;
+    }
+    case 'Attr': err('TypeError','cannot assign to attribute');
+    default: err('SyntaxError','cannot assign to this expression');
+  }
+}
+
+function* execBlock(stmts,sc){
+  for(let i=0;i<stmts.length;i++) yield* execStmt(stmts[i],sc);
+}
+
+function* execStmt(st,sc){
+  RT.line=st.ln||RT.line;
+  switch(st.k){
+    case 'ExprStmt': { const v=yield* ev(st.value,sc); RT.last=v; return; }
+    case 'Assign': { const v=yield* ev(st.value,sc);
+      for(const t of st.targets) yield* assign(t,v,sc); return; }
+    case 'Aug': {
+      const cur=yield* ev(st.target,sc);
+      const rhs=yield* ev(st.value,sc);
+      yield* assign(st.target, binop(st.op,cur,rhs), sc);
+      return;
+    }
+    case 'If': {
+      if(truthy(yield* ev(st.test,sc))) yield* execBlock(st.body,sc);
+      else yield* execBlock(st.orelse,sc);
+      return;
+    }
+    case 'While': {
+      let broke=false;
+      while(truthy(yield* ev(st.test,sc))){
+        yield 0;
+        try{ yield* execBlock(st.body,sc); }
+        catch(e){ if(e===BRK){ broke=true; break; } if(e!==CNT) throw e; }
+      }
+      if(!broke) yield* execBlock(st.orelse,sc);
+      return;
+    }
+    case 'For': {
+      const it=yield* ev(st.iter,sc);
+      let broke=false;
+      const seq = it instanceof PyRange ? it : toList(it);
+      for(const item of seq){
+        yield 0;
+        yield* assign(st.tgt,item,sc);
+        try{ yield* execBlock(st.body,sc); }
+        catch(e){ if(e===BRK){ broke=true; break; } if(e!==CNT) throw e; }
+      }
+      if(!broke) yield* execBlock(st.orelse,sc);
+      return;
+    }
+    case 'Def': sc.set(st.name,new PyFunc(st.name,st.names,st.defs,st.star,st.body,sc,false)); return;
+    case 'Return': throw new Ret(st.value?yield* ev(st.value,sc):null);
+    case 'Break': throw BRK;
+    case 'Continue': throw CNT;
+    case 'Pass': return;
+    case 'Seq': yield* execBlock(st.body,sc); return;
+    case 'Global': { if(!sc.decl) sc.decl=new Set(); for(const n of st.names) sc.decl.add(n); return; }
+    case 'Del': {
+      for(const t of st.targets){
+        if(t.k==='Name'){ const m=sc.lookup(t.v); if(m) m.delete(t.v); }
+        else if(t.k==='Sub'){
+          const o=yield* ev(t.obj,sc), i=yield* ev(t.idx,sc);
+          if(o instanceof PyDict){ if(!o.del(i)) err('KeyError',pyRepr(i)); }
+          else if(Array.isArray(o)) o.splice(normIdx(i,o.length,'list'),1);
+        }
+      }
+      return;
+    }
+    case 'Assert': {
+      if(!truthy(yield* ev(st.test,sc)))
+        err('AssertionError', st.msg? pyStr(yield* ev(st.msg,sc)) : '');
+      return;
+    }
+    case 'Raise': {
+      if(!st.value) err('RuntimeError','exception raised');
+      const v=yield* ev(st.value,sc);
+      if(v instanceof PyEx) throw v;
+      if(v&&v.__exType) throw new PyEx(v.name, '');
+      throw new PyEx('Exception',pyStr(v));
+    }
+    case 'Try': {
+      let caught=false;
+      try{ yield* execBlock(st.body,sc); }
+      catch(e){
+        if(e instanceof Ret||e===BRK||e===CNT||e&&e.__halt){ if(st.fin.length) yield* execBlock(st.fin,sc); throw e; }
+        const ex = e instanceof PyEx ? e : new PyEx('RuntimeError', e&&e.message?e.message:String(e));
+        caught=true;
+        let handled=false;
+        for(const h of st.handlers){
+          let match=true;
+          if(h.type){
+            const t=yield* ev(h.type,sc);
+            const nm = t&&t.__exType ? t.name : pyStr(t);
+            match = (nm===ex.type)||nm==='Exception';
+          }
+          if(match){
+            if(h.name) sc.set(h.name, ex);
+            yield* execBlock(h.body,sc); handled=true; break;
+          }
+        }
+        if(!handled){ if(st.fin.length) yield* execBlock(st.fin,sc); throw ex; }
+      }
+      if(!caught) yield* execBlock(st.orelse,sc);
+      if(st.fin.length) yield* execBlock(st.fin,sc);
+      return;
+    }
+    default: err('SyntaxError','unknown statement '+st.k);
+  }
+}
+
+function* ev(n,sc){
+  switch(n.k){
+    case 'Num': case 'Str': case 'Const': return n.v;
+    case 'Name': return sc.get(n.v);
+    case 'JStr': {
+      let s='';
+      for(const p of n.parts){
+        if(p.k==='Str') s+=p.v;
+        else{
+          const v=yield* ev(p.v,sc);
+          s += p.spec ? formatSpec(v,p.spec) : pyStr(v);
+        }
+      }
+      return s;
+    }
+    case 'List': { const a=[]; for(const it of n.items) a.push(yield* ev(it,sc)); return a; }
+    case 'Tuple': { const a=[]; for(const it of n.items) a.push(yield* ev(it,sc)); return tup(a); }
+    case 'SetLit': { const s=new PySet(); for(const it of n.items) s.add(yield* ev(it,sc)); return s; }
+    case 'Dict': { const d=new PyDict();
+      for(const [k,v] of n.pairs) d.set(yield* ev(k,sc), yield* ev(v,sc)); return d; }
+    case 'Comp': {
+      const seq=toList(yield* ev(n.iter,sc));
+      const inner=new Scope(sc,sc.g);
+      const out = n.kind==='dict'?new PyDict():(n.kind==='set'?new PySet():[]);
+      for(const item of seq){
+        yield 0;
+        yield* assign(n.tgt,item,inner);
+        if(n.cond && !truthy(yield* ev(n.cond,inner))) continue;
+        if(n.kind==='dict') out.set(yield* ev(n.elt,inner), yield* ev(n.elt2,inner));
+        else if(n.kind==='set') out.add(yield* ev(n.elt,inner));
+        else out.push(yield* ev(n.elt,inner));
+      }
+      return out;
+    }
+    case 'Bin': return binop(n.op, yield* ev(n.l,sc), yield* ev(n.r,sc));
+    case 'Neg': return -numOf(yield* ev(n.v,sc),'-');
+    case 'Inv': return ~numOf(yield* ev(n.v,sc),'~');
+    case 'Not': return !truthy(yield* ev(n.v,sc));
+    case 'Bool': {
+      const l=yield* ev(n.l,sc);
+      if(n.op==='and') return truthy(l) ? yield* ev(n.r,sc) : l;
+      return truthy(l) ? l : yield* ev(n.r,sc);
+    }
+    case 'Cmp': {
+      let left=yield* ev(n.left,sc);
+      for(let i=0;i<n.ops.length;i++){
+        const right=yield* ev(n.rs[i],sc);
+        let r;
+        switch(n.ops[i]){
+          case '==': r=pyEq(left,right); break;
+          case '!=': r=!pyEq(left,right); break;
+          case '<': r=cmpVals(left,right)<0; break;
+          case '>': r=cmpVals(left,right)>0; break;
+          case '<=': r=cmpVals(left,right)<=0; break;
+          case '>=': r=cmpVals(left,right)>=0; break;
+          case 'in': r=contains(right,left); break;
+          case 'not in': r=!contains(right,left); break;
+          case 'is': r=(left===right)||pyEq(left,right)&&(left===null||typeof left!=='object'); break;
+          case 'is not': r=!((left===right)||pyEq(left,right)&&(left===null||typeof left!=='object')); break;
+        }
+        if(!r) return false;
+        left=right;
+      }
+      return true;
+    }
+    case 'Cond': return truthy(yield* ev(n.test,sc)) ? yield* ev(n.then,sc) : yield* ev(n.other,sc);
+    case 'Call': {
+      const fn=yield* ev(n.fn,sc);
+      const [args,kw]=yield* evalArgs(n,sc);
+      yield 0;
+      return yield* callValue(fn,args,kw,n.ln);
+    }
+    case 'Attr': return getAttr(yield* ev(n.obj,sc), n.name);
+    case 'Sub': return getItem(yield* ev(n.obj,sc), yield* ev(n.idx,sc));
+    case 'Slice': return doSlice(yield* ev(n.obj,sc),
+      n.lo?yield* ev(n.lo,sc):null, n.hi?yield* ev(n.hi,sc):null, n.step?yield* ev(n.step,sc):null);
+    case 'Lambda': return new PyFunc('<lambda>',n.names,n.defs,null,n.body,sc,true);
+    case 'Star': return yield* ev(n.v,sc);
+    default: err('SyntaxError','cannot evaluate '+n.k);
+  }
+}
+function formatSpec(v,spec){
+  const m=/^([<>^]?)(\d*)(?:\.(\d+))?([dfsx%,]?)$/.exec(spec||'');
+  if(!m) return pyStr(v);
+  const [,align,width,prec,type]=m;
+  let s;
+  if(type==='f'||prec) s=Number(numOf(v,'format')).toFixed(prec?+prec:6);
+  else if(type==='d') s=String(Math.trunc(numOf(v,'format')));
+  else if(type==='x') s=Math.trunc(numOf(v,'format')).toString(16);
+  else if(type==='%') s=(numOf(v,'format')*100).toFixed(prec?+prec:2)+'%';
+  else if(type===',') s=Math.trunc(numOf(v,'format')).toLocaleString('en-US');
+  else s=pyStr(v);
+  const w=width?+width:0;
+  if(s.length>=w) return s;
+  if(align==='>') return s.padStart(w);
+  if(align==='^'){ const l=Math.floor((w-s.length)/2); return ' '.repeat(l)+s+' '.repeat(w-s.length-l); }
+  return align==='<' ? s.padEnd(w) : (typeof v==='number'&&!align ? s.padStart(w) : s.padEnd(w));
+}
+</script>
+<script>
+/* ========================= game world & drone API ======================== */
+const NORTH=0,EAST=1,SOUTH=2,WEST=3;
+const DV=[{x:0,y:1},{x:1,y:0},{x:0,y:-1},{x:-1,y:0}];
+const DIRNAME=['North','East','South','West'];
+
+const ITEMS=['Hay','Wood','Carrot','Pumpkin','Power','Cactus','Bone','Gold','Water','Fertilizer'];
+const ITEM_COLOR={Hay:'#D8B24A',Wood:'#8A5A33',Carrot:'#E1762F',Pumpkin:'#E08A2B',
+  Power:'#57B6C7',Cactus:'#5FA05A',Bone:'#DCD2BE',Gold:'#F0C852',Water:'#3E8FB0',Fertilizer:'#9B7BD4'};
+const TRADE_VALUE={Hay:1,Wood:2,Carrot:6,Pumpkin:15,Power:25,Cactus:30,Bone:60};
+
+const ENT=['Grass','Bush','Carrot','Pumpkin','Sunflower','Cactus','Dinosaur','Hedge','Treasure'];
+const SPEC={
+  Grass:     {ground:'Grassland', grow:3,  need:'plant'},
+  Bush:      {ground:'Grassland', grow:9,  need:'bush'},
+  Carrot:    {ground:'Soil',      grow:14, need:'carrot'},
+  Pumpkin:   {ground:'Soil',      grow:20, need:'pumpkin'},
+  Sunflower: {ground:'Soil',      grow:22, need:'sunflower'},
+  Cactus:    {ground:'Soil',      grow:16, need:'cactus'},
+  Dinosaur:  {ground:'Soil',      grow:0,  need:'dino'},
+  Hedge:     {ground:'Grassland', grow:0,  need:'maze'},
+  Treasure:  {ground:'Grassland', grow:0,  need:'maze'}
+};
+const FEED_ITEMS=['Hay','Wood','Carrot','Pumpkin'];
+
+const Items    = ns('Items',    Object.fromEntries(ITEMS.map(n=>[n,sym('Items',n)])));
+const Entities = ns('Entities', Object.fromEntries(ENT.map(n=>[n,sym('Entities',n)])));
+const Grounds  = ns('Grounds',  {Grassland:sym('Grounds','Grassland'),Soil:sym('Grounds','Soil')});
+const Unlocks  = ns('Unlocks',  {});
+
+const SIZES=[3,4,5,6,8,10,12,14,18,22,26];
+const TPS=[4,6,9,13,19,28,42,63,95,140,210,320,480];
+
+const state = {
+  items:Object.fromEntries(ITEMS.map(i=>[i,0])),
+  unlocked:{},
+  expand:0, speed:0, speedPref:0,
+  credit:0, treasures:0,
+  wanted:'Hay', wantedAt:0
+};
+const world = {
+  size:3, tiles:[], time:0, maze:false,
+  drone:{x:0,y:0,dir:NORTH,vx:0,vy:0,flip:0,bump:0},
+  fx:[]
+};
+
+function newTile(){ return {g:'Grassland',e:'Grass',age:Math.random()*SPEC.Grass.grow,water:0,d:null}; }
+function buildWorld(size,keep){
+  const old=world.tiles, os=world.size;
+  world.size=size;
+  world.tiles=new Array(size*size);
+  for(let y=0;y<size;y++) for(let x=0;x<size;x++){
+    world.tiles[y*size+x] = (keep && x<os && y<os) ? old[y*os+x] : newTile();
+  }
+  world.drone.x=Math.min(world.drone.x,size-1);
+  world.drone.y=Math.min(world.drone.y,size-1);
+  world.drone.vx=world.drone.x; world.drone.vy=world.drone.y;
+  world.maze=false;
+}
+const wrap=(v)=>((v%world.size)+world.size)%world.size;
+const tileAt=(x,y)=>world.tiles[wrap(y)*world.size+wrap(x)];
+const here=()=>tileAt(world.drone.x,world.drone.y);
+const isMature=t=>t.e && t.age>=SPEC[t.e].grow && (t.e!=='Dinosaur'||(t.d&&t.d.fed>=5));
+
+function growthRate(t){
+  if(t.g==='Soil') return 0.35+0.65*Math.min(1,t.water);
+  return 1;
+}
+function advanceWorld(dt){
+  if(dt<=0) return;
+  world.time+=dt;
+  const T=world.tiles;
+  for(let i=0;i<T.length;i++){
+    const t=T[i];
+    if(t.water>0) t.water=Math.max(0,t.water-dt*0.0022);
+    if(!t.e) continue;
+    const sp=SPEC[t.e];
+    if(sp.grow>0 && t.age<sp.grow) t.age=Math.min(sp.grow,t.age+dt*growthRate(t));
+  }
+  if(world.time-state.wantedAt>500){
+    state.wantedAt=world.time;
+    const pool=Object.keys(TRADE_VALUE).filter(k=>state.unlocked[unlockForItem(k)]!==undefined||k==='Hay');
+    state.wanted=pool[Math.floor(Math.random()*pool.length)]||'Hay';
+  }
+}
+function unlockForItem(k){
+  return {Hay:'plant',Wood:'bush',Carrot:'carrot',Pumpkin:'pumpkin',Power:'sunflower',Cactus:'cactus',Bone:'dino'}[k];
+}
+function give(item,n){
+  state.items[item]=(state.items[item]||0)+n;
+  UI.bump(item);
+}
+function fx(x,y,text,color){
+  world.fx.push({x,y,text,color,t:0});
+  if(world.fx.length>40) world.fx.shift();
+}
+
+/* ------------------------------ actions --------------------------------- */
+function requireUnlock(id,what){
+  if(!state.unlocked[id]) err('LockedError',what+' is locked. Buy it in the Shop tab.');
+}
+const COST={move:1,harvest:1,plant:1,till:2,water:1,measure:1,swap:2,trade:2,flip:2,feed:1};
+
+function* act(cost){ yield cost; }
+
+function* a_move(args){
+  let d=args.length?args[0]:null;
+  if(d&&d.__sym&&d.kind==='Dir') d=d.v;
+  if(typeof d!=='number'||d<0||d>3) err('TypeError','move() needs North, East, South or West');
+  const D=world.drone;
+  const nx=wrap(D.x+DV[d].x), ny=wrap(D.y+DV[d].y);
+  D.dir=d;
+  const dest=tileAt(nx,ny);
+  yield COST.move;
+  if(dest.e==='Hedge'){ D.bump=1; return false; }
+  D.x=nx; D.y=ny;
+  return true;
+}
+function* a_harvest(){
+  const t=here();
+  yield COST.harvest;
+  if(!t.e) return false;
+  if(t.e==='Hedge'){ t.e=null; t.age=0; return true; }
+  if(!isMature(t)) return false;
+  const D=world.drone;
+  switch(t.e){
+    case 'Grass':
+      t.age=0;
+      t.e = state.unlocked.plant ? null : 'Grass';   // wild grass regrows until you own a seed hopper
+      give('Hay',1); fx(D.x,D.y,'+1','#D8B24A'); return true;
+    case 'Bush':    t.e=null;t.age=0; give('Wood',1); fx(D.x,D.y,'+1','#8A5A33'); return true;
+    case 'Carrot':  t.e=null;t.age=0; give('Carrot',1); fx(D.x,D.y,'+1','#E1762F'); return true;
+    case 'Pumpkin': {
+      const group=floodPumpkin(D.x,D.y);
+      const n=group.length, side=Math.round(Math.sqrt(n));
+      const amount = side*side===n ? n*side : n;
+      for(const i of group){ world.tiles[i].e=null; world.tiles[i].age=0; }
+      give('Pumpkin',amount); fx(D.x,D.y,'+'+amount,'#E08A2B'); return true;
+    }
+    case 'Sunflower': {
+      let best=0;
+      for(const t2 of world.tiles) if(t2.e==='Sunflower'&&isMature(t2)) best=Math.max(best,t2.d.petals);
+      const p=t.d.petals;
+      t.e=null; t.age=0;
+      if(p>=best){ const gain=p*2; give('Power',gain); fx(D.x,D.y,'+'+gain,'#57B6C7'); return true; }
+      fx(D.x,D.y,'wilt','#D4573A'); return false;
+    }
+    case 'Cactus': {
+      const list=[];
+      for(let y=0;y<world.size;y++) for(let k=0;k<world.size;k++){
+        const x = y%2===0 ? k : world.size-1-k;
+        const c=tileAt(x,y); if(c.e==='Cactus') list.push(c);
+      }
+      const allRipe=list.every(isMature);
+      let sorted=true;
+      for(let i=1;i<list.length;i++) if(list[i].d.size<list[i-1].d.size) sorted=false;
+      if(allRipe&&sorted){
+        const n=list.length;
+        for(const c of list){ c.e=null; c.age=0; c.d=null; }
+        give('Cactus',n); fx(D.x,D.y,'+'+n,'#5FA05A'); return true;
+      }
+      t.e=null;t.age=0;t.d=null; fx(D.x,D.y,'unsorted','#D4573A'); return false;
+    }
+    case 'Dinosaur': t.e=null;t.age=0;t.d=null; give('Bone',6); fx(D.x,D.y,'+6','#DCD2BE'); return true;
+    case 'Treasure': {
+      t.e=null;t.age=0; give('Gold',1); fx(D.x,D.y,'+1 gold','#F0C852');
+      state.treasures++;
+      if(state.treasures%5===0) buildMaze(); else placeTreasure();
+      return true;
+    }
+  }
+  return false;
+}
+function floodPumpkin(x,y){
+  const seen=new Set(), out=[], st=[[wrap(x),wrap(y)]];
+  while(st.length){
+    const [cx,cy]=st.pop();
+    const i=cy*world.size+cx;
+    if(seen.has(i)) continue;
+    const t=world.tiles[i];
+    if(!t||t.e!=='Pumpkin'||!isMature(t)) continue;
+    seen.add(i); out.push(i);
+    for(const d of DV) st.push([wrap(cx+d.x),wrap(cy+d.y)]);
+  }
+  return out;
+}
+function* a_plant(args){
+  let e=args[0];
+  if(!e||!e.__sym||e.kind!=='Entities') err('TypeError','plant() needs an Entities value, e.g. Entities.Grass');
+  const name=e.name, sp=SPEC[name];
+  requireUnlock(sp.need, name);
+  if(name==='Treasure') err('ValueError','you cannot plant treasure');
+  const t=here();
+  yield COST.plant;
+  if(name==='Hedge'){ buildMaze(); return true; }
+  if(t.e) return false;
+  if(t.g!==sp.ground) return false;
+  t.e=name; t.age=0;
+  if(name==='Sunflower') t.d={petals:1+Math.floor(Math.random()*7)};
+  else if(name==='Cactus') t.d={size:1+Math.floor(Math.random()*9)};
+  else if(name==='Dinosaur') t.d={fed:0,want:FEED_ITEMS[Math.floor(Math.random()*FEED_ITEMS.length)]};
+  else t.d=null;
+  return true;
+}
+function* a_till(){
+  requireUnlock('till','till()');
+  const t=here();
+  yield COST.till;
+  if(t.e) return false;
+  t.g = t.g==='Soil' ? 'Grassland' : 'Soil';
+  if(t.g==='Grassland') t.water=0;
+  return true;
+}
+function* a_use_item(args){
+  const it=args[0];
+  if(!it||!it.__sym||it.kind!=='Items') err('TypeError','use_item() needs an Items value');
+  const t=here(), D=world.drone;
+  if(it.name==='Water'){
+    requireUnlock('water','use_item(Items.Water)');
+    yield COST.water;
+    if(t.g!=='Soil') return false;
+    t.water=1; fx(D.x,D.y,'water','#57B6C7'); return true;
+  }
+  if(it.name==='Fertilizer'){
+    requireUnlock('fertilizer','fertilizer');
+    yield COST.water;
+    if(!t.e||!SPEC[t.e].grow) return false;
+    if(state.items.Fertilizer<1) return false;
+    state.items.Fertilizer--; UI.bump('Fertilizer');
+    t.age=SPEC[t.e].grow; fx(D.x,D.y,'grown','#9B7BD4'); return true;
+  }
+  yield COST.feed;
+  if(t.e==='Dinosaur'){
+    if(t.d.want!==it.name) return false;
+    if((state.items[it.name]||0)<1) return false;
+    state.items[it.name]--; UI.bump(it.name);
+    t.d.fed++;
+    t.d.want=FEED_ITEMS[Math.floor(Math.random()*FEED_ITEMS.length)];
+    fx(D.x,D.y,'fed '+t.d.fed+'/5','#8FC93A');
+    return true;
+  }
+  return false;
+}
+function* a_measure(args){
+  requireUnlock('sensors','measure()');
+  let t=here();
+  if(args.length){
+    let d=args[0]; if(d&&d.__sym&&d.kind==='Dir') d=d.v;
+    t=tileAt(world.drone.x+DV[d].x, world.drone.y+DV[d].y);
+  }
+  yield COST.measure;
+  if(!t.e) return null;
+  if(t.e==='Sunflower') return t.d.petals;
+  if(t.e==='Cactus') return t.d.size;
+  if(t.e==='Dinosaur') return Items.props[t.d.want];
+  if(t.e==='Treasure') return true;
+  return null;
+}
+function* a_swap(args){
+  requireUnlock('cactus','swap()');
+  let d=args[0]; if(d&&d.__sym&&d.kind==='Dir') d=d.v;
+  if(typeof d!=='number') err('TypeError','swap() needs a direction');
+  const a=here(), b=tileAt(world.drone.x+DV[d].x, world.drone.y+DV[d].y);
+  yield COST.swap;
+  if(a.g!==b.g) return false;
+  const e=a.e,ag=a.age,dd=a.d;
+  a.e=b.e; a.age=b.age; a.d=b.d;
+  b.e=e; b.age=ag; b.d=dd;
+  return true;
+}
+function* a_trade(args){
+  requireUnlock('trade','trade()');
+  const it=args[0];
+  const n=args.length>1?Math.trunc(numOf(args[1],'trade')):1;
+  if(!it||!it.__sym||it.kind!=='Items') err('TypeError','trade() needs an Items value');
+  const v=TRADE_VALUE[it.name];
+  yield COST.trade;
+  if(!v) return false;
+  if(n<1||(state.items[it.name]||0)<n) return false;
+  state.items[it.name]-=n; UI.bump(it.name);
+  const mult = state.wanted===it.name?3:1;
+  state.credit += n*v*mult;
+  const gold=Math.floor(state.credit/100);
+  if(gold>0){ state.credit-=gold*100; give('Gold',gold); fx(world.drone.x,world.drone.y,'+'+gold+'g','#F0C852'); }
+  return true;
+}
+function* a_flip(){
+  yield COST.flip;
+  world.drone.flip=1;
+  return true;
+}
+
+/* -------------------------------- maze ---------------------------------- */
+function buildMaze(){
+  requireUnlock('maze','the hedge maze');
+  const n=world.size;
+  if(n<5) err('ValueError','the maze needs a farm of at least 5x5');
+  for(const t of world.tiles){ t.e='Hedge'; t.age=0; t.g='Grassland'; t.d=null; t.water=0; }
+  const set=(x,y)=>{ if(x>=0&&y>=0&&x<n&&y<n) world.tiles[y*n+x].e=null; };
+  const seen=new Set(), stack=[[0,0]];
+  seen.add('0,0'); set(0,0);
+  while(stack.length){
+    const [x,y]=stack[stack.length-1];
+    const opts=[];
+    for(const d of DV){
+      const nx=x+d.x*2, ny=y+d.y*2;
+      if(nx>=0&&ny>=0&&nx<n&&ny<n&&!seen.has(nx+','+ny)) opts.push([nx,ny,x+d.x,y+d.y]);
+    }
+    if(!opts.length){ stack.pop(); continue; }
+    const [nx,ny,mx,my]=opts[Math.floor(Math.random()*opts.length)];
+    seen.add(nx+','+ny); set(mx,my); set(nx,ny); stack.push([nx,ny]);
+  }
+  for(let i=0;i<n;i++){
+    const x=Math.floor(Math.random()*n), y=Math.floor(Math.random()*n);
+    if(x>0&&y>0&&x<n-1&&y<n-1) set(x,y);
+  }
+  world.maze=true;
+  world.drone.x=0; world.drone.y=0;
+  placeTreasure();
+}
+function placeTreasure(){
+  const open=[];
+  for(let y=0;y<world.size;y++) for(let x=0;x<world.size;x++){
+    const t=tileAt(x,y);
+    if(!t.e && (x!==world.drone.x||y!==world.drone.y)) open.push([x,y,Math.abs(x-world.drone.x)+Math.abs(y-world.drone.y)]);
+  }
+  if(!open.length) return;
+  open.sort((a,b)=>b[2]-a[2]);
+  const pick=open[Math.floor(Math.random()*Math.max(1,Math.floor(open.length/3)))];
+  tileAt(pick[0],pick[1]).e='Treasure';
+}
+</script>
+<script>
+/* ============================ builtins & globals ========================= */
+function* B_sorted(a,kw){ return yield* sortArr(toList(a[0]),kw); }
+function* B_map(a){ const out=[]; for(const x of toList(a[1])) out.push(yield* callValue(a[0],[x],{})); return out; }
+function* B_filter(a){ const out=[]; for(const x of toList(a[1])) if(truthy(yield* callValue(a[0],[x],{}))) out.push(x); return out; }
+function* B_minmax(a,kw,big){
+  const seq = a.length===1 ? toList(a[0]) : a;
+  if(!seq.length) err('ValueError','min()/max() arg is an empty sequence');
+  const key=kw&&kw.key?kw.key:null;
+  let best=seq[0], bestK=key?yield* callValue(key,[seq[0]],{}):seq[0];
+  for(let i=1;i<seq.length;i++){
+    const k=key?yield* callValue(key,[seq[i]],{}):seq[i];
+    const c=cmpVals(k,bestK);
+    if(big?c>0:c<0){ best=seq[i]; bestK=k; }
+  }
+  return best;
+}
+function buildGlobals(){
+  const g=new Map();
+  const def=(n,fn,gen)=>g.set(n,nat(n,fn,gen));
+
+  def('print',a=>{ UI.log(a.map(pyStr).join(' ')); return null; });
+  def('quick_print',a=>{ UI.log(a.map(pyStr).join(' '),'',true); return null; });
+  def('clear',()=>{ UI.clearLog(); return null; });
+  def('len',a=>pyLen(a[0]));
+  def('range',a=>{
+    const x=a.map(v=>Math.trunc(numOf(v,'range')));
+    const r = x.length===1?new PyRange(0,x[0],1):(x.length===2?new PyRange(x[0],x[1],1):new PyRange(x[0],x[1],x[2]));
+    if(r.step===0) err('ValueError','range() step must not be zero');
+    if(r.length>4e6) err('MemoryError','range() is too large');
+    return r;
+  });
+  def('abs',a=>Math.abs(numOf(a[0],'abs')));
+  def('round',a=>{ const d=a.length>1?a[1]:0; const m=Math.pow(10,d);
+    return Math.round(numOf(a[0],'round')*m*(1+1e-12))/m; });
+  def('int',a=>{ if(!a.length) return 0;
+    if(typeof a[0]==='string'){ const v=parseInt(a[0].trim(),a.length>1?a[1]:10);
+      if(Number.isNaN(v)) err('ValueError','invalid literal for int(): '+pyRepr(a[0])); return v; }
+    return Math.trunc(numOf(a[0],'int')); });
+  def('float',a=>{ if(typeof a[0]==='string'){ const v=parseFloat(a[0]);
+      if(Number.isNaN(v)) err('ValueError','could not convert string to float'); return v; }
+    return numOf(a[0],'float'); });
+  def('str',a=>a.length?pyStr(a[0]):'');
+  def('repr',a=>pyRepr(a[0]));
+  def('bool',a=>a.length?truthy(a[0]):false);
+  def('list',a=>a.length?toList(a[0]):[]);
+  def('tuple',a=>tup(a.length?toList(a[0]):[]));
+  def('set',a=>a.length?new PySet(toList(a[0])):new PySet());
+  def('dict',a=>{ const d=new PyDict();
+    if(a.length){ if(a[0] instanceof PyDict) for(const e of a[0].m.values()) d.set(e[0],e[1]);
+      else for(const p of toList(a[0])) d.set(p[0],p[1]); }
+    return d; });
+  def('sum',a=>{ let s=a.length>1?a[1]:0; for(const x of toList(a[0])) s=binop('+',s,x); return s; });
+  def('any',a=>toList(a[0]).some(truthy));
+  def('all',a=>toList(a[0]).every(truthy));
+  def('reversed',a=>toList(a[0]).reverse());
+  def('enumerate',a=>{ const st=a.length>1?a[1]:0;
+    return toList(a[0]).map((x,i)=>tup([i+st,x])); });
+  def('zip',a=>{ const ls=a.map(toList); const n=Math.min(...ls.map(l=>l.length));
+    const out=[]; for(let i=0;i<n;i++) out.push(tup(ls.map(l=>l[i]))); return out; });
+  def('type',a=>typeName(a[0]));
+  def('isinstance',a=>{ const t=a[1];
+    const names = Array.isArray(t)?t.map(pyStr):[pyStr(t)];
+    return names.includes(typeName(a[0])); });
+  def('chr',a=>String.fromCharCode(numOf(a[0],'chr')));
+  def('ord',a=>String(a[0]).charCodeAt(0));
+  def('min',function*(a,kw){ return yield* B_minmax(a,kw,false); },true);
+  def('max',function*(a,kw){ return yield* B_minmax(a,kw,true); },true);
+  def('sorted',B_sorted,true);
+  def('map',B_map,true);
+  def('filter',B_filter,true);
+  def('random',a=>{
+    if(!a.length) return Math.random();
+    if(a.length===1) return Math.floor(Math.random()*numOf(a[0],'random'));
+    const lo=Math.ceil(numOf(a[0],'random')), hi=Math.floor(numOf(a[1],'random'));
+    return lo+Math.floor(Math.random()*(hi-lo+1));
+  });
+  def('random_int',a=>{ const lo=Math.ceil(numOf(a[0],'random_int')), hi=Math.floor(numOf(a[1],'random_int'));
+    return lo+Math.floor(Math.random()*(hi-lo+1)); });
+  def('sqrt',a=>Math.sqrt(numOf(a[0],'sqrt')));
+  def('floor',a=>Math.floor(numOf(a[0],'floor')));
+  def('ceil',a=>Math.ceil(numOf(a[0],'ceil')));
+
+  /* ---- world API ---- */
+  def('move',a_move,true);
+  def('harvest',a_harvest,true);
+  def('plant',a_plant,true);
+  def('till',a_till,true);
+  def('use_item',a_use_item,true);
+  def('measure',a_measure,true);
+  def('swap',a_swap,true);
+  def('trade',a_trade,true);
+  def('do_a_flip',a_flip,true);
+  def('get_pos_x',()=>world.drone.x);
+  def('get_pos_y',()=>world.drone.y);
+  def('get_world_size',()=>world.size);
+  def('get_time',()=>Math.round(world.time*100)/100);
+  def('num_items',a=>{
+    const it=a[0];
+    if(!it||!it.__sym||it.kind!=='Items') err('TypeError','num_items() needs an Items value');
+    return state.items[it.name]||0;
+  });
+  def('can_harvest',()=>{ requireUnlock('sensors','can_harvest()'); const t=here();
+    return !!(t.e && (t.e==='Hedge'||t.e==='Treasure'||isMature(t))); });
+  def('get_entity_type',()=>{ requireUnlock('sensors','get_entity_type()');
+    const t=here(); return t.e?Entities.props[t.e]:null; });
+  def('get_ground_type',()=>{ requireUnlock('sensors','get_ground_type()');
+    return Grounds.props[here().g]; });
+  def('get_water',()=>{ requireUnlock('water','get_water()');
+    return Math.round(here().water*1000)/1000; });
+  def('get_trade_request',()=>{ requireUnlock('trade','get_trade_request()');
+    return Items.props[state.wanted]; });
+  def('get_cost',a=>{ const d=new PyDict();
+    const u=UPGRADES.find(x=>x.id===pyStr(a[0]));
+    if(u){ const c=u.cost(state); for(const k in c) d.set(Items.props[k],c[k]); }
+    return d; });
+  def('unlocked',a=>!!state.unlocked[pyStr(a[0])]);
+
+  g.set('North',NORTH); g.set('East',EAST); g.set('South',SOUTH); g.set('West',WEST);
+  g.set('Items',Items); g.set('Entities',Entities); g.set('Grounds',Grounds);
+  g.set('True',true); g.set('False',false); g.set('None',null);
+  g.set('pi',Math.PI);
+  for(const n of ['ValueError','TypeError','IndexError','KeyError','NameError','ZeroDivisionError',
+    'RuntimeError','AssertionError','LockedError','Exception','StopIteration'])
+    g.set(n,{__exType:true,name:n});
+  return g;
+}
+
+/* ============================== the runner =============================== */
+const runner={ gen:null, running:false, carry:0, scope:null, source:'' };
+let GLOBALS=buildGlobals();
+
+function resetGlobals(){
+  GLOBALS=buildGlobals();
+  UI.log('globals reset — user functions cleared','i');
+}
+function tpsNow(){ return TPS[Math.min(state.speedPref,state.speed)]; }
+
+function startRun(src,label){
+  if(runner.running) stopRun(true);
+  let ast;
+  try{ ast=parse(src); }
+  catch(e){
+    UI.log((e.syntax?'SyntaxError':'Error')+': '+e.message+(e.line?'  (line '+e.line+')':''),'e');
+    UI.flag('error'); return false;
+  }
+  const sc=new Scope(null,GLOBALS);
+  sc.v=GLOBALS;
+  RT={line:0,depth:0,last:null};
+  runner.scope=sc;
+  runner.carry=0;
+  runner.gen=(function*(){ yield* execBlock(ast.body,sc); })();
+  runner.running=true;
+  UI.flag('running');
+  UI.setRunning(true);
+  UI.log('▶ run '+label,'s');
+  return true;
+}
+function stopRun(quiet){
+  runner.running=false; runner.gen=null;
+  UI.setRunning(false); UI.flag('idle');
+  if(!quiet) UI.log('■ stopped','i');
+}
+function programError(e){
+  runner.running=false; runner.gen=null;
+  UI.setRunning(false); UI.flag('error');
+  if(e instanceof PyEx) UI.log(e.type+': '+e.msg+'   (line '+RT.line+')','e');
+  else if(e instanceof Ret) UI.log('SyntaxError: return outside function','e');
+  else if(e===BRK||e===CNT) UI.log('SyntaxError: break/continue outside loop','e');
+  else UI.log('InternalError: '+(e&&e.message?e.message:String(e))+'   (line '+RT.line+')','e');
+}
+function stepProgram(dt){
+  let budget = tpsNow()*dt + runner.carry;
+  const cap = 30000;
+  let ops=0;
+  while(budget>0 && ops<cap && runner.running){
+    let r;
+    try{ r=runner.gen.next(); }
+    catch(e){ programError(e); return; }
+    if(r.done){
+      runner.running=false; runner.gen=null;
+      UI.setRunning(false); UI.flag('done');
+      UI.log('✔ finished','s');
+      UI.refreshShop();
+      return;
+    }
+    const cost=r.value||0;
+    if(cost>0){ advanceWorld(cost); budget-=cost; }
+    ops++;
+  }
+  runner.carry=Math.max(-4,Math.min(0,budget));
+  UI.refreshStats();
+}
+</script>
+<script>
+/* ============================== rendering ================================ */
+const cv=document.getElementById('field');
+const cx=cv.getContext('2d');
+let CW=0,CH=0,DPR=1;
+
+function resizeCanvas(){
+  const r=cv.getBoundingClientRect();
+  DPR=Math.min(2.5,window.devicePixelRatio||1);
+  CW=Math.max(80,Math.round(r.width)); CH=Math.max(80,Math.round(r.height));
+  cv.width=Math.round(CW*DPR); cv.height=Math.round(CH*DPR);
+  cx.setTransform(DPR,0,0,DPR,0,0);
+}
+new ResizeObserver(resizeCanvas).observe(cv);
+
+const hash=(x,y)=>{ const s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); };
+const lerp=(a,b,t)=>a+(b-a)*t;
+function rr(g,x,y,w,h,r){
+  g.beginPath();
+  const k=Math.min(r,w/2,h/2);
+  g.moveTo(x+k,y); g.arcTo(x+w,y,x+w,y+h,k); g.arcTo(x+w,y+h,x,y+h,k);
+  g.arcTo(x,y+h,x,y,k); g.arcTo(x,y,x+w,y,k); g.closePath();
+}
+
+let spin=0;
+function draw(dt){
+  spin+=dt*18;
+  const n=world.size;
+  const pad=6;
+  const cell=Math.floor(Math.min((CW-pad*2)/n,(CH-pad*2)/n));
+  const ox=Math.round((CW-cell*n)/2), oy=Math.round((CH-cell*n)/2);
+  cx.clearRect(0,0,CW,CH);
+  cx.fillStyle='#100D0C'; cx.fillRect(0,0,CW,CH);
+
+  const px=(x)=>ox+x*cell;
+  const py=(y)=>oy+(n-1-y)*cell;
+
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++){
+    const t=world.tiles[y*n+x];
+    const X=px(x), Y=py(y), h=hash(x,y);
+    if(t.g==='Soil'){
+      const w=t.water;
+      const base=[lerp(74,44,w),lerp(53,32,w),lerp(38,24,w)];
+      cx.fillStyle='rgb('+Math.round(base[0]+h*10)+','+Math.round(base[1]+h*8)+','+Math.round(base[2]+h*6)+')';
+      cx.fillRect(X,Y,cell,cell);
+      if(w>0.02){
+        cx.fillStyle='rgba(87,182,199,'+(0.10*w).toFixed(3)+')';
+        cx.fillRect(X,Y,cell,cell);
+      }
+      cx.fillStyle='rgba(0,0,0,.16)';
+      for(let i=0;i<3;i++){
+        const hx=hash(x*3+i,y*7), hy=hash(x*5,y*11+i);
+        cx.fillRect(X+hx*(cell-3),Y+hy*(cell-3),cell*0.16,1.5);
+      }
+    }else{
+      const g1=48+h*14;
+      cx.fillStyle='rgb('+Math.round(38+h*10)+','+Math.round(g1)+','+Math.round(26+h*8)+')';
+      cx.fillRect(X,Y,cell,cell);
+      cx.strokeStyle='rgba(143,201,58,.10)'; cx.lineWidth=1;
+      cx.beginPath();
+      for(let i=0;i<2;i++){
+        const hx=X+hash(x+i*9,y)*cell*0.8+cell*0.1, hy=Y+hash(x,y+i*4)*cell*0.8+cell*0.1;
+        cx.moveTo(hx,hy+cell*0.12); cx.lineTo(hx+cell*0.04,hy);
+      }
+      cx.stroke();
+    }
+    cx.strokeStyle='rgba(0,0,0,.22)'; cx.lineWidth=1;
+    cx.strokeRect(X+0.5,Y+0.5,cell-1,cell-1);
+    if(t.e) drawEntity(t,X,Y,cell,x,y);
+  }
+
+  // harvest-ready markers
+  cx.lineWidth=Math.max(1,cell*0.045);
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++){
+    const t=world.tiles[y*n+x];
+    if(t.e&&t.e!=='Hedge'&&isMature(t)){
+      cx.strokeStyle='rgba(233,162,59,.55)';
+      const X=px(x),Y=py(y), m=cell*0.12;
+      cx.beginPath();
+      cx.moveTo(X+m,Y+m*1.9); cx.lineTo(X+m,Y+m); cx.lineTo(X+m*1.9,Y+m);
+      cx.moveTo(X+cell-m,Y+cell-m*1.9); cx.lineTo(X+cell-m,Y+cell-m); cx.lineTo(X+cell-m*1.9,Y+cell-m);
+      cx.stroke();
+    }
+  }
+
+  // drone
+  const D=world.drone;
+  const k=Math.min(1,dt*Math.max(8,tpsNow()*0.9));
+  let tx=D.x, ty=D.y;
+  if(Math.abs(D.vx-tx)>n/2) D.vx += (D.vx>tx? -n : n);
+  if(Math.abs(D.vy-ty)>n/2) D.vy += (D.vy>ty? -n : n);
+  D.vx=lerp(D.vx,tx,k); D.vy=lerp(D.vy,ty,k);
+  if(D.flip>0) D.flip=Math.max(0,D.flip-dt*2.6);
+  if(D.bump>0) D.bump=Math.max(0,D.bump-dt*4);
+  const dx=px(D.vx)+cell/2, dy=py(D.vy)+cell/2;
+  drawDrone(dx,dy,cell,D);
+
+  // floating text
+  for(let i=world.fx.length-1;i>=0;i--){
+    const f=world.fx[i];
+    f.t+=dt;
+    if(f.t>1.1){ world.fx.splice(i,1); continue; }
+    const a=1-f.t/1.1;
+    cx.globalAlpha=a;
+    cx.fillStyle=f.color;
+    cx.font='600 '+Math.max(9,Math.round(cell*0.32))+'px Chakra Petch, sans-serif';
+    cx.textAlign='center';
+    cx.fillText(f.text, px(f.x)+cell/2, py(f.y)+cell*0.4-f.t*cell*0.5);
+    cx.globalAlpha=1;
+  }
+  cx.textAlign='left';
+}
+
+function drawEntity(t,X,Y,c,gx,gy){
+  const sp=SPEC[t.e];
+  const p=sp.grow>0?Math.min(1,t.age/sp.grow):1;
+  const cxm=X+c/2, cym=Y+c/2;
+  switch(t.e){
+    case 'Grass':{
+      const hgt=c*(0.18+0.42*p);
+      cx.strokeStyle=p>=1?'#D8B24A':'#6FA33A';
+      cx.lineWidth=Math.max(1,c*0.07); cx.lineCap='round';
+      cx.beginPath();
+      for(let i=-1;i<=1;i++){
+        cx.moveTo(cxm+i*c*0.17,Y+c*0.82);
+        cx.quadraticCurveTo(cxm+i*c*0.22,Y+c*0.82-hgt*0.6,cxm+i*c*0.3,Y+c*0.82-hgt);
+      }
+      cx.stroke(); cx.lineCap='butt';
+      break;
+    }
+    case 'Bush':{
+      const r=c*(0.16+0.22*p);
+      cx.fillStyle=p>=1?'#4E7A2E':'#3E6327';
+      cx.beginPath();
+      cx.arc(cxm-r*0.5,cym+r*0.2,r*0.75,0,7); cx.arc(cxm+r*0.5,cym+r*0.2,r*0.75,0,7);
+      cx.arc(cxm,cym-r*0.35,r*0.85,0,7); cx.fill();
+      if(p>=1){ cx.fillStyle='#8A5A33';
+        for(let i=0;i<3;i++){ cx.beginPath();
+          cx.arc(cxm+(i-1)*r*0.6,cym+(i%2?r*0.1:-r*0.25),r*0.2,0,7); cx.fill(); } }
+      break;
+    }
+    case 'Carrot':{
+      cx.strokeStyle='#5F9B34'; cx.lineWidth=Math.max(1,c*0.06);
+      cx.beginPath();
+      for(let i=-1;i<=1;i++){ cx.moveTo(cxm,Y+c*0.62);
+        cx.lineTo(cxm+i*c*0.2,Y+c*0.62-c*(0.12+0.24*p)); }
+      cx.stroke();
+      if(p>=1){ cx.fillStyle='#E1762F'; cx.beginPath();
+        cx.moveTo(cxm-c*0.13,Y+c*0.6); cx.lineTo(cxm+c*0.13,Y+c*0.6);
+        cx.lineTo(cxm,Y+c*0.84); cx.closePath(); cx.fill(); }
+      break;
+    }
+    case 'Pumpkin':{
+      const r=c*(0.14+0.32*p);
+      cx.fillStyle=p>=1?'#E08A2B':'#7D8B36';
+      cx.beginPath(); cx.ellipse(cxm,cym+c*0.04,r,r*0.86,0,0,7); cx.fill();
+      cx.strokeStyle='rgba(0,0,0,.22)'; cx.lineWidth=Math.max(1,c*0.03);
+      cx.beginPath();
+      cx.ellipse(cxm,cym+c*0.04,r*0.35,r*0.85,0,0,7);
+      cx.stroke();
+      cx.fillStyle='#4E6B22'; cx.fillRect(cxm-c*0.03,cym-r*0.95,c*0.06,c*0.09);
+      break;
+    }
+    case 'Sunflower':{
+      const st=c*(0.2+0.4*p);
+      cx.strokeStyle='#4E7A2E'; cx.lineWidth=Math.max(1,c*0.05);
+      cx.beginPath(); cx.moveTo(cxm,Y+c*0.86); cx.lineTo(cxm,Y+c*0.86-st); cx.stroke();
+      const hy=Y+c*0.86-st, r=c*(0.09+0.11*p);
+      if(p>=1){
+        cx.fillStyle='#EFC544';
+        for(let i=0;i<t.d.petals;i++){
+          const a=i/t.d.petals*Math.PI*2;
+          cx.beginPath();
+          cx.ellipse(cxm+Math.cos(a)*r*1.25,hy+Math.sin(a)*r*1.25,r*0.7,r*0.34,a,0,7);
+          cx.fill();
+        }
+      }
+      cx.fillStyle=p>=1?'#6B4A22':'#5C7A31';
+      cx.beginPath(); cx.arc(cxm,hy,r,0,7); cx.fill();
+      if(p>=1&&c>26){
+        cx.fillStyle='#FFF3D6'; cx.font='700 '+Math.round(c*0.26)+'px JetBrains Mono, monospace';
+        cx.textAlign='center'; cx.fillText(String(t.d.petals),cxm,Y+c*0.99); cx.textAlign='left';
+      }
+      break;
+    }
+    case 'Cactus':{
+      const s=t.d?t.d.size:1;
+      const hgt=c*(0.2+0.06*s)*(0.45+0.55*p);
+      const w=c*0.19;
+      cx.fillStyle=p>=1?'#5FA05A':'#41763F';
+      rr(cx,cxm-w/2,Y+c*0.84-hgt,w,hgt,w*0.45); cx.fill();
+      if(s>3){ rr(cx,cxm-w*1.5,Y+c*0.84-hgt*0.62,w*0.8,hgt*0.42,w*0.35); cx.fill(); }
+      if(s>6){ rr(cx,cxm+w*0.7,Y+c*0.84-hgt*0.75,w*0.8,hgt*0.5,w*0.35); cx.fill(); }
+      if(c>26){
+        cx.fillStyle='rgba(255,243,214,.85)'; cx.font='700 '+Math.round(c*0.24)+'px JetBrains Mono, monospace';
+        cx.textAlign='center'; cx.fillText(String(s),cxm,Y+c*0.99); cx.textAlign='left';
+      }
+      break;
+    }
+    case 'Dinosaur':{
+      const f=t.d?t.d.fed:0, sc=0.6+0.09*f;
+      cx.fillStyle=isMature(t)?'#7FB25A':'#5E8C46';
+      const bw=c*0.4*sc, bh=c*0.26*sc, bx=cxm-bw*0.4, by=cym+c*0.08;
+      rr(cx,bx-bw/2,by-bh,bw,bh,bh*0.45); cx.fill();
+      cx.beginPath(); cx.arc(bx+bw*0.55,by-bh*1.25,bh*0.55,0,7); cx.fill();
+      cx.beginPath(); cx.moveTo(bx-bw*0.5,by-bh*0.6);
+      cx.lineTo(bx-bw*1.05,by-bh*1.1); cx.lineTo(bx-bw*0.5,by-bh*0.1); cx.fill();
+      cx.fillRect(bx-bw*0.3,by-2,bw*0.16,bh*0.5); cx.fillRect(bx+bw*0.15,by-2,bw*0.16,bh*0.5);
+      cx.fillStyle='#120E0C'; cx.beginPath(); cx.arc(bx+bw*0.72,by-bh*1.32,bh*0.12,0,7); cx.fill();
+      if(!isMature(t)&&t.d){
+        cx.fillStyle=ITEM_COLOR[t.d.want];
+        cx.beginPath(); cx.arc(X+c*0.82,Y+c*0.2,c*0.075,0,7); cx.fill();
+        cx.fillStyle='rgba(255,255,255,.55)';
+        for(let i=0;i<5;i++) cx.fillRect(X+c*0.16+i*c*0.13,Y+c*0.13,c*0.09,i<f?c*0.05:c*0.02);
+      }
+      break;
+    }
+    case 'Hedge':{
+      cx.fillStyle='#24361B';
+      rr(cx,X+1,Y+1,c-2,c-2,Math.max(2,c*0.14)); cx.fill();
+      cx.fillStyle='rgba(143,201,58,.10)';
+      for(let i=0;i<4;i++){
+        const hx=hash(gx*7+i,gy*3), hy=hash(gx,gy*5+i);
+        cx.beginPath(); cx.arc(X+c*0.2+hx*c*0.6,Y+c*0.2+hy*c*0.6,c*0.11,0,7); cx.fill();
+      }
+      break;
+    }
+    case 'Treasure':{
+      const g=0.6+0.4*Math.sin(spin*0.35);
+      cx.fillStyle='rgba(240,200,82,'+(0.14*g).toFixed(3)+')';
+      cx.beginPath(); cx.arc(cxm,cym,c*0.5,0,7); cx.fill();
+      cx.fillStyle='#7A5220'; rr(cx,cxm-c*0.26,cym-c*0.14,c*0.52,c*0.3,c*0.05); cx.fill();
+      cx.fillStyle='#A66E2A'; rr(cx,cxm-c*0.26,cym-c*0.28,c*0.52,c*0.18,c*0.07); cx.fill();
+      cx.fillStyle='#F0C852'; cx.fillRect(cxm-c*0.05,cym-c*0.2,c*0.1,c*0.22);
+      break;
+    }
+  }
+}
+
+function drawDrone(x,y,c,D){
+  const s=c*0.62;
+  cx.save();
+  cx.translate(x,y);
+  cx.fillStyle='rgba(0,0,0,.35)';
+  cx.beginPath(); cx.ellipse(0,s*0.55,s*0.42,s*0.14,0,0,7); cx.fill();
+  if(D.flip>0) cx.rotate((1-D.flip)*Math.PI*2);
+  if(D.bump>0) cx.translate(DV[D.dir].x*D.bump*c*0.12, -DV[D.dir].y*D.bump*c*0.12);
+  const arm=s*0.36;
+  cx.strokeStyle='#4A3E35'; cx.lineWidth=Math.max(1.4,s*0.09);
+  cx.beginPath();
+  cx.moveTo(-arm,-arm); cx.lineTo(arm,arm); cx.moveTo(arm,-arm); cx.lineTo(-arm,arm);
+  cx.stroke();
+  for(const [ax,ay] of [[-arm,-arm],[arm,-arm],[-arm,arm],[arm,arm]]){
+    cx.strokeStyle='rgba(87,182,199,.65)'; cx.lineWidth=Math.max(1,s*0.05);
+    cx.beginPath(); cx.arc(ax,ay,s*0.2,spin%6.28,spin%6.28+3.6); cx.stroke();
+    cx.fillStyle='#2A2320'; cx.beginPath(); cx.arc(ax,ay,s*0.07,0,7); cx.fill();
+  }
+  cx.fillStyle='#1F1A17';
+  rr(cx,-s*0.28,-s*0.24,s*0.56,s*0.48,s*0.14); cx.fill();
+  cx.strokeStyle='#8FC93A'; cx.lineWidth=Math.max(1,s*0.045);
+  rr(cx,-s*0.28,-s*0.24,s*0.56,s*0.48,s*0.14); cx.stroke();
+  const d=DV[D.dir];
+  cx.fillStyle='#E9A23B';
+  cx.beginPath(); cx.arc(d.x*s*0.2,-d.y*s*0.2,s*0.09,0,7); cx.fill();
+  cx.restore();
+}
+</script>
+<script>
+/* =============================== upgrades =============================== */
+const EXPAND_COST=[null,{Hay:20},{Hay:120},{Wood:100},{Wood:450},{Carrot:500},
+  {Pumpkin:400},{Power:900},{Cactus:700},{Bone:900},{Gold:30}];
+const SPEED_COST=[null,{Hay:30},{Hay:150},{Wood:120},{Wood:500},{Carrot:400},{Carrot:1200},
+  {Power:200},{Power:800},{Power:2500},{Bone:600},{Gold:12},{Gold:45}];
+
+const UPGRADES=[
+  {id:'sensors',cat:'Systems',name:'Sensor Array',req:[],cost:()=>({Hay:2}),
+   desc:'can_harvest(), get_entity_type(), get_ground_type() and measure().'},
+  {id:'plant',cat:'Crops',name:'Seed Hopper',req:[],cost:()=>({Hay:5}),
+   desc:'plant(Entities.Grass) — grass regrows into hay in 3 ticks.'},
+  {id:'expand',cat:'Systems',name:'Field Expansion',req:[],lvl:()=>[state.expand,EXPAND_COST.length-1],
+   cost:s=>EXPAND_COST[s.expand+1]||{}, dyn:()=>'Farm is '+world.size+'x'+world.size+
+   (SIZES[state.expand+1]?' → '+SIZES[state.expand+1]+'x'+SIZES[state.expand+1]:' (max)'),
+   desc:'More ground under the rotors.'},
+  {id:'speed',cat:'Systems',name:'Rotor Tuning',req:[],lvl:()=>[state.speed,TPS.length-1],
+   cost:s=>SPEED_COST[s.speed+1]||{}, dyn:()=>'Top speed '+TPS[state.speed]+' ticks/s'+
+   (TPS[state.speed+1]?' → '+TPS[state.speed+1]:' (max)'),
+   desc:'Raises the speed cap on the run bar.'},
+  {id:'bush',cat:'Crops',name:'Bushes',req:['plant'],cost:()=>({Hay:60}),
+   desc:'plant(Entities.Bush) → wood. Slower than grass, worth more.'},
+  {id:'till',cat:'Crops',name:'Tiller',req:['bush'],cost:()=>({Wood:40}),
+   desc:'till() flips a tile between grassland and soil.'},
+  {id:'carrot',cat:'Crops',name:'Carrots',req:['till'],cost:()=>({Wood:120,Hay:200}),
+   desc:'plant(Entities.Carrot) on soil. Soil grows slowly while dry.'},
+  {id:'water',cat:'Crops',name:'Irrigation',req:['carrot'],cost:()=>({Carrot:150}),
+   desc:'get_water() and use_item(Items.Water). Wet soil grows ~3x faster.'},
+  {id:'trade',cat:'Market',name:'Trading Post',req:['carrot'],cost:()=>({Wood:250,Carrot:100}),
+   desc:'trade(item, n) sells goods for gold. get_trade_request() names the item paying triple.'},
+  {id:'pumpkin',cat:'Crops',name:'Pumpkins',req:['water'],cost:()=>({Carrot:400}),
+   desc:'Ripe pumpkins touching each other merge — an n x n block pays n^3.'},
+  {id:'sunflower',cat:'Crops',name:'Sunflowers',req:['pumpkin'],cost:()=>({Pumpkin:250}),
+   desc:'measure() reads petals. Only the most-petalled ripe flower yields power.'},
+  {id:'cactus',cat:'Crops',name:'Cacti',req:['sunflower'],cost:()=>({Power:400}),
+   desc:'swap(dir) trades two plants. Cacti only pay out once the whole field is sorted by size.'},
+  {id:'dino',cat:'Livestock',name:'Dinosaurs',req:['cactus'],cost:()=>({Cactus:300,Pumpkin:800}),
+   desc:'measure() asks what it wants; use_item() feeds it. Five feeds → 6 bones.'},
+  {id:'maze',cat:'Livestock',name:'Hedge Maze',req:['dino'],cost:()=>({Bone:400}),
+   desc:'plant(Entities.Hedge) rebuilds the farm as a maze. Find the chest for gold.'},
+  {id:'fertilizer',cat:'Market',name:'Fertilizer',req:['maze'],cost:()=>({Gold:15}),
+   desc:'Buy fertilizer with gold; use_item(Items.Fertilizer) ripens a plant instantly.'}
+];
+for(const u of UPGRADES) Unlocks.props[u.id]=sym('Unlocks',u.id);
+
+function canAfford(c){ for(const k in c) if((state.items[k]||0)<c[k]) return false; return true; }
+function pay(c){ for(const k in c){ state.items[k]-=c[k]; UI.bump(k); } }
+function reqsMet(u){ return u.req.every(r=>state.unlocked[r]); }
+function isOwned(u){ return u.lvl ? false : !!state.unlocked[u.id]; }
+function isMaxed(u){ if(!u.lvl) return false; const [c,m]=u.lvl(); return c>=m; }
+
+function buy(u){
+  if(isOwned(u)||isMaxed(u)||!reqsMet(u)) return;
+  const c=u.cost(state);
+  if(!canAfford(c)){ UI.log('not enough resources for '+u.name,'e'); return; }
+  pay(c);
+  if(u.id==='expand'){ state.expand++; buildWorld(SIZES[state.expand],true); }
+  else if(u.id==='speed'){ state.speed++; state.speedPref=state.speed; UI.syncSpeed(); }
+  else state.unlocked[u.id]=true;
+  UI.log('unlocked '+u.name,'s');
+  UI.refreshShop(); UI.refreshStats(); save();
+}
+
+/* ================================= UI =================================== */
+const $=id=>document.getElementById(id);
+const STARTER='# Rootloop \u2014 press Run.\n'+
+  '# Wild grass regrows by itself until you buy the Seed Hopper.\n\n'+
+  'while True:\n'+
+  '    harvest()\n'+
+  '    move(North)\n';
+
+let files=[{name:'main.py',code:STARTER}];
+let active=0;
+let logLines=[];
+
+const UI={
+  statsAt:0, bumped:{},
+  bump(item){ this.bumped[item]=performance.now(); this.statsAt=0; },
+  log(text,cls,quick){
+    if(quick && logLines.length && logLines[logLines.length-1].q) logLines[logLines.length-1]={t:text,c:cls,q:1};
+    else logLines.push({t:text,c:cls,q:quick?1:0});
+    if(logLines.length>300) logLines.splice(0,logLines.length-300);
+    this.renderLog();
+  },
+  clearLog(){ logLines=[]; this.renderLog(); },
+  renderLog(){
+    const el=$('log');
+    el.innerHTML=logLines.map(l=>'<div class="'+(l.c||'')+'">'+esc(l.t)+'</div>').join('');
+    el.scrollTop=el.scrollHeight;
+  },
+  flag(mode){
+    const f=$('flag');
+    f.className='flag'+(mode==='running'?' on':mode==='error'?' err':'');
+    f.textContent=mode;
+  },
+  setRunning(on){ $('runBtn').disabled=on; $('stopBtn').disabled=!on; },
+  syncSpeed(){
+    const s=$('speed');
+    s.max=String(state.speed);
+    state.speedPref=Math.min(state.speedPref,state.speed);
+    s.value=String(state.speedPref);
+    $('tps').textContent=TPS[state.speedPref]+'/s';
+  },
+  refreshStats(force){
+    const now=performance.now();
+    if(!force && now-this.statsAt<120) return;
+    this.statsAt=now;
+    const shown=ITEMS.filter(i=>state.items[i]>0||['Hay'].includes(i)||
+      (i==='Wood'&&state.unlocked.bush)||(i==='Carrot'&&state.unlocked.carrot)||
+      (i==='Fertilizer'&&state.unlocked.fertilizer));
+    $('strip').innerHTML=shown.map(i=>{
+      const hot=now-(this.bumped[i]||0)<400;
+      return '<span class="chip'+(hot?' pulse':'')+'"><span class="dot" style="background:'+ITEM_COLOR[i]+'"></span>'+
+        i.toLowerCase()+' <b>'+fmtInt(state.items[i]||0)+'</b></span>';
+    }).join('');
+    const n=UPGRADES.filter(u=>reqsMet(u)&&!isOwned(u)&&!isMaxed(u)&&canAfford(u.cost(state))).length;
+    const b=$('shopBadge');
+    if(n>0){ b.hidden=false; b.textContent=String(n); } else b.hidden=true;
+  },
+  refreshShop(){
+    const cats=['Systems','Crops','Livestock','Market'];
+    let html='';
+    for(const c of cats){
+      const list=UPGRADES.filter(u=>u.cat===c);
+      if(!list.length) continue;
+      html+='<div class="secTitle">'+c+'</div><div class="buys">';
+      for(const u of list){
+        const met=reqsMet(u), owned=isOwned(u), maxed=isMaxed(u);
+        const cost=u.cost(state), afford=canAfford(cost);
+        const lvl=u.lvl?u.lvl():null;
+        html+='<div class="buy'+(owned||maxed?' owned':met?'':' locked')+'">';
+        html+='<h3>'+u.name+(lvl?' <span class="lvl">lv '+lvl[0]+'/'+lvl[1]+'</span>':'')+'</h3>';
+        html+= owned||maxed
+          ? '<button class="btn small" disabled>'+(maxed?'max':'owned')+'</button>'
+          : '<button class="btn small'+(met&&afford?' primary':'')+'" data-buy="'+u.id+'"'+
+            (met&&afford?'':' disabled')+'>'+(met?'unlock':'locked')+'</button>';
+        html+='<p>'+esc(u.dyn?u.dyn()+' — '+u.desc:u.desc)+'</p>';
+        if(!(owned||maxed)){
+          html+='<div class="price">';
+          if(!met) html+='<span class="tag short">needs '+u.req.map(r=>nameOf(r)).join(' + ')+'</span>';
+          for(const k in cost)
+            html+='<span class="tag'+((state.items[k]||0)<cost[k]?' short':'')+'">'+fmtInt(cost[k])+' '+k.toLowerCase()+'</span>';
+          html+='</div>';
+        }
+        html+='</div>';
+      }
+      html+='</div>';
+    }
+    html+='<div class="secTitle">Supplies</div><div class="buys">'+
+      '<div class="buy'+(state.unlocked.fertilizer?'':' locked')+'"><h3>Fertilizer x10</h3>'+
+      '<button class="btn small'+(state.unlocked.fertilizer&&state.items.Gold>=2?' primary':'')+'" data-act="fert"'+
+      (state.unlocked.fertilizer&&state.items.Gold>=2?'':' disabled')+'>buy</button>'+
+      '<p>Ten doses of instant ripening.</p><div class="price"><span class="tag'+
+      (state.items.Gold<2?' short':'')+'">2 gold</span></div></div>'+
+      '<div class="buy"><h3>Clear the field</h3>'+
+      '<button class="btn small" data-act="clear">reset</button>'+
+      '<p>Wipes every plant back to bare grassland. The way out of a finished maze.</p></div>'+
+      '<div class="buy"><h3>Wipe save</h3>'+
+      '<button class="btn small" data-act="wipe">erase</button>'+
+      '<p>Deletes progress and code on this device. No undo.</p></div></div>';
+    $('shop').innerHTML=html;
+  }
+};
+function nameOf(id){ const u=UPGRADES.find(x=>x.id===id); return u?u.name:id; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtInt(n){ return n>=10000 ? (n/1000).toFixed(n>=100000?0:1)+'k' : String(Math.floor(n)); }
+
+/* ---------------------------- editor ------------------------------------ */
+const API_WORDS=['move','harvest','plant','till','use_item','measure','swap','trade','do_a_flip',
+  'get_pos_x','get_pos_y','get_world_size','get_time','num_items','can_harvest','get_entity_type',
+  'get_ground_type','get_water','get_trade_request','print','quick_print','clear','range','len','abs',
+  'int','float','str','list','dict','set','sum','min','max','sorted','random','random_int','round',
+  'enumerate','zip','reversed','any','all','map','filter','sqrt','floor','ceil','type','bool','tuple'];
+const CONST_WORDS=['True','False','None','North','East','South','West','Items','Entities','Grounds'];
+const KW_WORDS=['if','elif','else','while','for','in','def','return','break','continue','pass','and',
+  'or','not','global','import','from','as','try','except','finally','raise','is','lambda','del','assert'];
+
+const HL=new RegExp(
+  '(#[^\\n]*)'+
+  '|("""[\\s\\S]*?"""|\'\'\'[\\s\\S]*?\'\'\'|"(?:\\\\.|[^"\\\\\\n])*"|\'(?:\\\\.|[^\'\\\\\\n])*\')'+
+  '|\\b('+KW_WORDS.join('|')+')\\b'+
+  '|\\b('+CONST_WORDS.join('|')+')\\b'+
+  '|\\b('+API_WORDS.join('|')+')\\b(?=\\s*\\()'+
+  '|\\b(\\d+\\.?\\d*)\\b','g');
+
+function highlight(src){
+  const out=esc(src).replace(HL,(m,com,str,kw,cst,api,num)=>{
+    if(com) return '<span class="tk-com">'+com+'</span>';
+    if(str) return '<span class="tk-str">'+str+'</span>';
+    if(kw) return '<span class="tk-kw">'+kw+'</span>';
+    if(cst) return '<span class="tk-const">'+cst+'</span>';
+    if(api) return '<span class="tk-api">'+api+'</span>';
+    if(num) return '<span class="tk-num">'+num+'</span>';
+    return m;
+  });
+  return out+'\n\n';
+}
+function syncHL(){ $('hl').innerHTML=highlight($('code').value); }
+function renderFiles(){
+  $('files').innerHTML=files.map((f,i)=>
+    '<button class="file'+(i===active?' active':'')+'" data-file="'+i+'">'+esc(f.name)+'</button>').join('')+
+    '<button class="file" data-file="new">+ new</button>'+
+    (files.length>1?'<button class="file" data-file="del">delete</button>':'');
+}
+function loadFile(i){
+  active=i; $('code').value=files[i].code; syncHL(); renderFiles();
+  $('hl').scrollTop=0; $('code').scrollTop=0;
+}
+function insert(text,caretBack){
+  const ta=$('code'), s=ta.selectionStart, e=ta.selectionEnd;
+  ta.value=ta.value.slice(0,s)+text+ta.value.slice(e);
+  const p=s+text.length-(caretBack||0);
+  ta.selectionStart=ta.selectionEnd=p;
+  ta.focus(); onEdit();
+}
+function onEdit(){ files[active].code=$('code').value; syncHL(); saveSoon(); }
+
+const KEYS=[['⇥','    '],[':',':'],['(','()',1],['[','[]',1],['"','""',1],['=','='],['==','=='],
+  ['while True:','while True:\n    '],['if','if '],['else:','else:\n    '],['for','for i in range(10):\n    '],
+  ['move','move(North)'],['N','North'],['E','East'],['S','South'],['W','West'],
+  ['harvest','harvest()'],['plant','plant(Entities.Grass)'],['can_harvest','can_harvest()'],
+  ['num_items','num_items(Items.Hay)'],['print','print()',1]];
+
+/* ------------------------------ save/load -------------------------------- */
+const KEY='rootloop.save.v1';
+let saveTimer=null;
+function saveSoon(){ clearTimeout(saveTimer); saveTimer=setTimeout(save,900); }
+function save(){
+  try{
+    const t=world.tiles.map(x=>[x.g==='Soil'?1:0, x.e?ENT.indexOf(x.e):-1,
+      Math.round(x.age*10)/10, Math.round(x.water*100)/100, x.d]);
+    localStorage.setItem(KEY,JSON.stringify({
+      v:1, items:state.items, unlocked:state.unlocked, expand:state.expand, speed:state.speed,
+      speedPref:state.speedPref, credit:state.credit, treasures:state.treasures,
+      files, active, size:world.size, time:world.time, maze:world.maze,
+      drone:{x:world.drone.x,y:world.drone.y,dir:world.drone.dir}, tiles:t
+    }));
+  }catch(e){}
+}
+function load(){
+  let d=null;
+  try{ d=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){}
+  if(!d){ buildWorld(SIZES[0],false); return; }
+  Object.assign(state.items,d.items||{});
+  state.unlocked=d.unlocked||{};
+  state.expand=d.expand||0; state.speed=d.speed||0;
+  state.speedPref=Math.min(d.speedPref??d.speed??0,state.speed);
+  state.credit=d.credit||0; state.treasures=d.treasures||0;
+  buildWorld(d.size||SIZES[state.expand],false);
+  if(d.tiles&&d.tiles.length===world.tiles.length){
+    d.tiles.forEach((s,i)=>{ const t=world.tiles[i];
+      t.g=s[0]?'Soil':'Grassland'; t.e=s[1]>=0?ENT[s[1]]:null; t.age=s[2]||0; t.water=s[3]||0; t.d=s[4]||null; });
+  }
+  world.time=d.time||0; world.maze=!!d.maze;
+  if(d.drone){ world.drone.x=d.drone.x|0; world.drone.y=d.drone.y|0; world.drone.dir=d.drone.dir|0;
+    world.drone.vx=world.drone.x; world.drone.vy=world.drone.y; }
+  if(Array.isArray(d.files)&&d.files.length){ files=d.files; active=Math.min(d.active||0,files.length-1); }
+}
+function wipe(){
+  if(!confirm('Erase all progress and code on this device?')) return;
+  localStorage.removeItem(KEY);
+  location.reload();
+}
+</script>
+<script>
+/* ============================== the guide ================================ */
+function apiRow(sig,txt,lock){
+  const off = lock && !state.unlocked[lock];
+  return '<div class="row'+(off?' lk':'')+'"><code>'+esc(sig)+'</code><span>'+txt+
+    (off?' <em>— locked</em>':'')+'</span></div>';
+}
+function renderGuide(){
+  $('guide').innerHTML=`
+<h2>What this is</h2>
+<p>A farm, a drone, and a Python interpreter. You never move the drone by hand — you write a program,
+press <b>Run</b>, and watch it work. Every action the drone takes costs a tick of farm time, so plants
+only grow while your code is running. Faster code, faster farm.</p>
+<p>Written from scratch as a personal tribute to the coding-farm genre: the language, the sim and the
+art here are all original.</p>
+
+<h2>Start here</h2>
+<pre>while True:
+    harvest()
+    move(North)</pre>
+<p>The farm wraps at the edges, so moving north forever walks one column round and round. Wild grass
+regrows where you cut it, so that loop alone earns the hay for your first upgrades in the <b>Shop</b>.
+Buy the <b>Seed Hopper</b> and you take over the replanting yourself:</p>
+<pre>while True:
+    for i in range(get_world_size()):
+        for j in range(get_world_size()):
+            harvest()
+            plant(Entities.Grass)
+            move(North)
+        move(East)</pre>
+<p>That walks the whole field, column by column, forever.</p>
+
+<h2>Ticks and speed</h2>
+<p>Moving, harvesting and planting cost 1 tick; tilling, swapping, trading and flips cost 2. Pure
+computation is free. The run bar sets how many ticks pass per second — <b>Rotor Tuning</b> in the shop
+raises the ceiling.</p>
+
+<h2>Drone commands</h2>
+<div class="api">
+${apiRow('move(North)','Step one tile. Also East, South, West. Returns False if a hedge blocks it.')}
+${apiRow('harvest()','Take whatever is ripe on this tile. Returns True if something was taken.')}
+${apiRow('plant(Entities.Grass)','Plant on the current tile. Fails if the tile is occupied or the wrong ground.','plant')}
+${apiRow('till()','Toggle this tile between grassland and soil.','till')}
+${apiRow('use_item(Items.Water)','Water the soil under the drone.','water')}
+${apiRow('use_item(Items.Carrot)','Feed the dinosaur standing here.','dino')}
+${apiRow('measure()','Petals, cactus size, or what a dinosaur wants. measure(North) reads a neighbour.','sensors')}
+${apiRow('swap(North)','Swap this plant with the neighbouring one.','cactus')}
+${apiRow('trade(Items.Hay, 100)','Sell goods for gold.','trade')}
+${apiRow('do_a_flip()','No yield whatsoever.')}
+</div>
+
+<h2>Sensors and counters</h2>
+<div class="api">
+${apiRow('get_pos_x() / get_pos_y()','Drone coordinates. (0, 0) is the bottom-left corner.')}
+${apiRow('get_world_size()','Width of the square farm.')}
+${apiRow('num_items(Items.Hay)','How much you are holding.')}
+${apiRow('can_harvest()','True when this tile holds something ripe.','sensors')}
+${apiRow('get_entity_type()','Entities.Grass, Entities.Treasure, … or None.','sensors')}
+${apiRow('get_ground_type()','Grounds.Grassland or Grounds.Soil.','sensors')}
+${apiRow('get_water()','Moisture here, 0.0 to 1.0.','water')}
+${apiRow('get_trade_request()','The item the market is paying triple for.','trade')}
+${apiRow('get_time()','Ticks elapsed on this farm.')}
+${apiRow('print(x) / quick_print(x)','Write to the Log tab. quick_print overwrites its own line.')}
+</div>
+
+<h2>The crops</h2>
+<p><b>Grass</b> → hay in 3 ticks. <b>Bushes</b> → wood, slower. Both need grassland.</p>
+<p><b>Soil</b> crops grow at about a third speed while dry, so water pays for itself:</p>
+<pre>if get_water() < 0.5:
+    use_item(Items.Water)</pre>
+<p><b>Pumpkins</b> merge: ripe pumpkins that touch become one field, and harvesting an n x n block
+pays n<sup>3</sup> instead of n<sup>2</sup>. Plant the whole square, wait for the last one, then harvest once.</p>
+<p><b>Sunflowers</b> carry 1–7 petals — <code>measure()</code> reads them. Only the ripe flowers holding
+the highest petal count pay out; harvest anything less and it wilts for nothing. Scan first, then reap.</p>
+<pre>best = 0
+for i in range(n * n):
+    p = measure()
+    if p != None and p > best:
+        best = p
+    step()</pre>
+<p><b>Cacti</b> only pay when every cactus is ripe <i>and</i> sorted by size along the snake path:
+the bottom row left to right, the row above it right to left, and so on upward. Every step of that path
+lands on a neighbouring tile, so a bubble sort with <code>swap(dir)</code> is enough. Harvest an unsorted
+patch and that cactus is simply gone.</p>
+<p><b>Dinosaurs</b> want a random item — <code>measure()</code> tells you which — and
+<code>use_item()</code> hands it over. Five feeds makes it ripe, and it pays 6 bones.</p>
+<p><b>The maze</b>: <code>plant(Entities.Hedge)</code> rebuilds the whole farm as hedge walls with one
+chest hidden inside. <code>move()</code> returns False into a wall, so a depth-first search with a
+visited set will find it. Every fifth chest reshuffles the maze.</p>
+
+<h2>The market</h2>
+<p><code>trade(item, n)</code> converts goods to gold at a fixed rate — hay is worth the least, bones the
+most — and whatever <code>get_trade_request()</code> names pays triple until the market moves on.
+Gold buys the last upgrades.</p>
+
+<h2>The language</h2>
+<p>Real Python syntax, a practical subset of it: variables, arithmetic, <code>if/elif/else</code>,
+<code>while</code>, <code>for … in</code>, <code>def</code> with defaults and <code>*args</code>,
+<code>return</code>, <code>break</code>, <code>continue</code>, <code>global</code>, lambdas,
+comprehensions, f-strings, <code>try/except</code>, and the usual lists, tuples, dicts, sets, strings
+with their common methods. No classes, imports, generators or file access.</p>
+<p class="note">Functions you define stick around between runs, so you can keep a file of helpers and
+call them from another file. <b>Reset globals</b> in the Log tab clears them.</p>
+
+<h2>On a phone</h2>
+<p>The row under the editor inserts snippets and a four-space indent at the cursor. Enter keeps your
+indentation and adds a level after a colon. Everything saves to this device automatically.</p>
+<div class="foot"><span class="tag">tap a tile to inspect it</span><span class="tag">code runs only while Run is lit</span></div>`;
+}
+
+/* =============================== wiring ================================= */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===t));
+  const id=t.dataset.pane;
+  document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+id));
+  if(id==='shop') UI.refreshShop();
+  if(id==='guide') renderGuide();
+}));
+
+$('runBtn').addEventListener('click',()=>{
+  files[active].code=$('code').value;
+  save();
+  startRun(files[active].code,files[active].name);
+});
+$('stopBtn').addEventListener('click',()=>stopRun(false));
+$('speed').addEventListener('input',e=>{
+  state.speedPref=Math.min(+e.target.value,state.speed);
+  e.target.value=String(state.speedPref);
+  $('tps').textContent=TPS[state.speedPref]+'/s';
+  saveSoon();
+});
+
+$('files').addEventListener('click',e=>{
+  const b=e.target.closest('[data-file]'); if(!b) return;
+  const v=b.dataset.file;
+  if(v==='new'){
+    const n=prompt('File name','script'+(files.length+1)+'.py');
+    if(!n) return;
+    files.push({name:n.trim(),code:'# '+n.trim()+'\n'});
+    loadFile(files.length-1); saveSoon(); return;
+  }
+  if(v==='del'){
+    if(files.length<2||!confirm('Delete '+files[active].name+'?')) return;
+    files.splice(active,1); loadFile(Math.max(0,active-1)); saveSoon(); return;
+  }
+  loadFile(+v);
+});
+
+$('keys').innerHTML=KEYS.map((k,i)=>
+  '<button class="key'+(k[1].length>6?' wide':'')+'" data-k="'+i+'">'+esc(k[0])+'</button>').join('');
+$('keys').addEventListener('click',e=>{
+  const b=e.target.closest('[data-k]'); if(!b) return;
+  const k=KEYS[+b.dataset.k];
+  insert(k[1],k[2]||0);
+});
+
+const ta=$('code');
+ta.addEventListener('input',onEdit);
+ta.addEventListener('scroll',()=>{ $('hl').scrollTop=ta.scrollTop; $('hl').scrollLeft=ta.scrollLeft; });
+ta.addEventListener('keydown',e=>{
+  if(e.key==='Tab'){ e.preventDefault(); insert('    '); return; }
+  if(e.key==='Enter'){
+    const s=ta.selectionStart;
+    const line=ta.value.slice(0,s).split('\n').pop();
+    const ind=(/^[ \t]*/.exec(line)||[''])[0];
+    const extra=/:\s*$/.test(line)?'    ':'';
+    e.preventDefault();
+    insert('\n'+ind+extra);
+  }
+});
+
+$('shop').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.buy){ const u=UPGRADES.find(x=>x.id===b.dataset.buy); if(u) buy(u); return; }
+  const a=b.dataset.act;
+  if(a==='fert'){
+    if(state.items.Gold>=2){ state.items.Gold-=2; give('Fertilizer',10);
+      UI.log('bought 10 fertilizer','s'); UI.refreshShop(); UI.refreshStats(true); save(); }
+  } else if(a==='clear'){
+    if(!confirm('Clear every plant on the farm?')) return;
+    for(const t of world.tiles){ t.e=null; t.age=0; t.d=null; }
+    world.maze=false; UI.log('field cleared','i'); save();
+  } else if(a==='wipe') wipe();
+});
+
+$('clearLog').addEventListener('click',()=>UI.clearLog());
+$('resetGlobals').addEventListener('click',()=>resetGlobals());
+$('clearFarm').addEventListener('click',()=>{
+  for(const t of world.tiles){ t.e=null; t.age=0; t.d=null; }
+  world.maze=false; UI.log('field cleared','i'); save();
+});
+
+let inspect=null;
+cv.addEventListener('pointerdown',e=>{
+  const r=cv.getBoundingClientRect(), n=world.size;
+  const cell=Math.floor(Math.min((r.width-12)/n,(r.height-12)/n));
+  const ox=(r.width-cell*n)/2, oy=(r.height-cell*n)/2;
+  const gx=Math.floor((e.clientX-r.left-ox)/cell);
+  const gy=n-1-Math.floor((e.clientY-r.top-oy)/cell);
+  if(gx<0||gy<0||gx>=n||gy>=n){ inspect=null; return; }
+  inspect={x:gx,y:gy,t:performance.now()};
+});
+function readout(){
+  const D=world.drone;
+  let s='<span>x <b>'+D.x+'</b> y <b>'+D.y+'</b></span><span>t <b>'+Math.floor(world.time)+'</b></span>';
+  if(inspect && performance.now()-inspect.t<6000){
+    const t=tileAt(inspect.x,inspect.y);
+    const sp=t.e?SPEC[t.e]:null;
+    let d=t.e||'empty';
+    if(t.e==='Sunflower') d+=' '+t.d.petals+'p';
+    if(t.e==='Cactus') d+=' size '+t.d.size;
+    if(t.e==='Dinosaur') d+=' '+t.d.fed+'/5 wants '+t.d.want;
+    if(sp&&sp.grow) d+=' '+Math.floor(Math.min(1,t.age/sp.grow)*100)+'%';
+    s+='<span>('+inspect.x+','+inspect.y+') '+t.g.toLowerCase()+
+      (t.g==='Soil'?' '+Math.round(t.water*100)+'%':'')+' <b>'+esc(d)+'</b></span>';
+  }
+  $('readout').innerHTML=s;
+}
+
+/* =============================== main loop =============================== */
+let lastT=0, readoutAt=0;
+function loop(ts){
+  const dt=Math.min(0.06,lastT?(ts-lastT)/1000:0.016);
+  lastT=ts;
+  if(runner.running) stepProgram(dt);
+  draw(dt);
+  if(ts-readoutAt>90){ readoutAt=ts; readout(); UI.refreshStats(); }
+  requestAnimationFrame(loop);
+}
+
+document.addEventListener('visibilitychange',()=>{ if(document.hidden){ files[active].code=ta.value; save(); } });
+window.addEventListener('pagehide',()=>{ files[active].code=ta.value; save(); });
+
+/* ================================= boot ================================== */
+load();
+resizeCanvas();
+renderFiles();
+loadFile(active);
+UI.syncSpeed();
+UI.refreshShop();
+UI.refreshStats(true);
+renderGuide();
+if(!logLines.length){
+  UI.log('Rootloop ready. Press Run to start the drone.','s');
+  UI.log('Tip: the Guide tab has the full command list.','i');
+}
+UI.flag('idle');
+requestAnimationFrame(loop);
+</script>
