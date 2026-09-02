@@ -26,7 +26,8 @@
 html,body{height:100%}
 body{
   margin:0;background:var(--soil-900);color:var(--wheat);
-  font-family:var(--f-body);font-size:14px;line-height:1.45;overscroll-behavior:none;
+  font-family:var(--f-body);font-size:14px;line-height:1.45;
+  overscroll-behavior:none;overflow:hidden;position:fixed;inset:0;
 }
 button,input,textarea,select{font-family:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--chloro);outline-offset:2px}
@@ -34,11 +35,11 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 ::-webkit-scrollbar-thumb{background:var(--soil-600);border-radius:99px}
 ::-webkit-scrollbar-track{background:transparent}
 
-#app{display:flex;flex-direction:column;height:100dvh;max-width:1500px;margin:0 auto}
+#app{display:flex;flex-direction:column;height:100dvh;max-width:1500px;margin:0 auto;overflow:hidden}
 
 /* ---------- HUD ---------- */
 .hud{
-  display:flex;align-items:center;gap:9px;padding:7px 10px 5px;flex:none;
+  display:flex;align-items:center;gap:9px;padding:7px 10px 5px;flex:none;position:relative;z-index:6;
   background:linear-gradient(var(--soil-850),var(--soil-900));border-bottom:1px solid var(--soil-700);
 }
 .brand{display:flex;align-items:center;gap:7px;flex:none}
@@ -127,18 +128,25 @@ input[type=range]::-moz-range-thumb{width:15px;height:15px;border:2px solid var(
   font-family:var(--f-mono);font-size:11.5px;color:var(--wheat-dim);cursor:pointer;white-space:nowrap}
 .file.active{background:var(--soil-700);border-color:var(--bark);color:var(--wheat)}
 .editor{position:relative;flex:1;min-height:0;margin:0 8px;border-radius:var(--r-m);
-  background:#141110;border:1px solid var(--soil-700);overflow:hidden}
+  background:#141110;border:1px solid var(--soil-700);
+  overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.edin{position:relative;width:max-content;min-width:100%;min-height:100%}
 .editor pre,.editor textarea{
   margin:0;padding:11px 13px;font-family:var(--f-mono);font-size:13px;line-height:1.6;
   white-space:pre;overflow-wrap:normal;word-break:normal;tab-size:4;border:0;background:transparent;
 }
 .wrap .editor pre,.wrap .editor textarea{white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word}
-.editor pre{overflow:hidden}
+.wrap .editor{overflow-x:hidden}
+.wrap .edin{width:100%}
 .zen .field,.zen .runbar .speedwrap{display:none}
 .zen .editor{margin:0 8px 0}
-.editor pre{position:absolute;inset:0;overflow:hidden;pointer-events:none;color:var(--wheat);min-width:100%;width:max-content}
-.editor textarea{position:absolute;inset:0;width:100%;height:100%;resize:none;overflow:auto;white-space:pre;
+.editor pre{position:relative;display:block;pointer-events:none;color:var(--wheat)}
+.editor textarea{position:absolute;inset:0;width:100%;height:100%;resize:none;overflow:hidden;
   color:transparent;caret-color:var(--amber);outline:none;-webkit-text-fill-color:transparent}
+/* 16px stops iOS zooming the whole page when the editor takes focus */
+@media (pointer:coarse){
+  .editor pre,.editor textarea{font-size:16px;line-height:1.5}
+}
 .editor textarea::selection{background:rgba(155,214,66,.28);-webkit-text-fill-color:transparent}
 .tk-kw{color:#F2799A}.tk-num{color:#7FD3E8}.tk-str{color:#A8DC63}
 .tk-com{color:#6E6357;font-style:italic}.tk-api{color:#9FD8E6}.tk-const{color:var(--gold)}
@@ -311,9 +319,12 @@ input[type=range]::-moz-range-thumb{width:15px;height:15px;border:2px solid var(
       <section class="pane active" id="pane-code">
         <div class="files" id="files"></div>
         <div class="editor">
-          <pre id="hl" aria-hidden="true"></pre>
-          <textarea id="code" spellcheck="false" autocapitalize="off" autocorrect="off"
-            autocomplete="off" wrap="soft" aria-label="Python code editor"></textarea>
+          <div class="edin">
+            <pre id="hl" aria-hidden="true"></pre>
+            <textarea id="code" spellcheck="false" autocapitalize="off" autocorrect="off"
+              autocomplete="off" autocorrect="off" wrap="off"
+              aria-label="Python code editor"></textarea>
+          </div>
         </div>
         <div class="keys" id="keys"></div>
       </section>
@@ -3220,7 +3231,8 @@ function insert(text,back){
   const ta=$('code'), s=ta.selectionStart, e=ta.selectionEnd;
   ta.value=ta.value.slice(0,s)+text+ta.value.slice(e);
   ta.selectionStart=ta.selectionEnd=s+text.length-(back||0);
-  ta.focus(); onEdit();
+  ta.focus();
+  ta.dispatchEvent(new Event('input',{bubbles:true}));
 }
 function onEdit(){ files[active].code=$('code').value; syncHL(); saveSoon(); }
 const KEYS=[['⇥','    '],[':',':'],['(','()',1],['[','[]',1],['"','""',1],['=','='],['==','=='],
@@ -3487,7 +3499,6 @@ $('keys').addEventListener('click',e=>{
 });
 const ta=$('code');
 ta.addEventListener('input',onEdit);
-ta.addEventListener('scroll',()=>{ $('hl').scrollTop=ta.scrollTop; $('hl').scrollLeft=ta.scrollLeft; });
 ta.addEventListener('keydown',e=>{
   if(e.key==='Tab'){ e.preventDefault(); insert('    '); return; }
   if(e.key==='Enter'){
@@ -3560,6 +3571,18 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden){ files[ac
 window.addEventListener('pagehide',()=>{ files[active].code=ta.value; save(); });
 
 /* ================================= boot ================================== */
+if(window.visualViewport){
+  const vv=window.visualViewport;
+  const fitViewport=()=>{
+    const app=document.getElementById('app');
+    if(app) app.style.height=Math.round(vv.height)+'px';
+    if(window.scrollX||window.scrollY) window.scrollTo(0,0);
+  };
+  vv.addEventListener('resize',fitViewport);
+  vv.addEventListener('scroll',fitViewport);
+  window.addEventListener('orientationchange',()=>setTimeout(fitViewport,250));
+  fitViewport();
+}
 if(!document.querySelector('meta[name=viewport]')){
   const mv=document.createElement('meta');
   mv.name='viewport';
@@ -3589,7 +3612,7 @@ requestAnimationFrame(loop);
    in the open file or left behind in globals. Tap one to complete it.
    ======================================================================== */
 (function autocomplete(){
-  const ta=$('code'), ed=ta.parentNode;
+  const ta=$('code'), ed=ta.parentNode, scroller=ed.parentNode;
   const pop=document.createElement('div');
   pop.className='ac';
   pop.setAttribute('role','listbox');
@@ -3668,10 +3691,20 @@ requestAnimationFrame(loop);
     mirror.appendChild(mark);
     const x=mark.offsetLeft, y=mark.offsetTop;
     const lh=parseFloat(cs.lineHeight)||18;
-    return {x:x-ta.scrollLeft, y:y-ta.scrollTop, lh};
+    return {x,y,lh};
   }
 
-  let items=[], sel=0, tokenStart=0, tokenEnd=0, open=false;
+  function ensureCaretVisible(){
+    const c=caretXY(ta.selectionStart);
+    const padX=28, padY=6;
+    if(c.x-scroller.scrollLeft<padX) scroller.scrollLeft=Math.max(0,c.x-padX);
+    else if(c.x-scroller.scrollLeft>scroller.clientWidth-padX)
+      scroller.scrollLeft=c.x-scroller.clientWidth+padX;
+    if(c.y-scroller.scrollTop<padY) scroller.scrollTop=Math.max(0,c.y-padY);
+    else if(c.y+c.lh-scroller.scrollTop>scroller.clientHeight-padY)
+      scroller.scrollTop=c.y+c.lh-scroller.clientHeight+padY;
+  }
+  let items=[], sel=0, tokenStart=0, tokenEnd=0, open=false, navigated=false;
   function hide(){ if(!open) return; open=false; pop.classList.remove('on'); }
   function render(){
     pop.innerHTML=items.map((it,i)=>
@@ -3685,12 +3718,12 @@ requestAnimationFrame(loop);
     pop.classList.add('on');
     open=true;
     render();
-    const maxW=ed.clientWidth-10;
-    pop.style.maxWidth=maxW+'px';
+    pop.style.maxWidth=(scroller.clientWidth-10)+'px';
     const w=pop.offsetWidth, h=pop.offsetHeight;
-    let x=Math.max(4,Math.min(c.x,ed.clientWidth-w-4));
+    const vl=scroller.scrollLeft, vt=scroller.scrollTop;
+    let x=Math.max(vl+4,Math.min(c.x,vl+scroller.clientWidth-w-4));
     let y=c.y+c.lh+3;
-    if(y+h>ed.clientHeight-2) y=Math.max(2,c.y-h-3);
+    if(y+h>vt+scroller.clientHeight-2) y=Math.max(vt+2,c.y-h-3);
     pop.style.left=x+'px';
     pop.style.top=y+'px';
   }
@@ -3707,10 +3740,11 @@ requestAnimationFrame(loop);
       prefix=w[0]; tokenStart=i-prefix.length;
       if(before[tokenStart-1]==='.'){ hide(); return; }
     }
+    if(!ns&&prefix.length<2){ hide(); return; }
     tokenEnd=i;
     items=candidates(prefix,ns);
     if(!items.length){ hide(); return; }
-    sel=0;
+    sel=0; navigated=false;
     show();
   }
   function accept(i){
@@ -3731,7 +3765,7 @@ requestAnimationFrame(loop);
     ta.selectionStart=ta.selectionEnd=caret;
     hide();
     ta.focus();
-    onEdit();
+    ta.dispatchEvent(new Event('input',{bubbles:true}));
     if(text.endsWith('.')) setTimeout(refresh,0);
   }
 
@@ -3741,15 +3775,24 @@ requestAnimationFrame(loop);
     e.preventDefault();
     accept(+b.dataset.i);
   });
-  ta.addEventListener('input',()=>setTimeout(refresh,0));
+  ta.addEventListener('input',()=>setTimeout(()=>{ ensureCaretVisible(); refresh(); },0));
   ta.addEventListener('click',()=>setTimeout(refresh,0));
+  ta.addEventListener('keyup',e=>{
+    if(e.key&&e.key.indexOf('Arrow')===0&&!open) ensureCaretVisible();
+  });
   ta.addEventListener('blur',()=>setTimeout(hide,120));
   ta.addEventListener('scroll',()=>{ if(open) show(); });
   ta.addEventListener('keydown',e=>{
     if(!open) return;
-    if(e.key==='ArrowDown'){ e.preventDefault(); sel=(sel+1)%items.length; render(); return; }
-    if(e.key==='ArrowUp'){ e.preventDefault(); sel=(sel-1+items.length)%items.length; render(); return; }
-    if(e.key==='Enter'||e.key==='Tab'){ e.preventDefault(); e.stopPropagation(); accept(sel); return; }
+    if(e.key==='ArrowDown'){ e.preventDefault(); navigated=true; sel=(sel+1)%items.length; render(); return; }
+    if(e.key==='ArrowUp'){ e.preventDefault(); navigated=true; sel=(sel-1+items.length)%items.length; render(); return; }
+    if(e.key==='Tab'){ e.preventDefault(); e.stopPropagation(); accept(sel); return; }
+    // Enter only completes if you actually picked something; otherwise it is a newline
+    if(e.key==='Enter'){
+      if(navigated){ e.preventDefault(); e.stopPropagation(); accept(sel); }
+      else hide();
+      return;
+    }
     if(e.key==='Escape'){ e.preventDefault(); hide(); return; }
   },true);
   document.addEventListener('pointerdown',e=>{
