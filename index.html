@@ -267,6 +267,14 @@ input[type=range]::-moz-range-thumb{width:15px;height:15px;border:2px solid var(
   position:absolute;top:0;left:0;visibility:hidden;pointer-events:none;
   white-space:pre;overflow:hidden;height:auto;border:0;
 }
+@media (max-width:900px){
+  body.typing .field{display:none}
+  body.typing .runbar{padding:5px 8px}
+  body.typing .hud{padding:4px 10px 3px}
+  body.typing .editor{margin-bottom:0}
+}
+.file.done{color:var(--chloro);border-color:var(--chloro-deep);display:none}
+.typing .file.done{display:inline-block}
 @media (max-height:720px) and (max-width:900px){
   .field{height:min(34dvh,78vw);min-height:150px}
   .files{padding:6px 8px}
@@ -3224,7 +3232,8 @@ function renderFiles(){
     '<button class="file" data-file="new">+ new</button>'+
     (files.length>1?'<button class="file" data-file="del">delete</button>':'')+
     '<button class="file'+(document.body.classList.contains('wrap')?' active':'')+'" data-file="wrap">wrap</button>'+
-    '<button class="file'+(document.body.classList.contains('zen')?' active':'')+'" data-file="zen">⤢ full</button>';
+    '<button class="file'+(document.body.classList.contains('zen')?' active':'')+'" data-file="zen">⤢ full</button>'+
+    '<button class="file done" data-file="done">done</button>';
 }
 function loadFile(i){ active=i; $('code').value=files[i].code; syncHL(); renderFiles(); $('code').scrollTop=0; }
 function insert(text,back){
@@ -3488,6 +3497,7 @@ $('files').addEventListener('click',e=>{
     if(files.length<2||!confirm('Delete '+files[active].name+'?')) return;
     files.splice(active,1); loadFile(Math.max(0,active-1)); saveSoon(); return;
   }
+  if(v==='done'){ $('code').blur(); return; }
   if(v==='wrap'){ document.body.classList.toggle('wrap'); renderFiles(); saveSoon(); return; }
   if(v==='zen'){
     document.body.classList.toggle('zen');
@@ -3497,12 +3507,21 @@ $('files').addEventListener('click',e=>{
 });
 $('keys').innerHTML=KEYS.map((k,i)=>
   '<button class="key'+(k[1].length>6?' wide':'')+'" data-k="'+i+'">'+esc(k[0])+'</button>').join('');
-$('keys').addEventListener('click',e=>{
+$('keys').addEventListener('pointerdown',e=>{
   const b=e.target.closest('[data-k]'); if(!b) return;
+  e.preventDefault();
   const k=KEYS[+b.dataset.k]; insert(k[1],k[2]||0);
 });
 const ta=$('code');
 ta.addEventListener('input',onEdit);
+ta.addEventListener('focus',()=>{
+  document.body.classList.add('typing');
+  setTimeout(()=>{ ta.dispatchEvent(new Event('input',{bubbles:true})); },320);
+});
+ta.addEventListener('blur',()=>setTimeout(()=>{
+  // let the tap that blurred us finish against the layout it was aimed at
+  if(document.activeElement!==ta) document.body.classList.remove('typing');
+},350));
 ta.addEventListener('keydown',e=>{
   if(e.key==='Tab'){ e.preventDefault(); insert('    '); return; }
   if(e.key==='Enter'){
@@ -3567,7 +3586,7 @@ function loop(ts){
   const dt=Math.min(0.06,lastT?(ts-lastT)/1000:0.016);
   lastT=ts;
   if(runner.running) stepProgram(dt);
-  draw(dt);
+  if(cv.clientWidth>0&&cv.clientHeight>0) draw(dt);
   if(ts-readoutAt>90){ readoutAt=ts; readout(); UI.refreshStats(); }
   requestAnimationFrame(loop);
 }
@@ -3582,7 +3601,11 @@ if(window.visualViewport){
     if(app) app.style.height=Math.round(vv.height)+'px';
     if(window.scrollX||window.scrollY) window.scrollTo(0,0);
   };
-  vv.addEventListener('resize',fitViewport);
+  vv.addEventListener('resize',()=>{
+    fitViewport();
+    if(document.activeElement===document.getElementById('code'))
+      setTimeout(()=>document.getElementById('code').dispatchEvent(new Event('input',{bubbles:true})),60);
+  });
   vv.addEventListener('scroll',fitViewport);
   window.addEventListener('orientationchange',()=>setTimeout(fitViewport,250));
   fitViewport();
