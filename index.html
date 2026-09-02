@@ -1883,10 +1883,9 @@ function stepProgram(dt){
 </script>
 <script>
 /* ============================== rendering ================================
-   A real 3D farm: WebGL, perspective camera, orbit + pinch. Tiles are solid
-   blocks with lit side faces; plants and drones are upright billboards. The
-   textures are the 16x16 pixel sprites, packed into one nearest-filtered
-   atlas. Falls back to a flat top-down blit if WebGL is unavailable.
+   Real geometry: every plant, animal and drone is a lit mesh built from
+   spheres, cylinders, cones and boxes with per-vertex normals. No textures,
+   no billboards. Meshes are cached per look and blitted into one buffer.
    ======================================================================== */
 const cv=document.getElementById('field');
 const fxc=document.createElement('canvas');
@@ -1894,265 +1893,301 @@ fxc.id='fxlayer';
 fxc.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none';
 cv.parentNode.insertBefore(fxc,cv.nextSibling);
 const fgx=fxc.getContext('2d');
-const gl=cv.getContext('webgl',{antialias:false,alpha:false,depth:true})||
-         cv.getContext('experimental-webgl',{antialias:false,alpha:false,depth:true});
+const gl=cv.getContext('webgl',{antialias:true,alpha:false,depth:true})||
+         cv.getContext('experimental-webgl',{antialias:true,alpha:false,depth:true});
 let CW=0,CH=0,DPR=1;
-const ART=16, CELL=18, ATLAS=512, PERROW=Math.floor(ATLAS/CELL);
-
 const hash=(x,y)=>{ const s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); };
 const lerp=(a,b,t)=>a+(b-a)*t;
 
-/* ------------------------------ palette --------------------------------- */
-const P={
-  gr0:'#25381B', gr1:'#335023', gr2:'#40632B', gr3:'#527A34', gr4:'#6B9440',
-  so0:'#2A1C12', so1:'#3E2C1C', so2:'#513A26', so3:'#66492F', so4:'#7A5A3B',
-  hay:'#B99340', hay2:'#D8B45B', hay3:'#EBD285',
-  bark:'#503420', bark2:'#6B4A2B',
-  lf0:'#27491B', lf1:'#376628', lf2:'#4C8033', lf3:'#679C41',
-  car:'#B34F1C', car2:'#D9702A', car3:'#EC9243',
-  pk0:'#8A4C13', pk1:'#B5661A', pk2:'#D98524', pk3:'#EDA23A',
-  sun:'#C9A028', sun2:'#E8C33C', sun3:'#F5DF7A', seed:'#4A3116',
-  ca0:'#2E5230', ca1:'#3F6E3C', ca2:'#55884B', spike:'#D6CBA0',
-  din0:'#3A5C2A', din1:'#4E7838', din2:'#688F4A', bone:'#CFC4A8',
-  app:'#8E2A24', app2:'#B93A30', app3:'#D9584A',
-  gold:'#C79A32', gold2:'#EDC65A',
-  hed0:'#16250F', hed1:'#1F3517', hed2:'#2B4720',
-  dr0:'#14171A', dr1:'#2B3138', dr2:'#454F5A', cyan:'#4EA9B8', cyan2:'#8FD8E2',
-  amber:'#E0983A', ink:'#100D0B', shade:'rgba(10,8,6,.45)', wht:'#E8E2D2'
+/* ------------------------------- colours -------------------------------- */
+function rgb(h){ return [parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255]; }
+function mixc(a,b,t){ return [lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)]; }
+const C={
+  grass:rgb('#4E7A32'), grass2:rgb('#5B8A3A'), grassDry:rgb('#6E8B39'),
+  soil:rgb('#6E4B2E'), soilWet:rgb('#3E2A1A'), side:rgb('#3B2A1B'), sideG:rgb('#3E4A24'),
+  land:rgb('#26361A'),
+  blade:rgb('#7FAC42'), hay:rgb('#D3AE53'), hay2:rgb('#E6C972'),
+  leaf:rgb('#3B6B2A'), leaf2:rgb('#4F8637'), leaf3:rgb('#67A046'),
+  trunk:rgb('#5B3D24'), trunk2:rgb('#6E4B2E'),
+  carrot:rgb('#D2701F'), carrot2:rgb('#E88C36'),
+  pump:rgb('#D4801F'), pumpRib:rgb('#B0620F'), pumpRaw:rgb('#6E8034'),
+  petal:rgb('#E9C63C'), petal2:rgb('#F3DC76'), head:rgb('#4A3116'),
+  cact:rgb('#4E8A4A'), cact2:rgb('#63A05C'), spine:rgb('#DCD3AE'),
+  dino:rgb('#5E8C46'), dino2:rgb('#82AE63'), dinoDark:rgb('#3E6430'),
+  apple:rgb('#B93A30'), apple2:rgb('#D45A46'),
+  hedge:rgb('#26411B'), hedge2:rgb('#33512A'),
+  chest:rgb('#6B4A20'), gold:rgb('#E0B84A'),
+  body:rgb('#2E353D'), body2:rgb('#464F5A'), dome:rgb('#6FC7D8'), rotor:rgb('#93A8B6'),
+  dark:rgb('#1A140F'), bone:rgb('#D8CDB2')
 };
-function ps(g,x,y,c,w,h){ if(!c) return; g.fillStyle=c; g.fillRect(x|0,y|0,w||1,h||1); }
-function pdisc(g,x0,y0,r,c){
-  const lim=r*r+r*0.55;
-  for(let y=-r;y<=r;y++) for(let x=-r;x<=r;x++) if(x*x+y*y<=lim) ps(g,x0+x,y0+y,c);
-}
-const DIG=['111101101101111','010010010010010','111001111100111','111001111001111',
-  '101101111001001','111100111001111','111100111101111','111001001010010',
-  '111101111101111','111101111001111'];
-function pnum(g,n,x,y,c){
-  const s=String(n);
-  for(let i=0;i<s.length;i++){
-    const d=DIG[+s[i]];
-    for(let r=0;r<5;r++) for(let q=0;q<3;q++) if(d[r*3+q]==='1') ps(g,x+i*4+q,y+r,c);
+
+/* --------------------------- mesh primitives ----------------------------- */
+function push(A,x,y,z,nx,ny,nz,c){ A.push(x,y,z,nx,ny,nz,c[0],c[1],c[2]); }
+function face(A,p,q,r,s,c,n){
+  if(!n){
+    const ux=q[0]-p[0],uy=q[1]-p[1],uz=q[2]-p[2];
+    const vx=r[0]-p[0],vy=r[1]-p[1],vz=r[2]-p[2];
+    let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx;
+    const l=Math.hypot(nx,ny,nz)||1; n=[nx/l,ny/l,nz/l];
+  }
+  push(A,p[0],p[1],p[2],n[0],n[1],n[2],c);
+  push(A,q[0],q[1],q[2],n[0],n[1],n[2],c);
+  push(A,r[0],r[1],r[2],n[0],n[1],n[2],c);
+  if(s){
+    push(A,p[0],p[1],p[2],n[0],n[1],n[2],c);
+    push(A,r[0],r[1],r[2],n[0],n[1],n[2],c);
+    push(A,s[0],s[1],s[2],n[0],n[1],n[2],c);
   }
 }
-
-/* ------------------------------- atlas ---------------------------------- */
-const atlasCv=document.createElement('canvas');
-atlasCv.width=ATLAS; atlasCv.height=ATLAS;
-const atx=atlasCv.getContext('2d');
-const slots=new Map();
-let nextSlot=0, atlasDirty=true;
-function slot(key,fn){
-  let s=slots.get(key);
-  if(s) return s;
-  if(nextSlot>=PERROW*PERROW){ return slots.values().next().value; }
-  const i=nextSlot++;
-  const cxp=(i%PERROW)*CELL+1, cyp=Math.floor(i/PERROW)*CELL+1;
-  const tmp=document.createElement('canvas');
-  tmp.width=ART; tmp.height=ART;
-  const g=tmp.getContext('2d');
-  fn(g);
-  atx.clearRect(cxp-1,cyp-1,CELL,CELL);
-  atx.drawImage(tmp,cxp,cyp);
-  s={u0:cxp/ATLAS,v0:cyp/ATLAS,u1:(cxp+ART)/ATLAS,v1:(cyp+ART)/ATLAS};
-  slots.set(key,s);
-  atlasDirty=true;
-  return s;
+function rotY(p,a){
+  const s=Math.sin(a),co=Math.cos(a);
+  return [p[0]*co-p[2]*s,p[1],p[0]*s+p[2]*co];
 }
-const flatSlot=k=>slot('flat'+k,g=>ps(g,0,0,k,ART,ART));
-function numSlot(n){ return slot('n'+n,g=>{ pnum(g,n,5,5,P.ink); pnum(g,n,4,4,'#F1E2B8'); }); }
-
-/* ------------------------------- ground --------------------------------- */
-function groundSlot(t,v){
-  const wet=t.g==='Soil'?Math.round(Math.min(1,t.water)*3):0;
-  return slot((t.g==='Soil'?'S':'G')+v+wet,g=>{
-    if(t.g==='Soil'){
-      const base=wet>=2?P.so1:P.so2, dk=wet>=2?P.so0:P.so1, lt=wet>=2?P.so2:P.so3;
-      ps(g,0,0,base,ART,ART);
-      for(let row=1;row<ART;row+=5)
-        for(let x=0;x<ART;x++) if(hash(x+v*7,row)>0.22) ps(g,x,row+(hash(x,row)>0.7?1:0),dk);
-      for(let i=0;i<12;i++){
-        const x=(hash(i*3+v,i)*ART)|0, y=(hash(i,i*5+v)*ART)|0;
-        ps(g,x,y,hash(i,v)>0.55?lt:dk);
-      }
-      if(wet>=1) for(let i=0;i<5;i++){
-        const x=(hash(i*11+v,i*3)*ART)|0, y=(hash(i*7,i+v)*ART)|0;
-        ps(g,x,y,'#3E5B63');
-      }
-    }else{
-      ps(g,0,0,[P.gr1,P.gr2,P.gr2,P.gr3][v%4],ART,ART);
-      for(let i=0;i<10;i++){
-        const x=(hash(i*3+v*5,i)*ART)|0, y=(hash(i,i*7+v)*ART)|0;
-        ps(g,x,y,hash(i,v)>0.5?P.gr3:P.gr1);
-      }
-      for(let i=0;i<4;i++){
-        const x=2+((hash(i*13+v,i)*12)|0), y=3+((hash(i,i*9+v)*11)|0);
-        ps(g,x,y,P.gr4); ps(g,x,y-1,P.gr4); ps(g,x+1,y,P.gr3);
-      }
+function box(A,x,y,z,sx,sy,sz,c,ang){
+  const h=[sx/2,sy/2,sz/2];
+  const V=[];
+  for(const sgn of [[-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,1],[-1,1,-1],[1,1,-1],[1,1,1],[-1,1,1]]){
+    let p=[sgn[0]*h[0],sgn[1]*h[1],sgn[2]*h[2]];
+    if(ang) p=rotY(p,ang);
+    V.push([p[0]+x,p[1]+y,p[2]+z]);
+  }
+  face(A,V[4],V[5],V[6],V[7],c);
+  face(A,V[1],V[0],V[3],V[2],c);
+  face(A,V[3],V[2],V[6],V[7],c);
+  face(A,V[1],V[5],V[4],V[0],c);
+  face(A,V[2],V[1],V[5],V[6],c);
+  face(A,V[0],V[4],V[7],V[3],c);
+}
+function sphere(A,x,y,z,rx,ry,rz,seg,ring,c,c2){
+  for(let i=0;i<ring;i++){
+    const t0=Math.PI*i/ring, t1=Math.PI*(i+1)/ring;
+    for(let j=0;j<seg;j++){
+      const a0=2*Math.PI*j/seg, a1=2*Math.PI*(j+1)/seg;
+      const U=(t,a)=>[Math.sin(t)*Math.cos(a),Math.cos(t),Math.sin(t)*Math.sin(a)];
+      const u=[U(t0,a0),U(t1,a0),U(t1,a1),U(t0,a1)];
+      const p=u.map(v=>[x+v[0]*rx,y+v[1]*ry,z+v[2]*rz]);
+      const col=c2&&(j%2===0)?c2:c;
+      push(A,p[0][0],p[0][1],p[0][2],u[0][0],u[0][1],u[0][2],col);
+      push(A,p[1][0],p[1][1],p[1][2],u[1][0],u[1][1],u[1][2],col);
+      push(A,p[2][0],p[2][1],p[2][2],u[2][0],u[2][1],u[2][2],col);
+      push(A,p[0][0],p[0][1],p[0][2],u[0][0],u[0][1],u[0][2],col);
+      push(A,p[2][0],p[2][1],p[2][2],u[2][0],u[2][1],u[2][2],col);
+      push(A,p[3][0],p[3][1],p[3][2],u[3][0],u[3][1],u[3][2],col);
     }
-  });
+  }
 }
-const sideColor=t=>t.g==='Soil'?'#3A2717':'#3A2A19';
+function cyl(A,x,y,z,r0,r1,h,sides,c,cap){
+  for(let i=0;i<sides;i++){
+    const a0=2*Math.PI*i/sides, a1=2*Math.PI*(i+1)/sides;
+    const c0=Math.cos(a0),s0=Math.sin(a0),c1=Math.cos(a1),s1=Math.sin(a1);
+    const p=[[x+c0*r0,y,z+s0*r0],[x+c1*r0,y,z+s1*r0],[x+c1*r1,y+h,z+s1*r1],[x+c0*r1,y+h,z+s0*r1]];
+    const nA=[c0,0.25,s0], nB=[c1,0.25,s1];
+    push(A,p[0][0],p[0][1],p[0][2],nA[0],nA[1],nA[2],c);
+    push(A,p[1][0],p[1][1],p[1][2],nB[0],nB[1],nB[2],c);
+    push(A,p[2][0],p[2][1],p[2][2],nB[0],nB[1],nB[2],c);
+    push(A,p[0][0],p[0][1],p[0][2],nA[0],nA[1],nA[2],c);
+    push(A,p[2][0],p[2][1],p[2][2],nB[0],nB[1],nB[2],c);
+    push(A,p[3][0],p[3][1],p[3][2],nA[0],nA[1],nA[2],c);
+    if(cap!==false&&r1>0.001)
+      face(A,[x,y+h,z],[x+c0*r1,y+h,z+s0*r1],[x+c1*r1,y+h,z+s1*r1],null,c,[0,1,0]);
+    if(cap!==false&&r0>0.001)
+      face(A,[x,y,z],[x+c1*r0,y,z+s1*r0],[x+c0*r0,y,z+s0*r0],null,c,[0,-1,0]);
+  }
+}
+function tilt(A,angX,ox,oy,oz,fn){
+  const T=[];
+  fn(T);
+  const ca=Math.cos(angX), sa=Math.sin(angX);
+  for(let i=0;i<T.length;i+=9){
+    const y=T[i+1], z=T[i+2];
+    T[i+1]=y*ca-z*sa; T[i+2]=y*sa+z*ca;
+    const ny=T[i+4], nz=T[i+5];
+    T[i+4]=ny*ca-nz*sa; T[i+5]=ny*sa+nz*ca;
+    T[i]+=ox; T[i+1]+=oy; T[i+2]+=oz;
+    A.push(T[i],T[i+1],T[i+2],T[i+3],T[i+4],T[i+5],T[i+6],T[i+7],T[i+8]);
+  }
+}
+function blade(A,x,z,h,lean,c,c2){
+  const w=0.035, tipx=Math.cos(lean)*h*0.35, tipz=Math.sin(lean)*h*0.35;
+  const p=[[x-w,0,z],[x+w,0,z],[x+tipx*0.4,h*0.55,z+tipz*0.4],[x+tipx,h,z+tipz]];
+  face(A,p[0],p[1],p[2],null,c);
+  face(A,p[0],p[2],p[3],null,c2||c);
+  face(A,p[1],p[0],p[2],null,c);
+  face(A,p[2],p[0],p[3],null,c2||c);
+}
 
-/* ------------------------------ entities -------------------------------- */
-function entKey(t,stage,v){
-  const e=t.e;
-  let x='';
-  if(e==='Sunflower') x=t.d?t.d.petals:1;
-  else if(e==='Cactus') x=t.d?t.d.size:1;
-  else if(e==='Dinosaur') x=(t.d?t.d.fed:0)+(t.d?t.d.want[0]:'');
-  else if(e==='Apple') x=t.age>APPLE_ROT*0.72?'r':'o';
-  else if(e==='Tree') x=(t.d&&t.d.fruit>APPLE_EVERY*0.5)?'f':'';
-  return 'E'+e+stage+v+x;
+/* --------------------------- mesh templates ----------------------------- */
+const meshes=new Map();
+function mesh(key,fn){
+  let m=meshes.get(key);
+  if(!m){
+    const A=[];
+    fn(A);
+    m=new Float32Array(A);
+    if(meshes.size>420) meshes.clear();
+    meshes.set(key,m);
+  }
+  return m;
 }
-function entSlot(t,stage,v){
-  const e=t.e;
-  return slot(entKey(t,stage,v),g=>{
+let LOD=2;
+const SEG=()=>LOD>=2?8:(LOD===1?6:5);
+const RING=()=>LOD>=2?5:(LOD===1?4:3);
+
+function plantMesh(t,stage){
+  const e=t.e, seg=SEG(), ring=RING();
+  let extra='';
+  if(e==='Sunflower') extra=t.d?t.d.petals:1;
+  else if(e==='Cactus') extra=t.d?t.d.size:1;
+  else if(e==='Dinosaur') extra=t.d?t.d.fed:0;
+  else if(e==='Tree') extra=(t.d&&t.d.fruit>APPLE_EVERY*0.5)?'f':'';
+  else if(e==='Apple') extra=t.age>APPLE_ROT*0.72?'r':'';
+  return mesh('P'+e+stage+extra+LOD,A=>{
+    const f=stage/4;
     switch(e){
       case 'Grass':{
-        const ripe=stage>=4, h=2+stage*2;
-        const c1=ripe?P.hay:P.gr4, c2=ripe?P.hay2:P.gr3, c3=ripe?P.hay3:P.gr4;
-        const xs=[4,7,9,12,6];
-        for(let i=0;i<(3+(v%3));i++){
-          const x=xs[i%5], bend=(i%2)?1:-1;
-          for(let k=0;k<h;k++) ps(g,x+(k>h-3?bend:0),15-k,k===h-1?c3:(k%2?c1:c2));
+        const ripe=stage>=4, h=0.14+0.34*f;
+        const c1=ripe?C.hay:C.blade, c2=ripe?C.hay2:C.leaf3;
+        for(let i=0;i<(LOD?9:5);i++){
+          const a=i*2.4, r=0.09+(i%3)*0.07;
+          blade(A,Math.cos(a)*r,Math.sin(a)*r,h*(0.7+((i*37)%50)/100),a,c1,c2);
         }
         break;
       }
       case 'Bush':{
-        const r=1+stage, cy=13-Math.floor(r/2);
-        pdisc(g,6,cy,r,P.lf0); pdisc(g,10,cy,r,P.lf0);
-        pdisc(g,6,cy-1,Math.max(1,r-1),P.lf2); pdisc(g,10,cy-1,Math.max(1,r-1),P.lf2);
-        pdisc(g,8,cy-1,r,P.lf1);
-        pdisc(g,7,cy-2,Math.max(1,r-2),P.lf3);
-        if(stage>=4){ ps(g,5,cy,P.bark2); ps(g,11,cy-1,P.bark2); ps(g,8,cy+1,P.bark2); }
+        const r=0.13+0.17*f;
+        sphere(A,0,r*0.95,0,r*1.25,r,r*1.25,seg,ring,C.leaf);
+        sphere(A,-r*0.5,r*1.3,r*0.2,r*0.8,r*0.8,r*0.8,seg,ring,C.leaf2);
+        sphere(A,r*0.55,r*1.15,-r*0.25,r*0.7,r*0.7,r*0.7,seg,ring,C.leaf3);
+        if(stage>=4&&LOD)
+          for(let i=0;i<3;i++)
+            sphere(A,Math.cos(i*2.1)*r*0.9,r*1.2,Math.sin(i*2.1)*r*0.9,0.035,0.035,0.035,4,3,C.trunk2);
         break;
       }
       case 'Tree':{
-        const th=3+stage*2, cr=1+stage;
-        ps(g,7,15-th,P.bark,2,th);
-        ps(g,7,15-th,P.bark2,1,th);
-        const cy=14-th-Math.floor(cr/2);
-        pdisc(g,8,cy,cr+1,P.lf0);
-        pdisc(g,8,cy,cr,P.lf1);
-        pdisc(g,7,cy-1,Math.max(1,cr-1),P.lf2);
-        pdisc(g,6,cy-2,Math.max(1,cr-3),P.lf3);
-        if(t.d&&t.d.fruit>APPLE_EVERY*0.5&&stage>=4){
-          ps(g,5,cy+1,P.app2); ps(g,11,cy,P.app2); ps(g,8,cy+3,P.app2);
-        }
+        const th=0.16+0.5*f, cr=0.12+0.26*f;
+        cyl(A,0,0,0,0.052,0.038,th,LOD?7:5,C.trunk);
+        sphere(A,0,th+cr*0.55,0,cr,cr*0.9,cr,seg,ring,C.leaf);
+        sphere(A,-cr*0.55,th+cr*0.25,cr*0.2,cr*0.65,cr*0.6,cr*0.65,seg,ring,C.leaf2);
+        sphere(A,cr*0.5,th+cr*0.35,-cr*0.3,cr*0.6,cr*0.55,cr*0.6,seg,ring,C.leaf2);
+        if(LOD) sphere(A,cr*0.1,th+cr*1.1,cr*0.1,cr*0.5,cr*0.45,cr*0.5,seg,ring,C.leaf3);
+        if(extra==='f')
+          for(let i=0;i<4;i++)
+            sphere(A,Math.cos(i*1.6)*cr*0.85,th+cr*0.5+Math.sin(i*2.2)*cr*0.3,Math.sin(i*1.6)*cr*0.85,
+              0.045,0.045,0.045,5,4,C.apple);
         break;
       }
       case 'Carrot':{
-        const h=2+stage;
-        for(const dx of [-3,-1,1,3])
-          for(let k=0;k<h-(Math.abs(dx)>1?1:0);k++)
-            ps(g,8+dx+(k>2?Math.sign(dx):0),10-k,k>=h-2?P.lf3:P.lf1);
+        const h=0.12+0.22*f;
+        for(let i=0;i<6;i++){
+          const a=i*1.05+0.4;
+          blade(A,Math.cos(a)*0.055,Math.sin(a)*0.055,h*(0.75+(i%3)*0.16),a,C.leaf2,C.leaf3);
+        }
         if(stage>=3){
-          ps(g,5,11,P.car2,7,1); ps(g,5,11,P.car3,2,1);
-          ps(g,6,12,P.car2,5,1); ps(g,6,12,P.car3,1,1);
-          ps(g,7,13,P.car,3,1); ps(g,8,14,P.car,1,1);
-        }else if(stage===2) ps(g,7,11,P.car2,3,1);
+          const r=0.05+0.028*f;
+          cyl(A,0,-0.16,0,0.004,r,0.2,LOD?7:5,C.carrot);
+          sphere(A,0,0.035,0,r,r*0.55,r,seg,3,C.carrot2);
+        }
         break;
       }
       case 'Pumpkin':{
-        const r=1+stage, ripe=stage>=4;
-        const cA=ripe?P.pk1:'#5F7030', cB=ripe?P.pk2:'#6E8038', cC=ripe?P.pk3:'#7E9142';
-        const cy=12-Math.floor(r/3);
-        pdisc(g,8,cy,r+1,ripe?P.pk0:'#48561F');
-        pdisc(g,8,cy,r,cA);
-        for(let y=-r;y<=r;y++){
-          ps(g,8,cy+y,cB);
-          if(r>2){ ps(g,9-r,cy+y,cB); ps(g,7+r,cy+y,cB); }
-        }
-        ps(g,7-Math.floor(r/2),cy-Math.floor(r/2),cC);
-        ps(g,8,cy-r-1,P.lf1); ps(g,9,cy-r-2,P.lf2);
+        const r=0.08+0.19*f, ripe=stage>=4;
+        const base=ripe?C.pump:C.pumpRaw, rib=ripe?C.pumpRib:mixc(C.pumpRaw,C.dark,0.25);
+        sphere(A,0,r*0.86,0,r,r*0.82,r,LOD?10:6,ring,base,rib);
+        cyl(A,0,r*1.6,0,0.028,0.022,0.06,5,C.leaf);
         break;
       }
       case 'Sunflower':{
-        const h=3+stage*2;
-        for(let k=0;k<h;k++) ps(g,8,15-k,k%3===2?P.lf1:P.lf2);
-        if(stage>=2){ ps(g,6,15-Math.floor(h*0.5),P.lf1,2,1); ps(g,10,15-Math.floor(h*0.7),P.lf1,2,1); }
-        const hy=15-h;
+        const h=0.2+0.5*f;
+        cyl(A,0,0,0,0.026,0.02,h,LOD?6:4,C.leaf2);
+        if(stage>=2){
+          blade(A,0.02,0,h*0.45,0.9,C.leaf2,C.leaf3);
+          blade(A,-0.02,0,h*0.38,3.9,C.leaf2,C.leaf3);
+        }
         if(stage>=4){
-          const n=t.d?t.d.petals:1;
-          const ring=[[0,-3],[2,-2],[3,0],[2,2],[0,3],[-2,2],[-3,0],[-2,-2]];
-          for(let i=0;i<n&&i<8;i++){
-            const [dx,dy]=ring[i];
-            ps(g,8+dx,hy+dy,P.sun2);
-            ps(g,8+dx+Math.sign(dx),hy+dy+Math.sign(dy),P.sun3);
-          }
-          pdisc(g,8,hy,2,P.seed);
-          ps(g,7,hy-1,P.sun);
-        }else pdisc(g,8,hy,Math.max(1,stage-1),P.lf1);
+          const n=t.d?t.d.petals:1, hr=0.085;
+          tilt(A,-0.62,0,h,0.02,T=>{
+            for(let i=0;i<n;i++){
+              const a=i/n*Math.PI*2;
+              box(T,Math.cos(a)*hr*1.75,0.01,Math.sin(a)*hr*1.75,hr*1.9,0.026,hr*0.72,
+                i%2?C.petal:C.petal2,-a);
+            }
+            cyl(T,0,-0.012,0,hr,hr*0.94,0.055,LOD?9:6,C.head);
+          });
+        }else sphere(A,0,h,0,0.04,0.035,0.04,5,3,C.leaf);
         break;
       }
       case 'Cactus':{
         const sz=t.d?t.d.size:1;
-        const h=Math.round((4+sz*0.9)*(0.45+0.55*(stage/4))), top=15-h;
-        ps(g,7,top,P.ca1,3,h); ps(g,7,top,P.ca2,1,h); ps(g,9,top,P.ca0,1,h);
-        ps(g,7,top,P.ca2,3,1);
-        if(sz>3){ ps(g,5,top+Math.floor(h*0.4),P.ca1,2,Math.max(2,Math.floor(h*0.4)));
-          ps(g,5,top+Math.floor(h*0.4),P.ca2,1,1); }
-        if(sz>6){ ps(g,10,top+Math.floor(h*0.25),P.ca1,2,Math.max(2,Math.floor(h*0.5)));
-          ps(g,10,top+Math.floor(h*0.25),P.ca2,1,1); }
-        for(let k=1;k<h;k+=2){ ps(g,6,top+k,P.spike); ps(g,10,top+k,P.spike); }
-        if(stage>=4){ ps(g,7,top-1,'#C9587F',3,1); ps(g,8,top-2,'#E88FAE'); }
+        const h=(0.16+0.045*sz)*(0.45+0.55*f), r=0.075;
+        cyl(A,0,0,0,r,r*0.9,h,LOD?9:6,C.cact);
+        sphere(A,0,h,0,r*0.9,r*0.7,r*0.9,seg,3,C.cact2);
+        if(sz>3){
+          cyl(A,-r*1.5,h*0.35,0,r*0.5,r*0.45,h*0.45,LOD?7:5,C.cact);
+          sphere(A,-r*1.5,h*0.8,0,r*0.45,r*0.4,r*0.45,5,3,C.cact2);
+        }
+        if(sz>6){
+          cyl(A,r*1.5,h*0.5,0,r*0.5,r*0.45,h*0.42,LOD?7:5,C.cact);
+          sphere(A,r*1.5,h*0.92,0,r*0.45,r*0.4,r*0.45,5,3,C.cact2);
+        }
+        if(LOD>=2)
+          for(let i=0;i<5;i++){
+            const a=i*1.3;
+            box(A,Math.cos(a)*r,h*(0.2+i*0.15),Math.sin(a)*r,0.03,0.008,0.008,C.spine,-a);
+          }
+        if(stage>=4) sphere(A,0,h+0.03,0,0.035,0.03,0.035,5,3,rgb('#D2688E'));
         break;
       }
       case 'Dinosaur':{
-        const fed=t.d?t.d.fed:0, s=fed>=5?1:0;
-        const bodyC=s?P.din2:P.din1, dk=P.din0;
-        ps(g,4,9,dk,8,5); ps(g,4,9,bodyC,8,4); ps(g,5,10,P.din2,3,1);
-        ps(g,11,7,dk,4,4); ps(g,11,7,bodyC,3,3); ps(g,13,8,P.ink);
-        ps(g,10,7,P.din0,1,2);
-        ps(g,1,8,dk,4,1); ps(g,2,9,dk,3,1); ps(g,3,10,dk,2,1);
-        ps(g,5,13,dk,2,2); ps(g,9,13,dk,2,2);
-        ps(g,6,8,P.din0); ps(g,8,8,P.din0); ps(g,10,8,P.din0);
-        if(fed<5){
-          for(let i=0;i<5;i++) ps(g,2+i*2,2,i<fed?P.hay2:P.dr2);
-          ps(g,13,2,ITEM_COLOR[t.d.want]||P.wht,2,2);
-        }
+        const fed=t.d?t.d.fed:0, s=0.62+0.075*fed;
+        sphere(A,0,0.17*s,0,0.19*s,0.15*s,0.15*s,seg,ring,C.dino);
+        sphere(A,0,0.13*s,0.1*s,0.14*s,0.1*s,0.09*s,seg,3,C.dino2);
+        cyl(A,0.17*s,0.14*s,0,0.05*s,0.005,0.22*s,5,C.dinoDark);
+        sphere(A,-0.2*s,0.3*s,0,0.1*s,0.095*s,0.095*s,seg,ring,C.dino);
+        sphere(A,-0.28*s,0.28*s,0.05*s,0.02,0.02,0.02,4,3,C.dark);
+        for(const dx of [-0.08,0.08]) for(const dz of [-0.07,0.07])
+          box(A,dx*s,0.05*s,dz*s,0.055*s,0.1*s,0.055*s,C.dinoDark);
+        if(LOD) for(let i=0;i<3;i++)
+          box(A,(0.06-i*0.07)*s,0.3*s,0,0.04*s,0.06*s,0.02,C.dino2,0.4);
+        if(fed<5)
+          for(let i=0;i<5;i++)
+            box(A,(-0.1+i*0.05)*s,0.45*s,0,0.035,0.035,0.035,
+              i<fed?C.petal:mixc(C.dark,C.bone,0.25));
         break;
       }
       case 'Apple':{
-        const rot=t.age>APPLE_ROT*0.72;
-        const a=rot?'#6E4A22':P.app2, b=rot?'#8A6030':P.app3;
-        pdisc(g,8,11,2,P.app); pdisc(g,8,11,2,a);
-        ps(g,7,10,b); ps(g,8,10,b);
-        ps(g,8,8,P.bark); ps(g,9,7,P.lf2);
+        const rot=extra==='r';
+        sphere(A,0,0.075,0,0.072,0.068,0.072,seg,ring,rot?mixc(C.apple,C.dark,0.4):C.apple);
+        sphere(A,-0.02,0.1,-0.02,0.03,0.028,0.03,5,3,rot?mixc(C.apple2,C.dark,0.4):C.apple2);
+        cyl(A,0,0.13,0,0.008,0.008,0.045,4,C.trunk);
         break;
       }
       case 'Hedge':{
-        ps(g,0,0,P.ink,ART,ART);
-        ps(g,1,1,P.hed0,ART-2,ART-2);
-        for(let i=0;i<30;i++){
-          const x=1+((hash(i*3+v*5,i)*(ART-2))|0), y=1+((hash(i,i*7+v)*(ART-2))|0);
-          ps(g,x,y,hash(i,v)>0.45?P.hed1:'#0E1A0A');
+        box(A,0,0.42,0,0.98,0.84,0.98,C.hedge);
+        for(let i=0;i<6;i++){
+          const a=hash(i,7)*6.28, r=hash(i*3,2)*0.35;
+          sphere(A,Math.cos(a)*r,0.84,Math.sin(a)*r,0.16,0.1,0.16,5,3,C.hedge2);
         }
-        ps(g,1,1,P.hed2,ART-2,1);
-        ps(g,2,2,'#375A28',3,1); ps(g,9,2,'#375A28',4,1);
         break;
       }
       case 'Treasure':{
-        ps(g,3,7,P.ink,10,7); ps(g,4,8,P.bark2,8,5); ps(g,4,8,P.bark,8,2);
-        ps(g,4,10,P.gold,8,1); ps(g,7,9,P.gold2,2,4); ps(g,5,11,P.bark2,2,1);
-        ps(g,3,6,P.gold2,1,1); ps(g,12,6,P.gold2,1,1);
+        box(A,0,0.09,0,0.42,0.18,0.3,C.chest);
+        cyl(A,0,0.18,0,0.15,0.15,0.42,LOD?9:6,C.chest);
+        box(A,0,0.19,0,0.44,0.03,0.32,C.gold);
+        box(A,0,0.1,0.16,0.07,0.09,0.02,C.gold);
         break;
       }
     }
   });
 }
-function droneSlot(D,phase){
-  return slot('D'+phase+(D.flip>0?'f':''),g=>{
-    const t=phase;
-    const x=2,y=3;
-    ps(g,x,y+1,P.dr1,3,1); ps(g,x+9,y+1,P.dr1,3,1);
-    ps(g,x+(t?0:1),y,P.cyan2,3,1); ps(g,x+9+(t?1:0),y,P.cyan2,3,1);
-    ps(g,x+1,y+2,P.dr0); ps(g,x+10,y+2,P.dr0);
-    ps(g,x+2,y+3,P.dr0,8,6);
-    ps(g,x+3,y+4,D.flip>0?P.amber:P.dr2,6,4);
-    ps(g,x+4,y+5,P.cyan,4,2); ps(g,x+5,y+5,P.cyan2,2,1);
-    ps(g,x+2,y+9,P.dr1,2,1); ps(g,x+8,y+9,P.dr1,2,1);
+function droneMesh(){
+  return mesh('drone'+LOD,A=>{
+    box(A,0,0,0,0.3,0.14,0.3,C.body);
+    box(A,0,0.06,0,0.2,0.06,0.2,C.body2);
+    sphere(A,0,0.09,0,0.08,0.07,0.08,7,4,C.dome);
+    for(const [dx,dz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){
+      box(A,dx*0.16,0,dz*0.16,0.26,0.035,0.05,C.body2,dx*dz>0?0.78:-0.78);
+      cyl(A,dx*0.24,0.02,dz*0.24,0.035,0.03,0.05,5,C.body);
+    }
   });
 }
 
@@ -2166,8 +2201,8 @@ function m4mul(a,b){
   }
   return o;
 }
-function m4persp(fovy,asp,near,far){
-  const f=1/Math.tan(fovy/2), o=new Float32Array(16);
+function m4persp(f0,asp,near,far){
+  const f=1/Math.tan(f0/2), o=new Float32Array(16);
   o[0]=f/asp; o[5]=f; o[10]=(far+near)/(near-far); o[11]=-1; o[14]=2*far*near/(near-far);
   return o;
 }
@@ -2181,26 +2216,27 @@ function m4look(e,c,up){
     -(x[0]*e[0]+x[1]*e[1]+x[2]*e[2]), -(y[0]*e[0]+y[1]*e[1]+y[2]*e[2]),
     -(z[0]*e[0]+z[1]*e[1]+z[2]*e[2]), 1]);
 }
-
-/* -------------------------------- camera --------------------------------- */
-const cam={yaw:-0.58,pitch:0.92,dist:6,target:0};
-function fitCam(){
-  const n=world.size;
-  cam.dist=Math.max(3.2,n*1.18+2.0);
-  cam.target=0;
-}
+const cam={yaw:-0.58,pitch:0.86,dist:6};
+function fitCam(){ cam.dist=Math.max(3.2,world.size*1.18+2.0); }
 let MVP=null, EYE=[0,0,0];
 
 /* --------------------------------- GL ------------------------------------ */
-let prog=null,vbo=null,tex=null,loc={},verts=null,vcount=0;
+let prog=null,vbo=null,loc={},VB=new Float32Array(9*3*20000),vn=0;
 function initGL(){
   if(!gl) return false;
-  const vs=`attribute vec3 aPos;attribute vec2 aUV;attribute float aSh;
-uniform mat4 uMVP;varying vec2 vUV;varying float vSh;
-void main(){gl_Position=uMVP*vec4(aPos,1.0);vUV=aUV;vSh=aSh;}`;
-  const fs=`precision mediump float;uniform sampler2D uTex;
-varying vec2 vUV;varying float vSh;
-void main(){vec4 c=texture2D(uTex,vUV);if(c.a<0.5)discard;gl_FragColor=vec4(c.rgb*vSh,1.0);}`;
+  const vs=`attribute vec3 aPos;attribute vec3 aNrm;attribute vec3 aCol;
+uniform mat4 uMVP;varying vec3 vN;varying vec3 vC;varying float vY;
+void main(){gl_Position=uMVP*vec4(aPos,1.0);vN=aNrm;vC=aCol;vY=aPos.y;}`;
+  const fs=`precision mediump float;varying vec3 vN;varying vec3 vC;varying float vY;
+void main(){
+  vec3 n=normalize(vN);
+  float key=max(dot(n,normalize(vec3(0.42,0.85,0.32))),0.0);
+  float fill=max(dot(n,normalize(vec3(-0.55,0.2,-0.6))),0.0);
+  float sky=n.y*0.5+0.5;
+  vec3 c=vC*(0.34+0.70*key)+vC*fill*0.18+vec3(0.10,0.14,0.17)*sky*0.30;
+  c*=0.90+0.10*clamp(vY,0.0,1.5);
+  gl_FragColor=vec4(c,1.0);
+}`;
   const mk=(t,src)=>{ const s=gl.createShader(t); gl.shaderSource(s,src); gl.compileShader(s);
     if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
   try{
@@ -2210,50 +2246,49 @@ void main(){vec4 c=texture2D(uTex,vUV);if(c.a<0.5)discard;gl_FragColor=vec4(c.rg
     gl.linkProgram(prog);
     if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
   }catch(e){ return false; }
-  gl.useProgram(prog);
   loc.pos=gl.getAttribLocation(prog,'aPos');
-  loc.uv=gl.getAttribLocation(prog,'aUV');
-  loc.sh=gl.getAttribLocation(prog,'aSh');
+  loc.nrm=gl.getAttribLocation(prog,'aNrm');
+  loc.col=gl.getAttribLocation(prog,'aCol');
   loc.mvp=gl.getUniformLocation(prog,'uMVP');
-  loc.tex=gl.getUniformLocation(prog,'uTex');
   vbo=gl.createBuffer();
-  tex=gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D,tex);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
-  gl.disable(gl.CULL_FACE);
-  verts=new Float32Array(6*6*4096);
+  gl.enable(gl.CULL_FACE);
+  gl.cullFace(gl.BACK);
   return true;
 }
 const GL_OK=initGL();
 
-function grow(need){
-  if(vcount*6+need<=verts.length) return;
-  const n=new Float32Array(Math.max(verts.length*2,(vcount*6+need)*1.4));
-  n.set(verts.subarray(0,vcount*6));
-  verts=n;
+function room(need){
+  if(vn*9+need<=VB.length) return;
+  const n=new Float32Array(Math.max(VB.length*2,(vn*9+need)*1.3));
+  n.set(VB.subarray(0,vn*9));
+  VB=n;
 }
-function vert(x,y,z,u,v,sh){
-  const i=vcount*6;
-  verts[i]=x; verts[i+1]=y; verts[i+2]=z; verts[i+3]=u; verts[i+4]=v; verts[i+5]=sh;
-  vcount++;
+function W(x,y,z,nx,ny,nz,c){
+  const i=vn*9;
+  VB[i]=x; VB[i+1]=y; VB[i+2]=z;
+  VB[i+3]=nx; VB[i+4]=ny; VB[i+5]=nz;
+  VB[i+6]=c[0]; VB[i+7]=c[1]; VB[i+8]=c[2];
+  vn++;
 }
-function quad(a,b,c,d,s,sh){
-  grow(36);
-  vert(a[0],a[1],a[2],s.u0,s.v1,sh);
-  vert(b[0],b[1],b[2],s.u1,s.v1,sh);
-  vert(c[0],c[1],c[2],s.u1,s.v0,sh);
-  vert(a[0],a[1],a[2],s.u0,s.v1,sh);
-  vert(c[0],c[1],c[2],s.u1,s.v0,sh);
-  vert(d[0],d[1],d[2],s.u0,s.v0,sh);
+function Wquad(p,q,r,s,c,n){
+  room(54);
+  W(p[0],p[1],p[2],n[0],n[1],n[2],c);
+  W(q[0],q[1],q[2],n[0],n[1],n[2],c);
+  W(r[0],r[1],r[2],n[0],n[1],n[2],c);
+  W(p[0],p[1],p[2],n[0],n[1],n[2],c);
+  W(r[0],r[1],r[2],n[0],n[1],n[2],c);
+  W(s[0],s[1],s[2],n[0],n[1],n[2],c);
 }
-function billboard(x,y,z,w,h,s,sh,rx,rz){
-  quad([x-rx*w/2,y,z-rz*w/2],[x+rx*w/2,y,z+rz*w/2],
-       [x+rx*w/2,y+h,z+rz*w/2],[x-rx*w/2,y+h,z-rz*w/2],s,sh);
+function blit(m,tx,ty,tz){
+  room(m.length);
+  const base=vn*9;
+  VB.set(m,base);
+  for(let i=0;i<m.length;i+=9){
+    VB[base+i]+=tx; VB[base+i+1]+=ty; VB[base+i+2]+=tz;
+  }
+  vn+=m.length/9;
 }
 
 function resizeCanvas(){
@@ -2268,66 +2303,52 @@ function resizeCanvas(){
 new ResizeObserver(resizeCanvas).observe(cv);
 
 /* ------------------------------ the scene -------------------------------- */
-const SH_TOP=1.0, SH_N=0.74, SH_E=0.56, SH_BILL=0.94, SH_FAR=0.34;
+const UP=[0,1,0];
 let frame=0;
 function buildScene(dt){
-  const n=world.size, h0=0.34;
-  vcount=0;
-  const rx=Math.cos(cam.yaw), rz=-Math.sin(cam.yaw);
-
-  const far=flatSlot('#1E2A16');
-  const R=Math.max(24,n*3);
-  quad([-R,-0.02,-R],[R,-0.02,-R],[R,-0.02,R],[-R,-0.02,R],far,SH_FAR);
+  const n=world.size;
+  LOD=n<=8?2:(n<=14?1:0);
+  vn=0;
+  const R=Math.max(20,n*2.2);
+  Wquad([-R,-0.02,-R],[-R,-0.02,R],[R,-0.02,R],[R,-0.02,-R],C.land,UP);
 
   for(let y=0;y<n;y++) for(let x=0;x<n;x++){
     const t=world.tiles[y*n+x];
-    const v=Math.floor(hash(x,y)*4);
     const X=x-n/2, Z=(n-1-y)-n/2;
-    const th=t.g==='Soil'?h0-0.1:h0;
-    const s=groundSlot(t,v);
-    quad([X,th,Z+1],[X+1,th,Z+1],[X+1,th,Z],[X,th,Z],s,SH_TOP);
-    const side=flatSlot(sideColor(t));
+    const soil=t.g==='Soil';
+    const th=soil?0.22:0.32;
+    const jit=hash(x,y)*0.06-0.03;
+    let col;
+    if(soil) col=mixc(C.soil,C.soilWet,Math.min(1,t.water));
+    else col=mixc(C.grass,C.grass2,hash(x*3,y*5));
+    col=[col[0]+jit,col[1]+jit*0.8,col[2]+jit*0.5];
+    Wquad([X,th,Z+1],[X+1,th,Z+1],[X+1,th,Z],[X,th,Z],col,UP);
+    const sideC=soil?C.side:C.sideG;
     const south=y===0?null:world.tiles[(y-1)*n+x];
-    const sh2=south?(south.g==='Soil'?h0-0.1:h0):0;
-    if(!south||sh2<th) quad([X,0,Z+1],[X+1,0,Z+1],[X+1,th,Z+1],[X,th,Z+1],side,SH_N);
+    const sh=south?(south.g==='Soil'?0.22:0.32):0;
+    if(!south||sh<th) Wquad([X,sh,Z+1],[X+1,sh,Z+1],[X+1,th,Z+1],[X,th,Z+1],sideC,[0,0,1]);
     const east=x===n-1?null:world.tiles[y*n+x+1];
-    const eh=east?(east.g==='Soil'?h0-0.1:h0):0;
-    if(!east||eh<th) quad([X+1,0,Z+1],[X+1,0,Z],[X+1,th,Z],[X+1,th,Z+1],side,SH_E);
-    if(x===0) quad([X,0,Z],[X,0,Z+1],[X,th,Z+1],[X,th,Z],side,SH_E);
-    if(y===n-1) quad([X+1,0,Z],[X,0,Z],[X,th,Z],[X+1,th,Z],side,SH_N);
+    const eh=east?(east.g==='Soil'?0.22:0.32):0;
+    if(!east||eh<th) Wquad([X+1,eh,Z+1],[X+1,eh,Z],[X+1,th,Z],[X+1,th,Z+1],sideC,[1,0,0]);
+    if(x===0) Wquad([X,0,Z],[X,0,Z+1],[X,th,Z+1],[X,th,Z],sideC,[-1,0,0]);
+    if(y===n-1) Wquad([X+1,0,Z],[X,0,Z],[X,th,Z],[X+1,th,Z],sideC,[0,0,-1]);
   }
 
   for(let y=0;y<n;y++) for(let x=0;x<n;x++){
     const t=world.tiles[y*n+x];
     if(!t.e) continue;
-    const v=Math.floor(hash(x*3+1,y*7+2)*4);
     const sp=SPEC[t.e];
     const stage=sp.grow>0?Math.round(Math.min(1,t.age/sp.grow)*4):4;
-    const X=x-n/2+0.5, Z=(n-1-y)-n/2+0.5;
-    const th=t.g==='Soil'?0.24:0.34;
-    const big=t.e==='Tree'?1.5:(t.e==='Hedge'?1.15:1.0);
-    if(t.e==='Hedge'){
-      const s=entSlot(t,stage,v), sd=flatSlot(P.hed0);
-      const X0=x-n/2, Z0=(n-1-y)-n/2, top=th+1.05;
-      quad([X0,top,Z0+1],[X0+1,top,Z0+1],[X0+1,top,Z0],[X0,top,Z0],s,SH_TOP);
-      quad([X0,th,Z0+1],[X0+1,th,Z0+1],[X0+1,top,Z0+1],[X0,top,Z0+1],s,SH_N);
-      quad([X0+1,th,Z0],[X0,th,Z0],[X0,top,Z0],[X0+1,top,Z0],s,SH_N);
-      quad([X0+1,th,Z0+1],[X0+1,th,Z0],[X0+1,top,Z0],[X0+1,top,Z0+1],s,SH_E);
-      quad([X0,th,Z0],[X0,th,Z0+1],[X0,top,Z0+1],[X0,top,Z0],s,SH_E);
-      continue;
-    }
-    billboard(X,th,Z,big,big,entSlot(t,stage,v),SH_BILL,rx,rz);
-    if(stage>=4&&(t.e==='Sunflower'||t.e==='Cactus')){
-      const nm=numSlot(t.e==='Sunflower'?t.d.petals:t.d.size), y0=th+0.012;
-      quad([X-0.44,y0,Z+0.46],[X+0.06,y0,Z+0.46],[X+0.06,y0,Z-0.04],[X-0.44,y0,Z-0.04],nm,SH_TOP);
-    }
+    const th=t.g==='Soil'?0.22:0.32;
+    blit(plantMesh(t,stage),x-n/2+0.5,th,(n-1-y)-n/2+0.5);
     if(state.unlocked.poly&&t.d&&t.d.comp){
-      const cs=flatSlot(companionOk(t,x,y)?'#8FC93A':'#4A4438'), y0=th+0.012;
-      quad([X+0.2,y0,Z+0.46],[X+0.44,y0,Z+0.46],[X+0.44,y0,Z+0.22],[X+0.2,y0,Z+0.22],cs,SH_TOP);
+      const c=companionOk(t,x,y)?rgb('#9BD642'):rgb('#4A4438');
+      const X=x-n/2+0.86, Z=(n-1-y)-n/2+0.86, s=0.1;
+      Wquad([X-s,th+0.005,Z+s],[X+s,th+0.005,Z+s],[X+s,th+0.005,Z-s],[X-s,th+0.005,Z-s],c,UP);
     }
   }
 
-  const shadow=slot('shadow',g=>{ pdisc(g,8,8,5,'rgba(8,6,4,.5)'); });
+  const dm=droneMesh();
   for(const D of world.drones){
     const k=Math.min(1,dt*Math.max(9,tpsNow()*0.85));
     if(Math.abs(D.vx-D.x)>n/2) D.vx += (D.vx>D.x?-n:n);
@@ -2336,9 +2357,21 @@ function buildScene(dt){
     if(D.flip>0) D.flip=Math.max(0,D.flip-dt*2.4);
     if(D.bump>0) D.bump=Math.max(0,D.bump-dt*4);
     const X=D.vx-n/2+0.5, Z=(n-1-D.vy)-n/2+0.5;
-    const hover=0.95+Math.sin(frame*0.06+D.id)*0.05;
-    quad([X-0.3,0.36,Z+0.3],[X+0.3,0.36,Z+0.3],[X+0.3,0.36,Z-0.3],[X-0.3,0.36,Z-0.3],shadow,1);
-    billboard(X,hover,Z,0.9,0.9,droneSlot(D,(frame>>1)&1),1,rx,rz);
+    const hov=0.78+Math.sin(frame*0.07+D.id)*0.03;
+    blit(dm,X,hov,Z);
+    const spin=frame*0.9+D.id;
+    room(4*6*9*4);
+    for(const [dx,dz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){
+      const cxr=X+dx*0.24, czr=Z+dz*0.24, ry=hov+0.05;
+      for(let i=0;i<6;i++){
+        const a0=spin+i*1.047, a1=spin+(i+1)*1.047;
+        Wquad([cxr,ry,czr],[cxr+Math.cos(a0)*0.15,ry,czr+Math.sin(a0)*0.15],
+              [cxr+Math.cos(a1)*0.15,ry,czr+Math.sin(a1)*0.15],[cxr,ry,czr],C.rotor,UP);
+      }
+    }
+    const sr=0.22;
+    Wquad([X-sr,0.335,Z+sr],[X+sr,0.335,Z+sr],[X+sr,0.335,Z-sr],[X-sr,0.335,Z-sr],
+      mixc(C.dark,C.grass,0.25),UP);
   }
 }
 
@@ -2346,42 +2379,31 @@ function draw(dt){
   frame++;
   if(!GL_OK){ draw2D(dt); return; }
   buildScene(dt);
-  if(atlasDirty){
-    gl.bindTexture(gl.TEXTURE_2D,tex);
-    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);
-    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,atlasCv);
-    atlasDirty=false;
-  }
   const asp=cv.width/cv.height;
   const cp=Math.cos(cam.pitch), sp=Math.sin(cam.pitch);
   EYE=[Math.sin(cam.yaw)*cp*cam.dist, sp*cam.dist, Math.cos(cam.yaw)*cp*cam.dist];
-  MVP=m4mul(m4persp(0.85,asp,0.1,200),m4look(EYE,[0,0,0],[0,1,0]));
-  gl.clearColor(0.055,0.05,0.04,1);
+  MVP=m4mul(m4persp(0.85,asp,0.1,240),m4look(EYE,[0,0,0],UP));
+  gl.clearColor(0.048,0.043,0.036,1);
   gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
   gl.useProgram(prog);
   gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
-  gl.bufferData(gl.ARRAY_BUFFER,verts.subarray(0,vcount*6),gl.DYNAMIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER,VB.subarray(0,vn*9),gl.DYNAMIC_DRAW);
   gl.enableVertexAttribArray(loc.pos);
-  gl.vertexAttribPointer(loc.pos,3,gl.FLOAT,false,24,0);
-  gl.enableVertexAttribArray(loc.uv);
-  gl.vertexAttribPointer(loc.uv,2,gl.FLOAT,false,24,12);
-  gl.enableVertexAttribArray(loc.sh);
-  gl.vertexAttribPointer(loc.sh,1,gl.FLOAT,false,24,20);
+  gl.vertexAttribPointer(loc.pos,3,gl.FLOAT,false,36,0);
+  gl.enableVertexAttribArray(loc.nrm);
+  gl.vertexAttribPointer(loc.nrm,3,gl.FLOAT,false,36,12);
+  gl.enableVertexAttribArray(loc.col);
+  gl.vertexAttribPointer(loc.col,3,gl.FLOAT,false,36,24);
   gl.uniformMatrix4fv(loc.mvp,false,MVP);
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D,tex);
-  gl.uniform1i(loc.tex,0);
-  gl.drawArrays(gl.TRIANGLES,0,vcount);
+  gl.drawArrays(gl.TRIANGLES,0,vn);
   drawFx(dt);
 }
-
 function project(x,y,z){
   if(!MVP) return null;
   const w=MVP[3]*x+MVP[7]*y+MVP[11]*z+MVP[15];
   if(w<=0.0001) return null;
-  const cxp=(MVP[0]*x+MVP[4]*y+MVP[8]*z+MVP[12])/w;
-  const cyp=(MVP[1]*x+MVP[5]*y+MVP[9]*z+MVP[13])/w;
-  return [(cxp*0.5+0.5)*CW,(0.5-cyp*0.5)*CH];
+  return [((MVP[0]*x+MVP[4]*y+MVP[8]*z+MVP[12])/w*0.5+0.5)*CW,
+          (0.5-(MVP[1]*x+MVP[5]*y+MVP[9]*z+MVP[13])/w*0.5)*CH];
 }
 function drawFx(dt){
   fgx.clearRect(0,0,CW,CH);
@@ -2390,12 +2412,12 @@ function drawFx(dt){
     const f=world.fx[i];
     f.t+=dt;
     if(f.t>1.15){ world.fx.splice(i,1); continue; }
-    const p=project(f.x-n/2+0.5,0.9+f.t*0.7,(n-1-f.y)-n/2+0.5);
+    const p=project(f.x-n/2+0.5,0.75+f.t*0.7,(n-1-f.y)-n/2+0.5);
     if(!p) continue;
     fgx.globalAlpha=Math.min(1,(1-f.t/1.15)*1.7);
-    fgx.font='700 13px JetBrains Mono, monospace';
+    fgx.font='700 13px Archivo, sans-serif';
     fgx.textAlign='center';
-    fgx.lineWidth=3; fgx.strokeStyle='#0B0907';
+    fgx.lineWidth=3; fgx.strokeStyle='rgba(8,7,5,.9)';
     fgx.strokeText(f.text,p[0],p[1]);
     fgx.fillStyle=f.color; fgx.fillText(f.text,p[0],p[1]);
     fgx.globalAlpha=1;
@@ -2403,58 +2425,59 @@ function drawFx(dt){
 }
 
 /* ------------------------- flat fallback (no WebGL) ---------------------- */
-const flat=cv.getContext&&!GL_OK?cv.getContext('2d'):null;
+const flat=(!GL_OK&&cv.getContext)?cv.getContext('2d'):null;
+const FLATC={Grass:'#8FB449',Bush:'#4F8637',Tree:'#3B6B2A',Carrot:'#D2701F',Pumpkin:'#D4801F',
+  Sunflower:'#E9C63C',Cactus:'#4E8A4A',Dinosaur:'#5E8C46',Apple:'#B93A30',Hedge:'#26411B',
+  Treasure:'#E0B84A'};
 function draw2D(dt){
   if(!flat) return;
   const n=world.size;
-  const cell=Math.min(Math.floor(Math.min(CW-16,CH-16)/n),48);
+  const cell=Math.min(Math.floor(Math.min(CW-16,CH-16)/n),56);
   const ox=(CW-cell*n)/2, oy=(CH-cell*n)/2;
   flat.setTransform(DPR,0,0,DPR,0,0);
-  flat.imageSmoothingEnabled=false;
-  flat.fillStyle='#141109'; flat.fillRect(0,0,CW,CH);
+  flat.fillStyle='#14110C'; flat.fillRect(0,0,CW,CH);
   for(let y=0;y<n;y++) for(let x=0;x<n;x++){
-    const t=world.tiles[y*n+x], v=Math.floor(hash(x,y)*4);
-    const s=groundSlot(t,v);
-    flat.drawImage(atlasCv,s.u0*ATLAS,s.v0*ATLAS,ART,ART,ox+x*cell,oy+(n-1-y)*cell,cell,cell);
+    const t=world.tiles[y*n+x];
+    flat.fillStyle=t.g==='Soil'?'#5E4028':'#4E7A32';
+    flat.fillRect(ox+x*cell,oy+(n-1-y)*cell,cell-1,cell-1);
     if(t.e){
       const sp=SPEC[t.e];
-      const st=sp.grow>0?Math.round(Math.min(1,t.age/sp.grow)*4):4;
-      const e=entSlot(t,st,Math.floor(hash(x*3+1,y*7+2)*4));
-      flat.drawImage(atlasCv,e.u0*ATLAS,e.v0*ATLAS,ART,ART,ox+x*cell,oy+(n-1-y)*cell,cell,cell);
+      const p=sp.grow>0?Math.min(1,t.age/sp.grow):1;
+      flat.fillStyle=FLATC[t.e]||'#fff';
+      const r=cell*0.16+cell*0.2*p;
+      flat.beginPath();
+      flat.arc(ox+x*cell+cell/2,oy+(n-1-y)*cell+cell/2,r/1.6,0,7);
+      flat.fill();
     }
   }
   for(const D of world.drones){
     D.vx=lerp(D.vx,D.x,Math.min(1,dt*12)); D.vy=lerp(D.vy,D.y,Math.min(1,dt*12));
-    const s=droneSlot(D,(frame>>1)&1);
-    flat.drawImage(atlasCv,s.u0*ATLAS,s.v0*ATLAS,ART,ART,
-      ox+D.vx*cell,oy+(n-1-D.vy)*cell,cell,cell);
+    flat.fillStyle='#6FC7D8';
+    flat.fillRect(ox+D.vx*cell+cell*0.25,oy+(n-1-D.vy)*cell+cell*0.25,cell*0.5,cell*0.5);
   }
 }
 
 /* ------------------------------ picking ---------------------------------- */
 function pickTile(clientX,clientY){
-  const r=cv.getBoundingClientRect();
+  const r=cv.getBoundingClientRect(), n=world.size;
   if(!GL_OK||!MVP){
-    const n=world.size;
-    const cell=Math.min(Math.floor(Math.min(CW-16,CH-16)/n),48);
+    const cell=Math.min(Math.floor(Math.min(CW-16,CH-16)/n),56);
     const ox=(r.width-cell*n)/2, oy=(r.height-cell*n)/2;
     const gx=Math.floor((clientX-r.left-ox)/cell), gy=n-1-Math.floor((clientY-r.top-oy)/cell);
     return (gx<0||gy<0||gx>=n||gy>=n)?null:{x:gx,y:gy};
   }
   const ndx=((clientX-r.left)/r.width)*2-1, ndy=1-((clientY-r.top)/r.height)*2;
-  const cp=Math.cos(cam.pitch), sp2=Math.sin(cam.pitch);
-  const fwd=[-Math.sin(cam.yaw)*cp,-sp2,-Math.cos(cam.yaw)*cp];
-  let right=[Math.cos(cam.yaw),0,-Math.sin(cam.yaw)];
+  const cp=Math.cos(cam.pitch), sp=Math.sin(cam.pitch);
+  const fwd=[-Math.sin(cam.yaw)*cp,-sp,-Math.cos(cam.yaw)*cp];
+  const right=[Math.cos(cam.yaw),0,-Math.sin(cam.yaw)];
   const up=[fwd[1]*right[2]-fwd[2]*right[1],fwd[2]*right[0]-fwd[0]*right[2],fwd[0]*right[1]-fwd[1]*right[0]];
   const th=Math.tan(0.425), asp=r.width/r.height;
-  const dir=[
-    fwd[0]+right[0]*ndx*th*asp+up[0]*ndy*th,
-    fwd[1]+right[1]*ndx*th*asp+up[1]*ndy*th,
-    fwd[2]+right[2]*ndx*th*asp+up[2]*ndy*th];
+  const dir=[fwd[0]+right[0]*ndx*th*asp+up[0]*ndy*th,
+             fwd[1]+right[1]*ndx*th*asp+up[1]*ndy*th,
+             fwd[2]+right[2]*ndx*th*asp+up[2]*ndy*th];
   if(Math.abs(dir[1])<1e-6) return null;
-  const tHit=(0.3-EYE[1])/dir[1];
+  const tHit=(0.28-EYE[1])/dir[1];
   if(tHit<0) return null;
-  const n=world.size;
   const wx=EYE[0]+dir[0]*tHit, wz=EYE[2]+dir[2]*tHit;
   const gx=Math.floor(wx+n/2), gy=n-1-Math.floor(wz+n/2);
   return (gx<0||gy<0||gx>=n||gy>=n)?null:{x:gx,y:gy};
@@ -2462,7 +2485,7 @@ function pickTile(clientX,clientY){
 
 /* --------------------------- orbit / pinch ------------------------------- */
 (function controls(){
-  let drag=null, pinch=null, moved=0, downAt=0;
+  let drag=null,pinch=null,moved=0,downAt=0;
   const pts=new Map();
   cv.style.touchAction='none';
   cv.addEventListener('pointerdown',e=>{
@@ -2488,7 +2511,7 @@ function pickTile(clientX,clientY){
     const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
     moved+=Math.abs(dx)+Math.abs(dy);
     cam.yaw-=dx*0.008;
-    cam.pitch=Math.max(0.22,Math.min(1.45,cam.pitch+dy*0.006));
+    cam.pitch=Math.max(0.2,Math.min(1.45,cam.pitch+dy*0.006));
     drag={x:e.clientX,y:e.clientY};
   });
   const up=e=>{
@@ -2503,7 +2526,7 @@ function pickTile(clientX,clientY){
     e.preventDefault();
     cam.dist=Math.max(2.2,Math.min(world.size*4+14,cam.dist*(1+Math.sign(e.deltaY)*0.12)));
   },{passive:false});
-  cv.addEventListener('dblclick',()=>{ cam.yaw=-0.58; cam.pitch=0.92; fitCam(); });
+  cv.addEventListener('dblclick',()=>{ cam.yaw=-0.58; cam.pitch=0.86; fitCam(); });
 })();
 </script>
 <script>
