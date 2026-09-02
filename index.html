@@ -57,7 +57,8 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .field{
   position:relative;flex:none;height:min(46dvh,92vw);min-height:190px;
   margin:8px 8px 0;border-radius:var(--r-l);overflow:hidden;
-  background:#0D0B0A;border:1px solid var(--soil-700);
+  background:linear-gradient(#33514E 0%,#4C6B57 40%,#5E7A52 66%,#3C5730 100%);
+  border:1px solid var(--soil-700);
   box-shadow:inset 0 3px 30px rgba(0,0,0,.75),0 8px 26px -20px #000;
 }
 .field canvas{display:block;width:100%;height:100%;touch-action:manipulation}
@@ -1893,8 +1894,8 @@ fxc.id='fxlayer';
 fxc.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none';
 cv.parentNode.insertBefore(fxc,cv.nextSibling);
 const fgx=fxc.getContext('2d');
-const gl=cv.getContext('webgl',{antialias:true,alpha:false,depth:true})||
-         cv.getContext('experimental-webgl',{antialias:true,alpha:false,depth:true});
+const gl=cv.getContext('webgl',{antialias:true,alpha:true,premultipliedAlpha:false,depth:true})||
+         cv.getContext('experimental-webgl',{antialias:true,alpha:true,premultipliedAlpha:false,depth:true});
 let CW=0,CH=0,DPR=1;
 const hash=(x,y)=>{ const s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); };
 const lerp=(a,b,t)=>a+(b-a)*t;
@@ -1903,22 +1904,22 @@ const lerp=(a,b,t)=>a+(b-a)*t;
 function rgb(h){ return [parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255]; }
 function mixc(a,b,t){ return [lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)]; }
 const C={
-  grass:rgb('#4E7A32'), grass2:rgb('#5B8A3A'), grassDry:rgb('#6E8B39'),
-  soil:rgb('#6E4B2E'), soilWet:rgb('#3E2A1A'), side:rgb('#3B2A1B'), sideG:rgb('#3E4A24'),
-  land:rgb('#26361A'),
-  blade:rgb('#7FAC42'), hay:rgb('#D3AE53'), hay2:rgb('#E6C972'),
-  leaf:rgb('#3B6B2A'), leaf2:rgb('#4F8637'), leaf3:rgb('#67A046'),
-  trunk:rgb('#5B3D24'), trunk2:rgb('#6E4B2E'),
-  carrot:rgb('#D2701F'), carrot2:rgb('#E88C36'),
-  pump:rgb('#D4801F'), pumpRib:rgb('#B0620F'), pumpRaw:rgb('#6E8034'),
-  petal:rgb('#E9C63C'), petal2:rgb('#F3DC76'), head:rgb('#4A3116'),
-  cact:rgb('#4E8A4A'), cact2:rgb('#63A05C'), spine:rgb('#DCD3AE'),
-  dino:rgb('#5E8C46'), dino2:rgb('#82AE63'), dinoDark:rgb('#3E6430'),
-  apple:rgb('#B93A30'), apple2:rgb('#D45A46'),
-  hedge:rgb('#26411B'), hedge2:rgb('#33512A'),
-  chest:rgb('#6B4A20'), gold:rgb('#E0B84A'),
-  body:rgb('#2E353D'), body2:rgb('#464F5A'), dome:rgb('#6FC7D8'), rotor:rgb('#93A8B6'),
-  dark:rgb('#1A140F'), bone:rgb('#D8CDB2')
+  grass:rgb('#5D9A3E'), grass2:rgb('#69A648'), grassDry:rgb('#8FA64C'),
+  soil:rgb('#8A5C33'), soilWet:rgb('#583A22'), side:rgb('#5E4227'), sideG:rgb('#5A6C32'),
+  land:rgb('#3F5E2D'),
+  blade:rgb('#68A440'), bladeTip:rgb('#8CC257'), hay:rgb('#C9A244'), hay2:rgb('#DFBE63'),
+  leaf:rgb('#4A8433'), leaf2:rgb('#5C9B3F'), leaf3:rgb('#78B653'),
+  trunk:rgb('#7A5433'), trunk2:rgb('#8E6640'),
+  carrot:rgb('#E07C24'), carrot2:rgb('#F49A42'),
+  pump:rgb('#E8912A'), pumpRib:rgb('#C4711A'), pumpRaw:rgb('#8FA245'),
+  petal:rgb('#F2CE45'), petal2:rgb('#FAE68C'), head:rgb('#6B4A22'),
+  cact:rgb('#5FA155'), cact2:rgb('#76B96A'), spine:rgb('#EDE6C8'),
+  dino:rgb('#71A254'), dino2:rgb('#96C176'), dinoDark:rgb('#4E7A3A'),
+  apple:rgb('#CF4A3A'), apple2:rgb('#E86B52'),
+  hedge:rgb('#395C28'), hedge2:rgb('#487033'),
+  chest:rgb('#8A6329'), gold:rgb('#F0CB5C'),
+  body:rgb('#48525E'), body2:rgb('#68737F'), dome:rgb('#7FD7E8'), rotor:rgb('#B6C6D2'),
+  dark:rgb('#2A2118'), bone:rgb('#E6DCC2')
 };
 
 /* --------------------------- mesh primitives ----------------------------- */
@@ -2008,12 +2009,22 @@ function tilt(A,angX,ox,oy,oz,fn){
   }
 }
 function blade(A,x,z,h,lean,c,c2){
-  const w=0.035, tipx=Math.cos(lean)*h*0.35, tipz=Math.sin(lean)*h*0.35;
-  const p=[[x-w,0,z],[x+w,0,z],[x+tipx*0.4,h*0.55,z+tipz*0.4],[x+tipx,h,z+tipz]];
-  face(A,p[0],p[1],p[2],null,c);
-  face(A,p[0],p[2],p[3],null,c2||c);
-  face(A,p[1],p[0],p[2],null,c);
-  face(A,p[2],p[0],p[3],null,c2||c);
+  const dx=Math.cos(lean), dz=Math.sin(lean), w=0.026, segs=3;
+  const nx=-dz, nz=dx;
+  const pts=[];
+  for(let i=0;i<=segs;i++){
+    const t=i/segs, bend=t*t*0.55;
+    pts.push([x+dx*h*bend, h*t, z+dz*h*bend, w*(1-t*0.82)]);
+  }
+  for(let i=0;i<segs;i++){
+    const a=pts[i], b=pts[i+1];
+    const p0=[a[0]-nx*a[3],a[1],a[2]-nz*a[3]], p1=[a[0]+nx*a[3],a[1],a[2]+nz*a[3]];
+    const p2=[b[0]+nx*b[3],b[1],b[2]+nz*b[3]], p3=[b[0]-nx*b[3],b[1],b[2]-nz*b[3]];
+    const col=i===segs-1?(c2||c):c;
+    const n=[nx*0.3,0.94,nz*0.3];
+    face(A,p0,p1,p2,p3,col,n);
+    face(A,p3,p2,p1,p0,col,[-n[0],n[1]*0.6,-n[2]]);
+  }
 }
 
 /* --------------------------- mesh templates ----------------------------- */
@@ -2030,8 +2041,8 @@ function mesh(key,fn){
   return m;
 }
 let LOD=2;
-const SEG=()=>LOD>=2?8:(LOD===1?6:5);
-const RING=()=>LOD>=2?5:(LOD===1?4:3);
+const SEG=()=>LOD>=2?12:(LOD===1?9:6);
+const RING=()=>LOD>=2?7:(LOD===1?5:4);
 
 function plantMesh(t,stage){
   const e=t.e, seg=SEG(), ring=RING();
@@ -2045,11 +2056,15 @@ function plantMesh(t,stage){
     const f=stage/4;
     switch(e){
       case 'Grass':{
-        const ripe=stage>=4, h=0.14+0.34*f;
-        const c1=ripe?C.hay:C.blade, c2=ripe?C.hay2:C.leaf3;
-        for(let i=0;i<(LOD?9:5);i++){
-          const a=i*2.4, r=0.09+(i%3)*0.07;
-          blade(A,Math.cos(a)*r,Math.sin(a)*r,h*(0.7+((i*37)%50)/100),a,c1,c2);
+        const ripe=stage>=4, h=0.15+0.3*f;
+        const c1=ripe?C.hay:C.blade, c2=ripe?C.hay2:C.bladeTip;
+        const n=LOD>=2?14:(LOD===1?9:5);
+        for(let i=0;i<n;i++){
+          const a=i*2.3994, r=0.055+((i*7)%5)*0.052;
+          const bh=h*(0.68+((i*37)%46)/100);
+          blade(A,Math.cos(a)*r,Math.sin(a)*r,bh,a+0.6,c1,c2);
+          if(ripe&&LOD>=2&&i%2===0)
+            box(A,Math.cos(a)*(r+bh*0.26),bh*0.92,Math.sin(a)*(r+bh*0.26),0.02,0.036,0.02,C.hay2,-a);
         }
         break;
       }
@@ -2233,8 +2248,8 @@ void main(){
   float key=max(dot(n,normalize(vec3(0.42,0.85,0.32))),0.0);
   float fill=max(dot(n,normalize(vec3(-0.55,0.2,-0.6))),0.0);
   float sky=n.y*0.5+0.5;
-  vec3 c=vC*(0.34+0.70*key)+vC*fill*0.18+vec3(0.10,0.14,0.17)*sky*0.30;
-  c*=0.90+0.10*clamp(vY,0.0,1.5);
+  vec3 c=vC*(0.46+0.74*key)+vC*fill*0.16+vec3(0.13,0.17,0.20)*sky*0.16;
+  c=c/(c+vec3(1.15))*1.42;
   gl_FragColor=vec4(c,1.0);
 }`;
   const mk=(t,src)=>{ const s=gl.createShader(t); gl.shaderSource(s,src); gl.compileShader(s);
@@ -2293,7 +2308,7 @@ function blit(m,tx,ty,tz){
 
 function resizeCanvas(){
   const r=cv.getBoundingClientRect();
-  DPR=Math.min(2,window.devicePixelRatio||1);
+  DPR=Math.min(3,window.devicePixelRatio||1);
   CW=Math.max(80,Math.round(r.width)); CH=Math.max(80,Math.round(r.height));
   cv.width=Math.round(CW*DPR); cv.height=Math.round(CH*DPR);
   fxc.width=cv.width; fxc.height=cv.height;
@@ -2317,7 +2332,7 @@ function buildScene(dt){
     const X=x-n/2, Z=(n-1-y)-n/2;
     const soil=t.g==='Soil';
     const th=soil?0.22:0.32;
-    const jit=hash(x,y)*0.06-0.03;
+    const jit=hash(x,y)*0.024-0.012;
     let col;
     if(soil) col=mixc(C.soil,C.soilWet,Math.min(1,t.water));
     else col=mixc(C.grass,C.grass2,hash(x*3,y*5));
@@ -2342,9 +2357,9 @@ function buildScene(dt){
     const th=t.g==='Soil'?0.22:0.32;
     blit(plantMesh(t,stage),x-n/2+0.5,th,(n-1-y)-n/2+0.5);
     if(state.unlocked.poly&&t.d&&t.d.comp){
-      const c=companionOk(t,x,y)?rgb('#9BD642'):rgb('#4A4438');
-      const X=x-n/2+0.86, Z=(n-1-y)-n/2+0.86, s=0.1;
-      Wquad([X-s,th+0.005,Z+s],[X+s,th+0.005,Z+s],[X+s,th+0.005,Z-s],[X-s,th+0.005,Z-s],c,UP);
+      const ok=companionOk(t,x,y);
+      blit(mesh('comp'+ok,A=>sphere(A,0,0.04,0,0.05,0.05,0.05,7,5,
+        ok?rgb('#A8E356'):rgb('#7A7364'))), x-n/2+0.84, th, (n-1-y)-n/2+0.84);
     }
   }
 
@@ -2383,7 +2398,7 @@ function draw(dt){
   const cp=Math.cos(cam.pitch), sp=Math.sin(cam.pitch);
   EYE=[Math.sin(cam.yaw)*cp*cam.dist, sp*cam.dist, Math.cos(cam.yaw)*cp*cam.dist];
   MVP=m4mul(m4persp(0.85,asp,0.1,240),m4look(EYE,[0,0,0],UP));
-  gl.clearColor(0.048,0.043,0.036,1);
+  gl.clearColor(0,0,0,0);
   gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
   gl.useProgram(prog);
   gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
