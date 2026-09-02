@@ -1696,7 +1696,7 @@ function* a_flip(){
 }
 
 function* a_spawn(args){
-  requireUnlock('drones','spawn_drone()');
+  if(maxDrones()<=1) err('LockedError','spawn_drone() is locked — buy a Drone Bay in the Shop tab.');
   const f=args[0];
   if(!(f instanceof PyFunc)) err('TypeError','spawn_drone() needs a function, e.g. spawn_drone(work)');
   yield COST.plant;
@@ -2970,7 +2970,7 @@ function buy(u){
   else if(u.id==='speed'){ state.speed++; state.speedPref=state.speed; UI.syncSpeed(); }
   else if(u.id==='tank'){ state.tankLvl++; }
   else if(u.id==='drones'){ state.bay++; }
-  else state.unlocked[u.id]=true;
+  state.unlocked[u.id]=true;
   UI.log('unlocked '+u.name,'s');
   sfx('buy'); shakeNow(0.16);
   UI.refreshShop(); UI.refreshStats(true); save();
@@ -3268,6 +3268,10 @@ function load(){
   state.expand=d.expand||0; state.speed=d.speed||0;
   state.speedPref=Math.min(d.speedPref??d.speed??0,state.speed);
   state.tankLvl=d.tankLvl||0; state.bay=d.bay||0;
+  if(state.expand>0) state.unlocked.expand=true;
+  if(state.speed>0) state.unlocked.speed=true;
+  if(state.tankLvl>0) state.unlocked.tank=true;
+  if(state.bay>0) state.unlocked.drones=true;
   state.tank=d.tank??TANK[state.tankLvl];
   state.credit=d.credit||0; state.treasures=d.treasures||0;
   buildWorld(d.size||SIZES[state.expand],false);
