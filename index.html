@@ -1,0 +1,3530 @@
+<title>Rootloop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --soil-900:#120F0E; --soil-850:#181413; --soil-800:#201B19; --soil-750:#292320;
+  --soil-700:#332B26; --soil-600:#42382F; --bark:#5C4C3E;
+  --wheat:#F2E3CB; --wheat-dim:#B9A992; --wheat-faint:#847768;
+  --chloro:#9BD642; --chloro-deep:#5F8F22; --amber:#F0A93C; --water:#5CC3D6;
+  --rust:#E0603F; --gold:#F5CE58; --bone:#E4DAC6; --violet:#A98BE0;
+  --r-s:6px; --r-m:11px; --r-l:18px;
+  --f-disp:'Chakra Petch',ui-sans-serif,system-ui,sans-serif;
+  --f-body:'Archivo',ui-sans-serif,system-ui,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0;background:var(--soil-900);color:var(--wheat);
+  font-family:var(--f-body);font-size:14px;line-height:1.45;overscroll-behavior:none;
+}
+button,input,textarea,select{font-family:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--chloro);outline-offset:2px}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--soil-600);border-radius:99px}
+::-webkit-scrollbar-track{background:transparent}
+
+#app{display:flex;flex-direction:column;height:100dvh;max-width:1500px;margin:0 auto}
+
+/* ---------- HUD ---------- */
+.hud{
+  display:flex;align-items:center;gap:9px;padding:7px 10px 5px;flex:none;
+  background:linear-gradient(var(--soil-850),var(--soil-900));border-bottom:1px solid var(--soil-700);
+}
+.brand{display:flex;align-items:center;gap:7px;flex:none}
+.mark{width:17px;height:17px;border-radius:5px;flex:none;
+  background:conic-gradient(from 210deg,var(--chloro-deep),var(--chloro) 30%,var(--amber) 62%,var(--chloro-deep));
+  box-shadow:0 0 0 1px var(--soil-600),0 0 14px -3px var(--chloro)}
+.brand h1{font-family:var(--f-disp);font-size:14px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;margin:0;white-space:nowrap;color:var(--wheat)}
+.strip{display:flex;gap:5px;overflow-x:auto;flex:1;padding-bottom:2px;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.chip{
+  display:flex;align-items:center;gap:5px;flex:none;padding:3px 9px 3px 5px;
+  background:var(--soil-800);border:1px solid var(--soil-700);border-radius:99px;
+  font-family:var(--f-mono);font-size:11px;font-variant-numeric:tabular-nums;
+  color:var(--wheat-faint);white-space:nowrap;transition:border-color .3s ease;
+}
+.chip b{color:var(--wheat);font-weight:700;font-size:11.5px}
+.chip i{width:9px;height:9px;border-radius:3px;flex:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 8px -2px currentColor}
+.chip.pulse{border-color:var(--chloro)}
+
+/* ---------- Field ---------- */
+.field{
+  position:relative;flex:none;height:min(46dvh,92vw);min-height:190px;
+  margin:8px 8px 0;border-radius:var(--r-l);overflow:hidden;
+  background:linear-gradient(#33514E 0%,#4C6B57 40%,#5E7A52 66%,#3C5730 100%);
+  border:1px solid var(--soil-700);
+  box-shadow:inset 0 3px 30px rgba(0,0,0,.75),0 8px 26px -20px #000;
+}
+.field canvas{display:block;width:100%;height:100%;touch-action:manipulation}
+.readout{position:absolute;left:8px;bottom:8px;display:flex;gap:5px;pointer-events:none;flex-wrap:wrap;
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.02em;max-width:calc(100% - 16px)}
+.readout span{background:rgba(12,10,9,.8);border:1px solid var(--soil-700);
+  padding:2px 7px;border-radius:99px;color:var(--wheat-faint);backdrop-filter:blur(3px)}
+.readout b{color:var(--chloro);font-weight:500}
+.flag{
+  position:absolute;right:8px;top:8px;padding:3px 9px;border-radius:99px;
+  font-family:var(--f-disp);font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  border:1px solid var(--soil-600);background:rgba(12,10,9,.8);color:var(--wheat-faint);backdrop-filter:blur(3px);
+}
+.flag.on{color:var(--chloro);border-color:var(--chloro-deep);box-shadow:0 0 16px -5px var(--chloro)}
+.flag.err{color:var(--rust);border-color:#6b2f1e}
+
+/* ---------- Run bar ---------- */
+.runbar{display:flex;align-items:center;gap:7px;padding:8px;flex:none}
+.btn{
+  border:1px solid var(--soil-600);background:var(--soil-750);color:var(--wheat);
+  border-radius:var(--r-m);padding:10px 13px;font-size:13px;font-weight:600;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;transition:transform .08s ease,background .15s ease;
+}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.38;cursor:default}
+.btn.primary{background:linear-gradient(#A6E048,var(--chloro-deep));border-color:#4a7414;color:#101705;
+  box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 8px 20px -12px var(--chloro)}
+.btn.stop{color:var(--rust)}
+.btn.small{padding:6px 10px;font-size:12px;border-radius:var(--r-s)}
+.speedwrap{display:flex;align-items:center;gap:7px;flex:1;min-width:0;
+  background:var(--soil-800);border:1px solid var(--soil-700);border-radius:var(--r-m);padding:6px 11px}
+.speedwrap label{font-family:var(--f-disp);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--wheat-faint)}
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:36px;height:22px;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:99px;background:var(--soil-600)}
+input[type=range]::-moz-range-track{height:4px;border-radius:99px;background:var(--soil-600)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;margin-top:-6.5px;
+  border-radius:50%;background:var(--amber);border:2px solid var(--soil-900);box-shadow:0 0 12px -2px var(--amber)}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border:2px solid var(--soil-900);border-radius:50%;background:var(--amber)}
+.tps{font-family:var(--f-mono);font-size:11px;color:var(--amber);font-variant-numeric:tabular-nums;min-width:50px;text-align:right}
+
+/* ---------- Tabs ---------- */
+.tabs{display:flex;gap:2px;padding:0 8px;flex:none;border-bottom:1px solid var(--soil-700)}
+.tab{
+  flex:1;background:none;border:none;border-bottom:2px solid transparent;padding:10px 4px 9px;position:relative;
+  font-family:var(--f-disp);font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--wheat-faint);cursor:pointer;
+}
+.tab.active{color:var(--wheat);border-bottom-color:var(--chloro)}
+.tab .badge{position:absolute;top:3px;right:5px;min-width:16px;height:16px;border-radius:99px;
+  background:var(--amber);color:#20170a;font-family:var(--f-body);font-size:10px;font-weight:700;line-height:16px}
+.dock{flex:1;min-height:0;position:relative}
+.pane{position:absolute;inset:0;display:none;flex-direction:column;min-height:0}
+.pane.active{display:flex}
+
+/* ---------- Code ---------- */
+.files{display:flex;gap:6px;padding:8px;overflow-x:auto;flex:none;scrollbar-width:none;align-items:center}
+.files::-webkit-scrollbar{display:none}
+.file{flex:none;padding:5px 11px;border-radius:99px;border:1px solid var(--soil-700);background:var(--soil-800);
+  font-family:var(--f-mono);font-size:11.5px;color:var(--wheat-dim);cursor:pointer;white-space:nowrap}
+.file.active{background:var(--soil-700);border-color:var(--bark);color:var(--wheat)}
+.editor{position:relative;flex:1;min-height:0;margin:0 8px;border-radius:var(--r-m);
+  background:#141110;border:1px solid var(--soil-700);overflow:hidden}
+.editor pre,.editor textarea{
+  margin:0;padding:11px 13px;font-family:var(--f-mono);font-size:13px;line-height:1.6;
+  white-space:pre;overflow-wrap:normal;word-break:normal;tab-size:4;border:0;background:transparent;
+}
+.wrap .editor pre,.wrap .editor textarea{white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word}
+.editor pre{overflow:hidden}
+.zen .field,.zen .runbar .speedwrap{display:none}
+.zen .editor{margin:0 8px 0}
+.editor pre{position:absolute;inset:0;overflow:hidden;pointer-events:none;color:var(--wheat);min-width:100%;width:max-content}
+.editor textarea{position:absolute;inset:0;width:100%;height:100%;resize:none;overflow:auto;white-space:pre;
+  color:transparent;caret-color:var(--amber);outline:none;-webkit-text-fill-color:transparent}
+.editor textarea::selection{background:rgba(155,214,66,.28);-webkit-text-fill-color:transparent}
+.tk-kw{color:#F2799A}.tk-num{color:#7FD3E8}.tk-str{color:#A8DC63}
+.tk-com{color:#6E6357;font-style:italic}.tk-api{color:#9FD8E6}.tk-const{color:var(--gold)}
+.keys{display:flex;gap:5px;padding:8px;overflow-x:auto;flex:none;scrollbar-width:none}
+.keys::-webkit-scrollbar{display:none}
+.key{flex:none;padding:8px 11px;border-radius:var(--r-s);border:1px solid var(--soil-700);
+  background:var(--soil-800);font-family:var(--f-mono);font-size:12px;color:var(--wheat-dim);cursor:pointer}
+.key:active{background:var(--soil-700)}
+.key.wide{color:var(--chloro)}
+
+/* ---------- Shop ---------- */
+.paneScroll{overflow-y:auto;padding:10px 8px 28px;flex:1;-webkit-overflow-scrolling:touch}
+.secTitle{font-family:var(--f-disp);font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--wheat-faint);margin:16px 4px 8px;display:flex;align-items:center;gap:9px}
+.secTitle:first-child{margin-top:2px}
+.secTitle::after{content:"";flex:1;height:1px;background:var(--soil-700)}
+.buys{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.treewrap{overflow:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.tree{position:relative}
+.tree svg{position:absolute;inset:0;pointer-events:none}
+.node{
+  position:absolute;display:flex;flex-direction:column;justify-content:center;gap:3px;
+  padding:6px 8px;border-radius:var(--r-s);border:1px solid var(--soil-600);
+  background:var(--soil-800);color:var(--wheat-dim);text-align:left;cursor:pointer;
+  font-family:var(--f-body);
+}
+.node b{font-family:var(--f-disp);font-size:11.5px;font-weight:600;color:var(--wheat);line-height:1.15}
+.node em{font-family:var(--f-mono);font-size:9.5px;font-style:normal;color:var(--wheat-faint);
+  font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node.owned{border-style:dashed;border-color:var(--chloro-deep);opacity:.72}
+.node.owned b{color:var(--chloro)}
+.node.ready{border-color:var(--chloro);background:linear-gradient(var(--soil-750),#1E2417);
+  box-shadow:0 0 14px -6px var(--chloro)}
+.node.ready em{color:var(--chloro)}
+.node.short{border-color:var(--soil-600)}
+.node.locked{opacity:.42}
+.node.sel{outline:2px solid var(--amber);outline-offset:1px}
+.detail{
+  position:sticky;top:-10px;z-index:4;margin:0 0 4px;padding:11px 12px;border-radius:var(--r-m);
+  box-shadow:0 8px 18px -12px #000;
+  background:var(--soil-800);border:1px solid var(--soil-700);
+  display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:start;
+}
+.detail h3{grid-column:1;margin:0;font-family:var(--f-disp);font-size:14px;font-weight:600}
+.detail p{grid-column:1/-1;margin:0;font-size:12.5px;color:var(--wheat-dim);line-height:1.45}
+.detail .price{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px}
+.detail .btn{grid-row:1;grid-column:2}
+.buy{display:grid;grid-template-columns:1fr auto;gap:5px 10px;align-items:start;
+  padding:11px 12px;border-radius:var(--r-m);background:var(--soil-800);border:1px solid var(--soil-700)}
+.buy.ready{border-color:#4a5f2a;background:linear-gradient(var(--soil-800),#1E2417)}
+.buy.owned{background:transparent;border-style:dashed;opacity:.55}
+.buy.locked{opacity:.45}
+.buy h3{grid-column:1;margin:0;font-family:var(--f-disp);font-size:13.5px;font-weight:600;line-height:1.3}
+.buy p{grid-column:1/-1;margin:0;font-size:12px;color:var(--wheat-dim);line-height:1.45}
+.buy .price{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px;margin-top:1px}
+.tag{font-family:var(--f-mono);font-size:11px;padding:1px 7px;border-radius:99px;
+  background:var(--soil-750);border:1px solid var(--soil-700);color:var(--wheat-dim);font-variant-numeric:tabular-nums}
+.tag.short{color:var(--rust);border-color:#5a2a1e}
+.buy .btn{grid-row:1;grid-column:2}
+.lvl{font-family:var(--f-mono);font-size:11px;color:var(--amber);font-weight:400}
+
+/* ---------- Log ---------- */
+.log{flex:1;overflow-y:auto;padding:10px 12px 20px;font-family:var(--f-mono);font-size:12px;line-height:1.65}
+.log div{white-space:pre-wrap;overflow-wrap:break-word;padding:1px 0;color:var(--wheat-dim)}
+.log .e{color:var(--rust)}.log .s{color:var(--chloro)}.log .i{color:var(--water)}
+
+/* ---------- Guide ---------- */
+.doc{max-width:66ch}
+.doc h2{font-family:var(--f-disp);font-size:15px;letter-spacing:.03em;margin:22px 0 7px;color:var(--wheat)}
+.doc h2:first-child{margin-top:4px}
+.doc p{margin:0 0 9px;color:var(--wheat-dim);font-size:13px}
+.doc code{font-family:var(--f-mono);font-size:12px;background:var(--soil-800);border:1px solid var(--soil-700);
+  padding:0 4px;border-radius:4px;color:var(--wheat)}
+.doc pre{font-family:var(--f-mono);font-size:12px;background:#141110;border:1px solid var(--soil-700);
+  border-radius:var(--r-m);padding:11px;overflow-x:auto;color:var(--wheat);line-height:1.6;margin:0 0 11px}
+.api{display:flex;flex-direction:column;border:1px solid var(--soil-700);border-radius:var(--r-m);overflow:hidden}
+.api .row{display:grid;grid-template-columns:minmax(130px,auto) 1fr;gap:3px 12px;padding:8px 11px;
+  border-bottom:1px solid var(--soil-800);background:#161211}
+.api .row:last-child{border-bottom:0}
+.api .row code{background:none;border:0;padding:0;color:#9FD8E6;font-size:12px}
+.api .row span{font-size:12px;color:var(--wheat-dim)}
+.api .row.lk{opacity:.5}
+.api .row.lk code{color:var(--wheat-faint)}
+.note{border-left:2px solid var(--amber);padding:2px 0 2px 11px;color:var(--wheat-dim);font-size:12.5px;margin:0 0 11px}
+.foot{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+
+.left,.right{display:contents}
+@media (min-width:900px){
+  #app{flex-direction:row}
+  .left,.right{display:flex}
+  .left{flex-direction:column;flex:1;min-width:0;max-width:52vh;border-right:1px solid var(--soil-700);padding-top:42px}
+  .right{flex-direction:column;flex:1.5;min-width:0;padding-top:42px}
+  .field{flex:1;height:auto;margin:8px}
+  .hud{position:absolute;top:0;left:0;right:0;z-index:5}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div id="app">
+  <header class="hud">
+    <div class="brand"><span class="mark"></span><h1>Rootloop</h1></div>
+    <div class="strip" id="strip"></div>
+  </header>
+
+  <div class="left">
+    <section class="field">
+      <canvas id="field"></canvas>
+      <div class="flag" id="flag">idle</div>
+      <div class="readout" id="readout"></div>
+    </section>
+    <div class="runbar">
+      <button class="btn primary" id="runBtn">▶ Run</button>
+      <button class="btn stop" id="stopBtn" disabled>■ Stop</button>
+      <div class="speedwrap">
+        <label for="speed">Speed</label>
+        <input type="range" id="speed" min="0" max="14" step="1" value="0">
+        <span class="tps" id="tps">4/s</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="right">
+    <nav class="tabs">
+      <button class="tab active" data-pane="code">Code</button>
+      <button class="tab" data-pane="shop">Shop<span class="badge" id="shopBadge" hidden>0</span></button>
+      <button class="tab" data-pane="log">Log</button>
+      <button class="tab" data-pane="guide">Guide</button>
+    </nav>
+    <main class="dock">
+      <section class="pane active" id="pane-code">
+        <div class="files" id="files"></div>
+        <div class="editor">
+          <pre id="hl" aria-hidden="true"></pre>
+          <textarea id="code" spellcheck="false" autocapitalize="off" autocorrect="off"
+            autocomplete="off" wrap="soft" aria-label="Python code editor"></textarea>
+        </div>
+        <div class="keys" id="keys"></div>
+      </section>
+      <section class="pane" id="pane-shop"><div class="paneScroll" id="shop"></div></section>
+      <section class="pane" id="pane-log">
+        <div class="log" id="log"></div>
+        <div class="keys">
+          <button class="key wide" id="clearLog">clear log</button>
+          <button class="key" id="resetGlobals">reset globals</button>
+          <button class="key" id="clearFarm">clear farm</button>
+          <button class="key" id="soundBtn">sound: on</button>
+        </div>
+      </section>
+      <section class="pane" id="pane-guide"><div class="paneScroll"><div class="doc" id="guide"></div></div></section>
+    </main>
+  </div>
+</div>
+<script>
+/* ==========================================================================
+   ROOTLOOP — a Python subset: lexer, parser, and a generator-based evaluator
+   that can pause on every drone action so the world can tick.
+   ========================================================================== */
+"use strict";
+
+const KW = new Set(['if','elif','else','while','for','in','def','return','break','continue',
+  'pass','and','or','not','True','False','None','global','nonlocal','try','except','finally',
+  'raise','is','lambda','del','import','from','as','assert','while']);
+
+class PyEx { constructor(type,msg){ this.type=type; this.msg=msg; } toString(){ return this.type+': '+this.msg; } }
+class SyntaxErr extends Error { constructor(msg,line){ super(msg); this.line=line; this.syntax=true; } }
+const err = (t,m)=>{ throw new PyEx(t,m); };
+
+/* ------------------------------- lexer ---------------------------------- */
+const OPS = ['**=','//=','>>=','<<=','**','//','==','!=','<=','>=','+=','-=','*=','/=','%=','&=','|=','^=','->','<<','>>',
+  '(',')','[',']','{','}',',',':','.',';','+','-','*','/','%','<','>','=','~','&','|','^'];
+
+function tokenize(src){
+  src = String(src).replace(/\r\n?/g,'\n');
+  const T=[], stack=[0];
+  let i=0, line=1, depth=0, lineStart=true;
+  const add=(t,v)=>T.push({t,v,line});
+  while(i<src.length){
+    if(lineStart){
+      if(depth>0){ lineStart=false; continue; }
+      let j=i, col=0;
+      while(j<src.length && (src[j]===' '||src[j]==='\t')){ col += src[j]==='\t'?4:1; j++; }
+      if(j>=src.length){ i=j; break; }
+      if(src[j]==='\n'){ i=j+1; line++; continue; }
+      if(src[j]==='#'){ while(j<src.length&&src[j]!=='\n') j++; i=j; continue; }
+      i=j; lineStart=false;
+      const top=stack[stack.length-1];
+      if(col>top){ stack.push(col); add('INDENT'); }
+      else if(col<top){
+        while(col<stack[stack.length-1]){ stack.pop(); add('DEDENT'); }
+        if(col!==stack[stack.length-1]) throw new SyntaxErr('indentation does not match any block',line);
+      }
+      continue;
+    }
+    const c=src[i];
+    if(c==='\n'){ i++; if(depth===0){ add('NEWLINE'); lineStart=true; } line++; continue; }
+    if(c===' '||c==='\t'||c==='\r'){ i++; continue; }
+    if(c==='#'){ while(i<src.length&&src[i]!=='\n') i++; continue; }
+    if(c==='\\'&&src[i+1]==='\n'){ i+=2; line++; continue; }
+
+    const sm = /^([fFrRbBuU]{0,2})('''|"""|'|")/.exec(src.slice(i));
+    if(sm){
+      const pref=sm[1].toLowerCase(), q=sm[2];
+      let j=i+sm[0].length, raw='';
+      while(true){
+        if(j>=src.length) throw new SyntaxErr('unterminated string',line);
+        if(src.startsWith(q,j)){ j+=q.length; break; }
+        if(src[j]==='\\' && !pref.includes('r')){ raw+=src[j]+src[j+1]; if(src[j+1]==='\n') line++; j+=2; continue; }
+        if(src[j]==='\n'){ if(q.length===1) throw new SyntaxErr('unterminated string',line); line++; }
+        raw+=src[j]; j++;
+      }
+      i=j;
+      if(pref.includes('f')) add('FSTR',raw);
+      else add('STR', pref.includes('r') ? raw : unescapeStr(raw));
+      continue;
+    }
+    const nm = /^(0[xX][0-9a-fA-F_]+|(?:\d[\d_]*\.?[\d_]*|\.\d[\d_]*)(?:[eE][+-]?\d+)?)/.exec(src.slice(i));
+    if(nm && /[\d.]/.test(c)){
+      const txt=nm[0].replace(/_/g,'');
+      add('NUM', txt.startsWith('0x')||txt.startsWith('0X') ? parseInt(txt,16) : parseFloat(txt));
+      i+=nm[0].length; continue;
+    }
+    const im = /^[A-Za-z_][A-Za-z0-9_]*/.exec(src.slice(i));
+    if(im){ const w=im[0]; add(KW.has(w)?'KW':'NAME', w); i+=w.length; continue; }
+    let matched=null;
+    for(const op of OPS) if(src.startsWith(op,i)){ matched=op; break; }
+    if(!matched) throw new SyntaxErr('unexpected character '+JSON.stringify(c),line);
+    if('([{'.includes(matched)) depth++;
+    if(')]}'.includes(matched)) depth=Math.max(0,depth-1);
+    add('OP',matched); i+=matched.length; continue;
+  }
+  add('NEWLINE');
+  while(stack.length>1){ stack.pop(); add('DEDENT'); }
+  add('EOF');
+  return T;
+}
+function unescapeStr(s){
+  return s.replace(/\\(u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|.|\n)/g,(m,g)=>{
+    if(g[0]==='u') return String.fromCharCode(parseInt(g.slice(1),16));
+    if(g[0]==='x') return String.fromCharCode(parseInt(g.slice(1),16));
+    return {n:'\n',t:'\t',r:'\r','\\':'\\',"'":"'",'"':'"','0':'\0','\n':''}[g] ?? g;
+  });
+}
+
+/* ------------------------------- parser --------------------------------- */
+function parse(src){
+  const T=tokenize(src);
+  let p=0;
+  const pk=(k=0)=>T[Math.min(p+k,T.length-1)];
+  const at=(t,v)=>{ const x=pk(); return x.t===t && (v===undefined||x.v===v); };
+  const atOp=v=>at('OP',v), atKw=v=>at('KW',v);
+  const next=()=>T[p++];
+  const eat=(t,v)=>{ if(at(t,v)){ return T[p++]; } return null; };
+  const need=(t,v)=>{ if(at(t,v)) return T[p++];
+    throw new SyntaxErr('expected '+(v||t)+', found '+(pk().v??pk().t), pk().line); };
+  const skipNL=()=>{ while(at('NEWLINE')) p++; };
+
+  function block(){
+    need('OP',':');
+    if(at('NEWLINE')){
+      p++; skipNL(); need('INDENT');
+      const body=[];
+      while(!at('DEDENT') && !at('EOF')){ const s=statement(); if(s) body.push(s); skipNL(); }
+      eat('DEDENT');
+      return body;
+    }
+    const body=[]; // inline suite:  if x: y = 1
+    do { const s=simpleStmt(); if(s) body.push(s); } while(eat('OP',';') && !at('NEWLINE'));
+    eat('NEWLINE');
+    return body;
+  }
+
+  function statement(){
+    skipNL();
+    const ln=pk().line;
+    if(atKw('if')) return ifStmt();
+    if(atKw('while')){ p++; const test=expr(); const body=block(); let orelse=[];
+      skipNL(); if(atKw('else')){ p++; orelse=block(); } return {k:'While',test,body,orelse,ln}; }
+    if(atKw('for')){ p++; const tgt=targetList(); need('KW','in'); const iter=exprList(); const body=block();
+      let orelse=[]; skipNL(); if(atKw('else')){ p++; orelse=block(); } return {k:'For',tgt,iter,body,orelse,ln}; }
+    if(atKw('def')){ p++; const name=need('NAME').v; return {k:'Def',name,...params(),body:block(),ln}; }
+    if(atKw('try')) return tryStmt();
+    if(at('NAME') && pk().v==='class') { throw new SyntaxErr('classes are not supported',ln); }
+    const s=simpleStmt();
+    while(eat('OP',';')){ if(at('NEWLINE')) break; const s2=simpleStmt(); if(s2) return {k:'Seq',body:[s,s2],ln}; }
+    eat('NEWLINE');
+    return s;
+  }
+  function ifStmt(){
+    const ln=pk().line; next();
+    const test=expr(), body=block(); let orelse=[];
+    skipNL();
+    if(atKw('elif')) orelse=[ifStmt()];
+    else if(atKw('else')){ p++; orelse=block(); }
+    return {k:'If',test,body,orelse,ln};
+  }
+  function tryStmt(){
+    const ln=pk().line; next();
+    const body=block(); const handlers=[]; let orelse=[],fin=[];
+    skipNL();
+    while(atKw('except')){
+      p++; let type=null,name=null;
+      if(!atOp(':')){ type=expr(); if(atKw('as')){ p++; name=need('NAME').v; } }
+      handlers.push({type,name,body:block()}); skipNL();
+    }
+    if(atKw('else')){ p++; orelse=block(); skipNL(); }
+    if(atKw('finally')){ p++; fin=block(); }
+    return {k:'Try',body,handlers,orelse,fin,ln};
+  }
+  function params(){
+    need('OP','(');
+    const names=[],defs=[]; let star=null;
+    while(!atOp(')')){
+      if(eat('OP','*')){ star=need('NAME').v; }
+      else{
+        names.push(need('NAME').v);
+        if(eat('OP','=')) defs.push(expr()); else if(defs.length) defs.push(null); else defs.push(null);
+      }
+      if(!eat('OP',',')) break;
+    }
+    need('OP',')');
+    if(eat('OP','->')) expr();
+    return {names,defs,star};
+  }
+  function targetList(){
+    const t=[target()];
+    while(eat('OP',',')){ if(atKw('in')) break; t.push(target()); }
+    return t.length===1?t[0]:{k:'Tuple',items:t};
+  }
+  function target(){ return postfix(atom()); }
+
+  function simpleStmt(){
+    const ln=pk().line;
+    if(atKw('pass')){ p++; return {k:'Pass',ln}; }
+    if(atKw('break')){ p++; return {k:'Break',ln}; }
+    if(atKw('continue')){ p++; return {k:'Continue',ln}; }
+    if(atKw('return')){ p++; const v = (at('NEWLINE')||at('EOF')||atOp(';'))?null:exprList(); return {k:'Return',value:v,ln}; }
+    if(atKw('raise')){ p++; const v=(at('NEWLINE')||at('EOF'))?null:expr(); return {k:'Raise',value:v,ln}; }
+    if(atKw('global')||atKw('nonlocal')){ p++; const names=[need('NAME').v];
+      while(eat('OP',',')) names.push(need('NAME').v); return {k:'Global',names,ln}; }
+    if(atKw('del')){ p++; const t=[expr()]; while(eat('OP',',')) t.push(expr()); return {k:'Del',targets:t,ln}; }
+    if(atKw('assert')){ p++; const t=expr(); let m=null; if(eat('OP',',')) m=expr(); return {k:'Assert',test:t,msg:m,ln}; }
+    if(atKw('import')){ while(!at('NEWLINE')&&!at('EOF')) p++; return {k:'Pass',ln}; }
+    if(atKw('from')){ while(!at('NEWLINE')&&!at('EOF')) p++; return {k:'Pass',ln}; }
+    const first=exprList();
+    const aug=['+=','-=','*=','/=','//=','%=','**=','&=','|=','^=','<<=','>>='];
+    for(const a of aug) if(atOp(a)){ p++; const v=exprList(); return {k:'Aug',target:first,op:a.slice(0,-1),value:v,ln}; }
+    if(atOp('=')){
+      const targets=[first];
+      while(eat('OP','=')){ targets.push(exprList()); }
+      const value=targets.pop();
+      return {k:'Assign',targets,value,ln};
+    }
+    return {k:'ExprStmt',value:first,ln};
+  }
+
+  function exprList(){
+    const first=expr();
+    if(!atOp(',')) return first;
+    const items=[first];
+    while(eat('OP',',')){
+      if(at('NEWLINE')||at('EOF')||atOp(')')||atOp(']')||atOp('}')||atOp('=')) break;
+      items.push(expr());
+    }
+    return {k:'Tuple',items};
+  }
+  function expr(){ return ternary(); }
+  function ternary(){
+    const v=orExpr();
+    if(atKw('if')){ p++; const test=orExpr(); need('KW','else'); const other=ternary();
+      return {k:'Cond',test,then:v,other}; }
+    return v;
+  }
+  function orExpr(){ let l=andExpr(); while(atKw('or')){ p++; l={k:'Bool',op:'or',l,r:andExpr()}; } return l; }
+  function andExpr(){ let l=notExpr(); while(atKw('and')){ p++; l={k:'Bool',op:'and',l,r:notExpr()}; } return l; }
+  function notExpr(){ if(atKw('not')){ p++; return {k:'Not',v:notExpr()}; } return comparison(); }
+  function comparison(){
+    let l=arith();
+    const ops=[],rs=[];
+    while(true){
+      let op=null;
+      if(at('OP')&&['<','>','<=','>=','==','!='].includes(pk().v)){ op=pk().v; p++; }
+      else if(atKw('in')){ op='in'; p++; }
+      else if(atKw('not')&&pk(1).t==='KW'&&pk(1).v==='in'){ op='not in'; p+=2; }
+      else if(atKw('is')){ p++; if(atKw('not')){ p++; op='is not'; } else op='is'; }
+      else break;
+      ops.push(op); rs.push(arith());
+    }
+    if(!ops.length) return l;
+    return {k:'Cmp',left:l,ops,rs};
+  }
+  const bin=(sub,list)=>function(){ let l=sub(); while(at('OP')&&list.includes(pk().v)){ const op=next().v; l={k:'Bin',op,l,r:sub()}; } return l; };
+  const bitOr = bin(()=>bitXor(), ['|']);
+  const bitXor = bin(()=>bitAnd(), ['^']);
+  const bitAnd = bin(()=>shift(), ['&']);
+  const shift  = bin(()=>addsub(), ['<<','>>']);
+  const addsub = bin(()=>muldiv(), ['+','-']);
+  const muldiv = bin(()=>unary(), ['*','/','//','%']);
+  function arith(){ return bitOr(); }
+  function unary(){
+    if(atOp('-')){ p++; return {k:'Neg',v:unary()}; }
+    if(atOp('+')){ p++; return unary(); }
+    if(atOp('~')){ p++; return {k:'Inv',v:unary()}; }
+    return power();
+  }
+  function power(){ const b=postfix(atom()); if(atOp('**')){ p++; return {k:'Bin',op:'**',l:b,r:unary()}; } return b; }
+
+  function postfix(node){
+    while(true){
+      if(atOp('(')){
+        p++; const args=[],kw={};
+        while(!atOp(')')){
+          if(at('NAME')&&pk(1).t==='OP'&&pk(1).v==='='&&!(pk(2).t==='OP'&&pk(2).v==='=')){
+            const n=next().v; p++; kw[n]=expr();
+          } else if(atOp('*')){ p++; args.push({k:'Star',v:expr()}); }
+          else args.push(expr());
+          if(!eat('OP',',')) break;
+        }
+        need('OP',')');
+        node={k:'Call',fn:node,args,kw,ln:pk().line};
+      } else if(atOp('[')){
+        p++;
+        let lo=null,hi=null,step=null,isSlice=false;
+        if(!atOp(':')) lo=exprList();
+        if(atOp(':')){ isSlice=true; p++; if(!atOp(']')&&!atOp(':')) hi=expr();
+          if(atOp(':')){ p++; if(!atOp(']')) step=expr(); } }
+        need('OP',']');
+        node = isSlice ? {k:'Slice',obj:node,lo,hi,step} : {k:'Sub',obj:node,idx:lo};
+      } else if(atOp('.')){
+        p++; const name=need('NAME').v; node={k:'Attr',obj:node,name};
+      } else break;
+    }
+    return node;
+  }
+
+  function comprehension(kind,elt,elt2){
+    p++; // 'for'
+    const tgt=targetList(); need('KW','in'); const iter=orExpr();
+    let cond=null; if(atKw('if')){ p++; cond=orExpr(); }
+    return {k:'Comp',kind,elt,elt2,tgt,iter,cond};
+  }
+
+  function atom(){
+    const tk=pk();
+    if(tk.t==='NUM'){ p++; return {k:'Num',v:tk.v}; }
+    if(tk.t==='STR'){ let s=''; while(at('STR')) s+=next().v; return {k:'Str',v:s}; }
+    if(tk.t==='FSTR'){ p++; return fstring(tk.v,tk.line); }
+    if(tk.t==='NAME'){ p++; return {k:'Name',v:tk.v,ln:tk.line}; }
+    if(tk.t==='KW'){
+      if(tk.v==='True'){ p++; return {k:'Const',v:true}; }
+      if(tk.v==='False'){ p++; return {k:'Const',v:false}; }
+      if(tk.v==='None'){ p++; return {k:'Const',v:null}; }
+      if(tk.v==='not'){ return notExpr(); }
+      if(tk.v==='lambda'){ p++; const names=[],defs=[];
+        while(!atOp(':')){ names.push(need('NAME').v); defs.push(eat('OP','=')?expr():null); if(!eat('OP',',')) break; }
+        need('OP',':'); const body=expr();
+        return {k:'Lambda',names,defs,star:null,body}; }
+    }
+    if(atOp('(')){
+      p++;
+      if(atOp(')')){ p++; return {k:'Tuple',items:[]}; }
+      const first=expr();
+      if(atKw('for')){ const c=comprehension('list',first); need('OP',')'); return c; }
+      if(atOp(',')){
+        const items=[first];
+        while(eat('OP',',')){ if(atOp(')')) break; items.push(expr()); }
+        need('OP',')'); return {k:'Tuple',items};
+      }
+      need('OP',')'); return first;
+    }
+    if(atOp('[')){
+      p++;
+      if(atOp(']')){ p++; return {k:'List',items:[]}; }
+      const first=expr();
+      if(atKw('for')){ const c=comprehension('list',first); need('OP',']'); return c; }
+      const items=[first];
+      while(eat('OP',',')){ if(atOp(']')) break; items.push(expr()); }
+      need('OP',']'); return {k:'List',items};
+    }
+    if(atOp('{')){
+      p++;
+      if(atOp('}')){ p++; return {k:'Dict',pairs:[]}; }
+      const first=expr();
+      if(atOp(':')){
+        p++; const v1=expr();
+        if(atKw('for')){ const c=comprehension('dict',first,v1); need('OP','}'); return c; }
+        const pairs=[[first,v1]];
+        while(eat('OP',',')){ if(atOp('}')) break; const k1=expr(); need('OP',':'); pairs.push([k1,expr()]); }
+        need('OP','}'); return {k:'Dict',pairs};
+      }
+      if(atKw('for')){ const c=comprehension('set',first); need('OP','}'); return c; }
+      const items=[first];
+      while(eat('OP',',')){ if(atOp('}')) break; items.push(expr()); }
+      need('OP','}'); return {k:'SetLit',items};
+    }
+    throw new SyntaxErr('unexpected '+(tk.v??tk.t), tk.line);
+  }
+
+  function fstring(raw,line){
+    const parts=[]; let buf='';
+    for(let i=0;i<raw.length;i++){
+      const c=raw[i];
+      if(c==='{'&&raw[i+1]==='{'){ buf+='{'; i++; continue; }
+      if(c==='}'&&raw[i+1]==='}'){ buf+='}'; i++; continue; }
+      if(c==='{'){
+        if(buf){ parts.push({k:'Str',v:unescapeStr(buf)}); buf=''; }
+        let d=1,j=i+1,inner='';
+        while(j<raw.length&&d>0){ if(raw[j]==='{')d++; else if(raw[j]==='}'){d--; if(!d)break;} inner+=raw[j]; j++; }
+        i=j;
+        let spec=null;
+        const cm=/:([^:]*)$/.exec(inner);
+        if(cm && !inner.slice(0,cm.index).includes('[')){ spec=cm[1]; inner=inner.slice(0,cm.index); }
+        if(inner.endsWith('=')){ parts.push({k:'Str',v:inner+' '}); inner=inner.slice(0,-1); }
+        let sub;
+        try{ sub=parse(inner).body[0].value; }
+        catch(e){ throw new SyntaxErr('bad f-string expression: '+inner,line); }
+        parts.push({k:'Fmt',v:sub,spec});
+        continue;
+      }
+      buf+=c;
+    }
+    if(buf) parts.push({k:'Str',v:unescapeStr(buf)});
+    return {k:'JStr',parts};
+  }
+
+  const body=[];
+  skipNL();
+  while(!at('EOF')){ const s=statement(); if(s) body.push(s); skipNL(); }
+  return {k:'Module',body};
+}
+</script><script>
+/* ===================== runtime values & evaluator ======================== */
+class PyDict{
+  constructor(){ this.m=new Map(); }
+  static kk(k){ return (k&&k.__sym) ? 'S:'+k.kind+':'+k.name : (Array.isArray(k)? 'T:'+k.map(PyDict.kk).join('|') : typeof k+':'+k); }
+  get(k,d){ const e=this.m.get(PyDict.kk(k)); return e?e[1]:d; }
+  has(k){ return this.m.has(PyDict.kk(k)); }
+  set(k,v){ this.m.set(PyDict.kk(k),[k,v]); }
+  del(k){ return this.m.delete(PyDict.kk(k)); }
+  get size(){ return this.m.size; }
+  keys(){ return [...this.m.values()].map(e=>e[0]); }
+  values(){ return [...this.m.values()].map(e=>e[1]); }
+  entries(){ return [...this.m.values()].map(e=>tup([e[0],e[1]])); }
+}
+class PySet{
+  constructor(items){ this.m=new Map(); if(items) for(const it of items) this.add(it); }
+  add(v){ this.m.set(PyDict.kk(v),v); }
+  has(v){ return this.m.has(PyDict.kk(v)); }
+  del(v){ return this.m.delete(PyDict.kk(v)); }
+  get size(){ return this.m.size; }
+  items(){ return [...this.m.values()]; }
+}
+class PyRange{
+  constructor(a,b,s){ this.start=a; this.stop=b; this.step=s;
+    this.length=Math.max(0,Math.ceil((b-a)/s)); }
+  at(i){ return this.start+this.step*i; }
+  *[Symbol.iterator](){ for(let i=0;i<this.length;i++) yield this.start+this.step*i; }
+}
+class PyFunc{
+  constructor(name,names,defs,star,body,scope,isLambda){
+    Object.assign(this,{name,names,defs,star,body,scope,isLambda}); }
+}
+class Scope{
+  constructor(parent,globals){ this.v=new Map(); this.parent=parent||null;
+    this.g=globals||(parent?parent.g:this.v); this.decl=null; }
+  lookup(n){
+    let s=this;
+    while(s){ if(s.v.has(n)) return s.v; s=s.parent; }
+    if(this.g.has(n)) return this.g;
+    return null;
+  }
+  get(n){ const m=this.lookup(n); if(!m) err('NameError',"name '"+n+"' is not defined"); return m.get(n); }
+  set(n,val){ if(this.decl&&this.decl.has(n)) this.g.set(n,val); else this.v.set(n,val); }
+}
+const tup=a=>{ a.tup=true; return a; };
+const nat=(name,fn,gen)=>({__nat:true,name,fn,gen:!!gen});
+const sym=(kind,name,data)=>Object.assign({__sym:true,kind,name},data||{});
+const ns=(name,props)=>({__ns:true,name,props});
+
+let RT = null;
+class Ret{ constructor(v){ this.v=v; } }
+const BRK={__brk:1}, CNT={__cnt:1};
+
+function truthy(v){
+  if(v===null||v===false||v===undefined) return false;
+  if(v===true) return true;
+  if(typeof v==='number') return v!==0;
+  if(typeof v==='string') return v.length>0;
+  if(Array.isArray(v)) return v.length>0;
+  if(v instanceof PyDict||v instanceof PySet) return v.size>0;
+  if(v instanceof PyRange) return v.length>0;
+  return true;
+}
+function typeName(v){
+  if(v===null||v===undefined) return 'NoneType';
+  if(typeof v==='boolean') return 'bool';
+  if(typeof v==='number') return Number.isInteger(v)?'int':'float';
+  if(typeof v==='string') return 'str';
+  if(Array.isArray(v)) return v.tup?'tuple':'list';
+  if(v instanceof PyDict) return 'dict';
+  if(v instanceof PySet) return 'set';
+  if(v instanceof PyRange) return 'range';
+  if(v instanceof PyFunc||(v&&v.__nat)) return 'function';
+  if(v&&v.__sym) return v.kind;
+  if(v&&v.__ns) return 'namespace';
+  return 'object';
+}
+function fmtNum(n){
+  if(Number.isNaN(n)) return 'nan';
+  if(!isFinite(n)) return n>0?'inf':'-inf';
+  if(Number.isInteger(n)) return String(n);
+  if(Math.abs(n)>=1e16||(Math.abs(n)<1e-4&&n!==0)) return String(n);
+  return String(parseFloat(n.toFixed(10)));
+}
+function pyStr(v){
+  if(v===null||v===undefined) return 'None';
+  if(v===true) return 'True';
+  if(v===false) return 'False';
+  if(typeof v==='number') return fmtNum(v);
+  if(typeof v==='string') return v;
+  if(Array.isArray(v)) return v.tup ? '('+v.map(pyRepr).join(', ')+(v.length===1?',':'')+')' : '['+v.map(pyRepr).join(', ')+']';
+  if(v instanceof PyDict) return '{'+[...v.m.values()].map(e=>pyRepr(e[0])+': '+pyRepr(e[1])).join(', ')+'}';
+  if(v instanceof PySet) return v.size?'{'+v.items().map(pyRepr).join(', ')+'}':'set()';
+  if(v instanceof PyRange) return 'range('+v.start+', '+v.stop+(v.step!==1?', '+v.step:'')+')';
+  if(v instanceof PyFunc) return '<function '+v.name+'>';
+  if(v&&v.__nat) return '<built-in function '+v.name+'>';
+  if(v&&v.__sym) return v.kind+'.'+v.name;
+  if(v&&v.__ns) return '<'+v.name+'>';
+  return String(v);
+}
+function pyRepr(v){
+  if(typeof v!=='string') return pyStr(v);
+  return "'"+v.split('\\').join('\\\\').split("'").join("\\'").split('\n').join('\\n')+"'";
+}
+function pyEq(a,b){
+  if(a===b) return true;
+  if(a===null||a===undefined||b===null||b===undefined) return (a??null)===(b??null);
+  if(typeof a==='boolean'&&typeof b==='number') return (a?1:0)===b;
+  if(typeof b==='boolean'&&typeof a==='number') return (b?1:0)===a;
+  if(Array.isArray(a)&&Array.isArray(b)) return a.length===b.length&&a.every((x,i)=>pyEq(x,b[i]));
+  if(a&&b&&a.__sym&&b.__sym) return a.kind===b.kind&&a.name===b.name;
+  if(a instanceof PyDict&&b instanceof PyDict){
+    if(a.size!==b.size) return false;
+    for(const [k,e] of a.m){ if(!b.m.has(k)||!pyEq(e[1],b.m.get(k)[1])) return false; }
+    return true;
+  }
+  if(a instanceof PySet&&b instanceof PySet){
+    if(a.size!==b.size) return false;
+    for(const k of a.m.keys()) if(!b.m.has(k)) return false;
+    return true;
+  }
+  return false;
+}
+function cmpVals(a,b){
+  if(typeof a==='boolean') a=a?1:0;
+  if(typeof b==='boolean') b=b?1:0;
+  if(typeof a==='number'&&typeof b==='number') return a<b?-1:a>b?1:0;
+  if(typeof a==='string'&&typeof b==='string') return a<b?-1:a>b?1:0;
+  if(Array.isArray(a)&&Array.isArray(b)){
+    const n=Math.min(a.length,b.length);
+    for(let i=0;i<n;i++){ const c=cmpVals(a[i],b[i]); if(c) return c; }
+    return a.length-b.length;
+  }
+  if(a&&b&&a.__sym&&b.__sym) return a.name<b.name?-1:a.name>b.name?1:0;
+  err('TypeError',"'<' not supported between '"+typeName(a)+"' and '"+typeName(b)+"'");
+}
+function pyLen(v){
+  if(typeof v==='string'||Array.isArray(v)) return v.length;
+  if(v instanceof PyDict||v instanceof PySet) return v.size;
+  if(v instanceof PyRange) return v.length;
+  err('TypeError',"object of type '"+typeName(v)+"' has no len()");
+}
+function toList(v){
+  if(Array.isArray(v)) return v.slice();
+  if(typeof v==='string') return v.split('');
+  if(v instanceof PyRange) return [...v];
+  if(v instanceof PyDict) return v.keys();
+  if(v instanceof PySet) return v.items();
+  err('TypeError',"'"+typeName(v)+"' object is not iterable");
+}
+function contains(box,item){
+  if(typeof box==='string') return typeof item==='string' && box.includes(item);
+  if(Array.isArray(box)) return box.some(x=>pyEq(x,item));
+  if(box instanceof PyDict) return box.has(item);
+  if(box instanceof PySet) return box.has(item);
+  if(box instanceof PyRange){
+    if(typeof item!=='number') return false;
+    const d=(item-box.start)/box.step;
+    return Number.isInteger(d)&&d>=0&&d<box.length;
+  }
+  err('TypeError',"argument of type '"+typeName(box)+"' is not iterable");
+}
+function numOf(v,op){
+  if(typeof v==='number') return v;
+  if(typeof v==='boolean') return v?1:0;
+  err('TypeError',"unsupported operand type for "+op+": '"+typeName(v)+"'");
+}
+function binop(op,a,b){
+  if(op==='+'){
+    if(typeof a==='string'||typeof b==='string'){
+      if(typeof a!=='string'||typeof b!=='string')
+        err('TypeError','can only concatenate str to str');
+      return a+b;
+    }
+    if(Array.isArray(a)&&Array.isArray(b)) return a.concat(b);
+    return numOf(a,'+')+numOf(b,'+');
+  }
+  if(op==='*'){
+    if(typeof a==='string'&&typeof b==='number') return b>0?a.repeat(Math.floor(b)):'';
+    if(typeof b==='string'&&typeof a==='number') return a>0?b.repeat(Math.floor(a)):'';
+    if(Array.isArray(a)&&typeof b==='number'){ let r=[]; for(let i=0;i<Math.floor(b);i++) r=r.concat(a); return r; }
+    if(Array.isArray(b)&&typeof a==='number'){ let r=[]; for(let i=0;i<Math.floor(a);i++) r=r.concat(b); return r; }
+    return numOf(a,'*')*numOf(b,'*');
+  }
+  const x=numOf(a,op), y=numOf(b,op);
+  switch(op){
+    case '-': return x-y;
+    case '/': if(y===0) err('ZeroDivisionError','division by zero'); return x/y;
+    case '//': if(y===0) err('ZeroDivisionError','division by zero'); return Math.floor(x/y);
+    case '%': if(y===0) err('ZeroDivisionError','division by zero'); return x-Math.floor(x/y)*y;
+    case '**': return Math.pow(x,y);
+    case '&': return x&y;
+    case '|': return x|y;
+    case '^': return x^y;
+    case '<<': return x<<y;
+    case '>>': return x>>y;
+  }
+  err('TypeError','unsupported operator '+op);
+}
+function normIdx(i,len,name){
+  let k=Math.trunc(numOf(i,'index'));
+  if(k<0) k+=len;
+  if(k<0||k>=len) err('IndexError',(name||'list')+' index out of range');
+  return k;
+}
+function getItem(obj,idx){
+  if(Array.isArray(obj)) return obj[normIdx(idx,obj.length,typeName(obj))];
+  if(typeof obj==='string') return obj[normIdx(idx,obj.length,'string')];
+  if(obj instanceof PyRange) return obj.at(normIdx(idx,obj.length,'range'));
+  if(obj instanceof PyDict){ if(!obj.has(idx)) err('KeyError',pyRepr(idx)); return obj.get(idx); }
+  err('TypeError',"'"+typeName(obj)+"' object is not subscriptable");
+}
+function setItem(obj,idx,val){
+  if(Array.isArray(obj)){ obj[normIdx(idx,obj.length,'list')]=val; return; }
+  if(obj instanceof PyDict){ obj.set(idx,val); return; }
+  err('TypeError',"'"+typeName(obj)+"' object does not support item assignment");
+}
+function doSlice(obj,lo,hi,step){
+  const isStr = typeof obj==='string';
+  const arr = isStr ? obj.split('') : (Array.isArray(obj)?obj:toList(obj));
+  const n=arr.length;
+  const st = (step===null||step===undefined) ? 1 : Math.trunc(numOf(step,'slice'));
+  if(st===0) err('ValueError','slice step cannot be zero');
+  let a = (lo===null||lo===undefined) ? (st>0?0:n-1) : Math.trunc(numOf(lo,'slice'));
+  let b = (hi===null||hi===undefined) ? (st>0?n:-1) : Math.trunc(numOf(hi,'slice'));
+  if(a<0) a+=n;
+  if(b<0 && !(hi===null||hi===undefined)) b+=n;
+  const out=[];
+  if(st>0){ a=Math.max(0,a); b=Math.min(n,b); for(let i=a;i<b;i+=st) out.push(arr[i]); }
+  else { a=Math.min(n-1,a); for(let i=a;i>b;i+=st) if(i>=0) out.push(arr[i]); }
+  return isStr ? out.join('') : out;
+}
+</script><script>
+/* ---------------------------- attributes -------------------------------- */
+const bnd=(name,fn)=>({__nat:true,name,fn,gen:false});
+const bndg=(name,fn)=>({__nat:true,name,fn,gen:true});
+const arg=(a,i,d)=>(a.length>i?a[i]:d);
+
+function strMethods(s,name){
+  const M={
+    upper:()=>s.toUpperCase(), lower:()=>s.toLowerCase(),
+    strip:a=>a.length?trimSet(s,a[0],3):s.trim(),
+    lstrip:a=>a.length?trimSet(s,a[0],1):s.replace(/^\s+/,''),
+    rstrip:a=>a.length?trimSet(s,a[0],2):s.replace(/\s+$/,''),
+    split:a=>{ const sep=arg(a,0,null);
+      if(sep===null||sep===undefined) return s.split(/\s+/).filter(x=>x.length);
+      return s.split(sep); },
+    join:a=>toList(a[0]).map(x=>{ if(typeof x!=='string') err('TypeError','sequence item is not str'); return x; }).join(s),
+    replace:a=>s.split(a[0]).join(a[1]),
+    startswith:a=>s.startsWith(a[0]), endswith:a=>s.endsWith(a[0]),
+    find:a=>s.indexOf(a[0]),
+    index:a=>{ const i=s.indexOf(a[0]); if(i<0) err('ValueError','substring not found'); return i; },
+    count:a=>a[0]===''?s.length+1:s.split(a[0]).length-1,
+    isdigit:()=>/^[0-9]+$/.test(s), isalpha:()=>/^[A-Za-z]+$/.test(s),
+    isspace:()=>/^\s+$/.test(s), isupper:()=>s===s.toUpperCase()&&/[A-Za-z]/.test(s),
+    islower:()=>s===s.toLowerCase()&&/[A-Za-z]/.test(s),
+    title:()=>s.replace(/\w\S*/g,t=>t[0].toUpperCase()+t.slice(1).toLowerCase()),
+    capitalize:()=>s.charAt(0).toUpperCase()+s.slice(1).toLowerCase(),
+    zfill:a=>s.padStart(a[0],'0'),
+    ljust:a=>s.padEnd(a[0],arg(a,1,' ')), rjust:a=>s.padStart(a[0],arg(a,1,' ')),
+    format:a=>{ let i=0; return s.replace(/\{([^}]*)\}/g,(m,g)=>{
+      if(g==='') return pyStr(a[i++]);
+      if(/^\d+$/.test(g)) return pyStr(a[+g]);
+      return m; }); }
+  };
+  return M[name] ? bnd(name,M[name]) : undefined;
+}
+function trimSet(s,chars,mode){
+  let a=0,b=s.length;
+  if(mode&1) while(a<b&&chars.includes(s[a])) a++;
+  if(mode&2) while(b>a&&chars.includes(s[b-1])) b--;
+  return s.slice(a,b);
+}
+function listMethods(L,name){
+  const M={
+    append:a=>{ L.push(arg(a,0,null)); return null; },
+    extend:a=>{ for(const x of toList(a[0])) L.push(x); return null; },
+    insert:a=>{ let i=Math.trunc(numOf(a[0],'insert')); if(i<0) i=Math.max(0,L.length+i); L.splice(Math.min(i,L.length),0,a[1]); return null; },
+    pop:a=>{ if(!L.length) err('IndexError','pop from empty list');
+      const i=a.length?normIdx(a[0],L.length,'pop'):L.length-1; return L.splice(i,1)[0]; },
+    remove:a=>{ const i=L.findIndex(x=>pyEq(x,a[0])); if(i<0) err('ValueError','list.remove(x): x not in list'); L.splice(i,1); return null; },
+    index:a=>{ const i=L.findIndex(x=>pyEq(x,a[0])); if(i<0) err('ValueError',pyRepr(a[0])+' is not in list'); return i; },
+    count:a=>L.filter(x=>pyEq(x,a[0])).length,
+    reverse:()=>{ L.reverse(); return null; },
+    clear:()=>{ L.length=0; return null; },
+    copy:()=>L.slice()
+  };
+  if(name==='sort') return bndg('sort',function*(a,kw){
+    const arr=yield* sortArr(L,kw); L.length=0; for(const x of arr) L.push(x); return null; });
+  return M[name] ? bnd(name,M[name]) : undefined;
+}
+function* sortArr(items,kw){
+  const key=kw&&kw.key ? kw.key : null;
+  const rev=kw&&kw.reverse ? truthy(kw.reverse) : false;
+  const arr=items.slice();
+  let deco;
+  if(key){ deco=[]; for(const x of arr) deco.push([yield* callValue(key,[x],{}),x]); }
+  else deco=arr.map(x=>[x,x]);
+  deco.sort((p,q)=>cmpVals(p[0],q[0]));
+  if(rev) deco.reverse();
+  return deco.map(p=>p[1]);
+}
+function dictMethods(D,name){
+  const M={
+    keys:()=>D.keys(), values:()=>D.values(), items:()=>D.entries(),
+    get:a=>D.has(a[0])?D.get(a[0]):arg(a,1,null),
+    pop:a=>{ if(!D.has(a[0])){ if(a.length>1) return a[1]; err('KeyError',pyRepr(a[0])); }
+      const v=D.get(a[0]); D.del(a[0]); return v; },
+    setdefault:a=>{ if(!D.has(a[0])) D.set(a[0],arg(a,1,null)); return D.get(a[0]); },
+    update:a=>{ const o=a[0];
+      if(o instanceof PyDict) for(const e of o.m.values()) D.set(e[0],e[1]);
+      else for(const pair of toList(o)) D.set(pair[0],pair[1]);
+      return null; },
+    clear:()=>{ D.m.clear(); return null; },
+    copy:()=>{ const d=new PyDict(); for(const e of D.m.values()) d.set(e[0],e[1]); return d; }
+  };
+  return M[name] ? bnd(name,M[name]) : undefined;
+}
+function setMethods(S,name){
+  const M={
+    add:a=>{ S.add(a[0]); return null; },
+    discard:a=>{ S.del(a[0]); return null; },
+    remove:a=>{ if(!S.del(a[0])) err('KeyError',pyRepr(a[0])); return null; },
+    clear:()=>{ S.m.clear(); return null; },
+    copy:()=>new PySet(S.items()),
+    union:a=>new PySet(S.items().concat(toList(a[0]))),
+    intersection:a=>{ const o=new PySet(toList(a[0])); return new PySet(S.items().filter(x=>o.has(x))); },
+    difference:a=>{ const o=new PySet(toList(a[0])); return new PySet(S.items().filter(x=>!o.has(x))); }
+  };
+  return M[name] ? bnd(name,M[name]) : undefined;
+}
+function getAttr(obj,name){
+  if(obj&&obj.__ns){
+    if(!(name in obj.props)) err('AttributeError',obj.name+' has no attribute '+name);
+    return obj.props[name];
+  }
+  if(typeof obj==='string'){ const m=strMethods(obj,name); if(m) return m; }
+  if(Array.isArray(obj)){ const m=listMethods(obj,name); if(m) return m; }
+  if(obj instanceof PyDict){ const m=dictMethods(obj,name); if(m) return m; }
+  if(obj instanceof PySet){ const m=setMethods(obj,name); if(m) return m; }
+  if(obj&&obj.__sym&&(name in obj)) return obj[name];
+  err('AttributeError',"'"+typeName(obj)+"' object has no attribute '"+name+"'");
+}
+
+/* ----------------------------- evaluator -------------------------------- */
+function* callValue(fn,args,kw,ln){
+  if(fn&&fn.__nat){
+    if(fn.gen) return yield* fn.fn(args,kw||{});
+    return fn.fn(args,kw||{});
+  }
+  if(fn instanceof PyFunc){
+    if(RT.depth>=180) err('RecursionError','maximum recursion depth exceeded');
+    const sc=new Scope(fn.scope,fn.scope.g);
+    const n=fn.names.length;
+    for(let i=0;i<n;i++){
+      const nm=fn.names[i];
+      if(kw&&Object.prototype.hasOwnProperty.call(kw,nm)) sc.v.set(nm,kw[nm]);
+      else if(i<args.length) sc.v.set(nm,args[i]);
+      else if(fn.defs[i]!==null&&fn.defs[i]!==undefined) sc.v.set(nm, yield* ev(fn.defs[i],fn.scope));
+      else err('TypeError',fn.name+"() missing required argument: '"+nm+"'");
+    }
+    if(fn.star) sc.v.set(fn.star,tup(args.slice(n)));
+    else if(args.length>n) err('TypeError',fn.name+'() takes '+n+' arguments but '+args.length+' were given');
+    RT.depth++;
+    try{
+      if(fn.isLambda) return yield* ev(fn.body,sc);
+      yield* execBlock(fn.body,sc);
+      return null;
+    }catch(e){
+      if(e instanceof Ret) return e.v;
+      throw e;
+    }finally{ RT.depth--; }
+  }
+  err('TypeError',"'"+typeName(fn)+"' object is not callable");
+}
+
+function* evalArgs(node,sc){
+  const args=[];
+  for(const a of node.args){
+    if(a.k==='Star'){ for(const x of toList(yield* ev(a.v,sc))) args.push(x); }
+    else args.push(yield* ev(a,sc));
+  }
+  const kw={};
+  for(const k in node.kw) kw[k]=yield* ev(node.kw[k],sc);
+  return [args,kw];
+}
+
+function* assign(target,val,sc){
+  switch(target.k){
+    case 'Name': sc.set(target.v,val); return;
+    case 'Tuple': case 'List': {
+      const items=toList(val);
+      const star=target.items.findIndex(t=>t.k==='Star');
+      if(star<0){
+        if(items.length!==target.items.length)
+          err('ValueError','expected '+target.items.length+' values to unpack, got '+items.length);
+        for(let i=0;i<items.length;i++) yield* assign(target.items[i],items[i],sc);
+      }else{
+        const before=star, after=target.items.length-star-1;
+        for(let i=0;i<before;i++) yield* assign(target.items[i],items[i],sc);
+        yield* assign(target.items[star].v,items.slice(before,items.length-after),sc);
+        for(let i=0;i<after;i++) yield* assign(target.items[star+1+i],items[items.length-after+i],sc);
+      }
+      return;
+    }
+    case 'Sub': setItem(yield* ev(target.obj,sc), yield* ev(target.idx,sc), val); return;
+    case 'Slice': {
+      const obj=yield* ev(target.obj,sc);
+      if(!Array.isArray(obj)) err('TypeError','slice assignment needs a list');
+      const lo=target.lo?yield* ev(target.lo,sc):null;
+      const hi=target.hi?yield* ev(target.hi,sc):null;
+      let a=lo===null?0:Math.trunc(lo), b=hi===null?obj.length:Math.trunc(hi);
+      if(a<0)a+=obj.length; if(b<0)b+=obj.length;
+      obj.splice(a,Math.max(0,b-a),...toList(val));
+      return;
+    }
+    case 'Attr': err('TypeError','cannot assign to attribute');
+    default: err('SyntaxError','cannot assign to this expression');
+  }
+}
+
+function* execBlock(stmts,sc){
+  for(let i=0;i<stmts.length;i++) yield* execStmt(stmts[i],sc);
+}
+
+function* execStmt(st,sc){
+  RT.line=st.ln||RT.line;
+  switch(st.k){
+    case 'ExprStmt': { const v=yield* ev(st.value,sc); RT.last=v; return; }
+    case 'Assign': { const v=yield* ev(st.value,sc);
+      for(const t of st.targets) yield* assign(t,v,sc); return; }
+    case 'Aug': {
+      const cur=yield* ev(st.target,sc);
+      const rhs=yield* ev(st.value,sc);
+      yield* assign(st.target, binop(st.op,cur,rhs), sc);
+      return;
+    }
+    case 'If': {
+      if(truthy(yield* ev(st.test,sc))) yield* execBlock(st.body,sc);
+      else yield* execBlock(st.orelse,sc);
+      return;
+    }
+    case 'While': {
+      let broke=false;
+      while(truthy(yield* ev(st.test,sc))){
+        yield 0;
+        try{ yield* execBlock(st.body,sc); }
+        catch(e){ if(e===BRK){ broke=true; break; } if(e!==CNT) throw e; }
+      }
+      if(!broke) yield* execBlock(st.orelse,sc);
+      return;
+    }
+    case 'For': {
+      const it=yield* ev(st.iter,sc);
+      let broke=false;
+      const seq = it instanceof PyRange ? it : toList(it);
+      for(const item of seq){
+        yield 0;
+        yield* assign(st.tgt,item,sc);
+        try{ yield* execBlock(st.body,sc); }
+        catch(e){ if(e===BRK){ broke=true; break; } if(e!==CNT) throw e; }
+      }
+      if(!broke) yield* execBlock(st.orelse,sc);
+      return;
+    }
+    case 'Def': sc.set(st.name,new PyFunc(st.name,st.names,st.defs,st.star,st.body,sc,false)); return;
+    case 'Return': throw new Ret(st.value?yield* ev(st.value,sc):null);
+    case 'Break': throw BRK;
+    case 'Continue': throw CNT;
+    case 'Pass': return;
+    case 'Seq': yield* execBlock(st.body,sc); return;
+    case 'Global': { if(!sc.decl) sc.decl=new Set(); for(const n of st.names) sc.decl.add(n); return; }
+    case 'Del': {
+      for(const t of st.targets){
+        if(t.k==='Name'){ const m=sc.lookup(t.v); if(m) m.delete(t.v); }
+        else if(t.k==='Sub'){
+          const o=yield* ev(t.obj,sc), i=yield* ev(t.idx,sc);
+          if(o instanceof PyDict){ if(!o.del(i)) err('KeyError',pyRepr(i)); }
+          else if(Array.isArray(o)) o.splice(normIdx(i,o.length,'list'),1);
+        }
+      }
+      return;
+    }
+    case 'Assert': {
+      if(!truthy(yield* ev(st.test,sc)))
+        err('AssertionError', st.msg? pyStr(yield* ev(st.msg,sc)) : '');
+      return;
+    }
+    case 'Raise': {
+      if(!st.value) err('RuntimeError','exception raised');
+      const v=yield* ev(st.value,sc);
+      if(v instanceof PyEx) throw v;
+      if(v&&v.__exType) throw new PyEx(v.name, '');
+      throw new PyEx('Exception',pyStr(v));
+    }
+    case 'Try': {
+      let caught=false;
+      try{ yield* execBlock(st.body,sc); }
+      catch(e){
+        if(e instanceof Ret||e===BRK||e===CNT||e&&e.__halt){ if(st.fin.length) yield* execBlock(st.fin,sc); throw e; }
+        const ex = e instanceof PyEx ? e : new PyEx('RuntimeError', e&&e.message?e.message:String(e));
+        caught=true;
+        let handled=false;
+        for(const h of st.handlers){
+          let match=true;
+          if(h.type){
+            const t=yield* ev(h.type,sc);
+            const nm = t&&t.__exType ? t.name : pyStr(t);
+            match = (nm===ex.type)||nm==='Exception';
+          }
+          if(match){
+            if(h.name) sc.set(h.name, ex);
+            yield* execBlock(h.body,sc); handled=true; break;
+          }
+        }
+        if(!handled){ if(st.fin.length) yield* execBlock(st.fin,sc); throw ex; }
+      }
+      if(!caught) yield* execBlock(st.orelse,sc);
+      if(st.fin.length) yield* execBlock(st.fin,sc);
+      return;
+    }
+    default: err('SyntaxError','unknown statement '+st.k);
+  }
+}
+
+function* ev(n,sc){
+  switch(n.k){
+    case 'Num': case 'Str': case 'Const': return n.v;
+    case 'Name': return sc.get(n.v);
+    case 'JStr': {
+      let s='';
+      for(const p of n.parts){
+        if(p.k==='Str') s+=p.v;
+        else{
+          const v=yield* ev(p.v,sc);
+          s += p.spec ? formatSpec(v,p.spec) : pyStr(v);
+        }
+      }
+      return s;
+    }
+    case 'List': { const a=[]; for(const it of n.items) a.push(yield* ev(it,sc)); return a; }
+    case 'Tuple': { const a=[]; for(const it of n.items) a.push(yield* ev(it,sc)); return tup(a); }
+    case 'SetLit': { const s=new PySet(); for(const it of n.items) s.add(yield* ev(it,sc)); return s; }
+    case 'Dict': { const d=new PyDict();
+      for(const [k,v] of n.pairs) d.set(yield* ev(k,sc), yield* ev(v,sc)); return d; }
+    case 'Comp': {
+      const seq=toList(yield* ev(n.iter,sc));
+      const inner=new Scope(sc,sc.g);
+      const out = n.kind==='dict'?new PyDict():(n.kind==='set'?new PySet():[]);
+      for(const item of seq){
+        yield 0;
+        yield* assign(n.tgt,item,inner);
+        if(n.cond && !truthy(yield* ev(n.cond,inner))) continue;
+        if(n.kind==='dict') out.set(yield* ev(n.elt,inner), yield* ev(n.elt2,inner));
+        else if(n.kind==='set') out.add(yield* ev(n.elt,inner));
+        else out.push(yield* ev(n.elt,inner));
+      }
+      return out;
+    }
+    case 'Bin': return binop(n.op, yield* ev(n.l,sc), yield* ev(n.r,sc));
+    case 'Neg': return -numOf(yield* ev(n.v,sc),'-');
+    case 'Inv': return ~numOf(yield* ev(n.v,sc),'~');
+    case 'Not': return !truthy(yield* ev(n.v,sc));
+    case 'Bool': {
+      const l=yield* ev(n.l,sc);
+      if(n.op==='and') return truthy(l) ? yield* ev(n.r,sc) : l;
+      return truthy(l) ? l : yield* ev(n.r,sc);
+    }
+    case 'Cmp': {
+      let left=yield* ev(n.left,sc);
+      for(let i=0;i<n.ops.length;i++){
+        const right=yield* ev(n.rs[i],sc);
+        let r;
+        switch(n.ops[i]){
+          case '==': r=pyEq(left,right); break;
+          case '!=': r=!pyEq(left,right); break;
+          case '<': r=cmpVals(left,right)<0; break;
+          case '>': r=cmpVals(left,right)>0; break;
+          case '<=': r=cmpVals(left,right)<=0; break;
+          case '>=': r=cmpVals(left,right)>=0; break;
+          case 'in': r=contains(right,left); break;
+          case 'not in': r=!contains(right,left); break;
+          case 'is': r=(left===right)||pyEq(left,right)&&(left===null||typeof left!=='object'); break;
+          case 'is not': r=!((left===right)||pyEq(left,right)&&(left===null||typeof left!=='object')); break;
+        }
+        if(!r) return false;
+        left=right;
+      }
+      return true;
+    }
+    case 'Cond': return truthy(yield* ev(n.test,sc)) ? yield* ev(n.then,sc) : yield* ev(n.other,sc);
+    case 'Call': {
+      const fn=yield* ev(n.fn,sc);
+      const [args,kw]=yield* evalArgs(n,sc);
+      yield 0;
+      return yield* callValue(fn,args,kw,n.ln);
+    }
+    case 'Attr': return getAttr(yield* ev(n.obj,sc), n.name);
+    case 'Sub': return getItem(yield* ev(n.obj,sc), yield* ev(n.idx,sc));
+    case 'Slice': return doSlice(yield* ev(n.obj,sc),
+      n.lo?yield* ev(n.lo,sc):null, n.hi?yield* ev(n.hi,sc):null, n.step?yield* ev(n.step,sc):null);
+    case 'Lambda': return new PyFunc('<lambda>',n.names,n.defs,null,n.body,sc,true);
+    case 'Star': return yield* ev(n.v,sc);
+    default: err('SyntaxError','cannot evaluate '+n.k);
+  }
+}
+function formatSpec(v,spec){
+  const m=/^([<>^]?)(\d*)(?:\.(\d+))?([dfsx%,]?)$/.exec(spec||'');
+  if(!m) return pyStr(v);
+  const [,align,width,prec,type]=m;
+  let s;
+  if(type==='f'||prec) s=Number(numOf(v,'format')).toFixed(prec?+prec:6);
+  else if(type==='d') s=String(Math.trunc(numOf(v,'format')));
+  else if(type==='x') s=Math.trunc(numOf(v,'format')).toString(16);
+  else if(type==='%') s=(numOf(v,'format')*100).toFixed(prec?+prec:2)+'%';
+  else if(type===',') s=Math.trunc(numOf(v,'format')).toLocaleString('en-US');
+  else s=pyStr(v);
+  const w=width?+width:0;
+  if(s.length>=w) return s;
+  if(align==='>') return s.padStart(w);
+  if(align==='^'){ const l=Math.floor((w-s.length)/2); return ' '.repeat(l)+s+' '.repeat(w-s.length-l); }
+  return align==='<' ? s.padEnd(w) : (typeof v==='number'&&!align ? s.padStart(w) : s.padEnd(w));
+}
+</script><script>
+/* ========================= game world & drone API ======================== */
+const NORTH=0,EAST=1,SOUTH=2,WEST=3;
+const DV=[{x:0,y:1},{x:1,y:0},{x:0,y:-1},{x:-1,y:0}];
+
+const ITEMS=['Hay','Wood','Carrot','Pumpkin','Power','Cactus','Bone','Apple','Gold','Water','Fertilizer'];
+const ITEM_COLOR={Hay:'#DCB84E',Wood:'#96633A',Carrot:'#E77B2C',Pumpkin:'#E89430',
+  Power:'#5CC3D6',Cactus:'#63A85C',Bone:'#E4DAC6',Apple:'#D9483F',Gold:'#F5CE58',
+  Water:'#4A9CC0',Fertilizer:'#A98BE0'};
+const TRADE_VALUE={Hay:1,Wood:2,Carrot:6,Apple:9,Pumpkin:15,Power:25,Cactus:30,Bone:60};
+
+const ENT=['Grass','Bush','Tree','Carrot','Pumpkin','Sunflower','Cactus','Dinosaur','Apple','Hedge','Treasure'];
+const SPEC={
+  Grass:     {ground:'Grassland', grow:3,  need:'plant',     comp:1},
+  Bush:      {ground:'Grassland', grow:9,  need:'bush',      comp:1},
+  Tree:      {ground:'Grassland', grow:26, need:'tree',      comp:1},
+  Carrot:    {ground:'Soil',      grow:14, need:'carrot',    comp:1},
+  Pumpkin:   {ground:'Soil',      grow:20, need:'pumpkin',   comp:1},
+  Sunflower: {ground:'Soil',      grow:22, need:'sunflower', comp:1},
+  Cactus:    {ground:'Soil',      grow:16, need:'cactus'},
+  Dinosaur:  {ground:'Soil',      grow:0,  need:'dino'},
+  Apple:     {ground:'any',       grow:0,  need:'apples'},
+  Hedge:     {ground:'Grassland', grow:0,  need:'maze'},
+  Treasure:  {ground:'Grassland', grow:0,  need:'maze'}
+};
+const PLANTABLE=['Grass','Bush','Tree','Carrot','Pumpkin','Sunflower','Cactus'];
+const FEED_ITEMS=['Hay','Wood','Carrot','Pumpkin','Apple'];
+const APPLE_ROT=70, APPLE_EVERY=30;
+
+const Items    = ns('Items',    Object.fromEntries(ITEMS.map(n=>[n,sym('Items',n)])));
+const Entities = ns('Entities', Object.fromEntries(ENT.map(n=>[n,sym('Entities',n)])));
+const Grounds  = ns('Grounds',  {Grassland:sym('Grounds','Grassland'),Soil:sym('Grounds','Soil')});
+const Unlocks  = ns('Unlocks',  {});
+
+const SIZES=[1,2,3,4,5,6,8,10,12,14,16,20,24];
+const TPS=[4,6,9,13,19,27,38,55,80,115,165,240,350,500,720];
+const TANK=[8,16,32,64,128,260];
+
+const state = {
+  items:Object.fromEntries(ITEMS.map(i=>[i,0])),
+  unlocked:{}, expand:0, speed:0, speedPref:0, tankLvl:0, bay:0,
+  tank:8, credit:0, treasures:0, wanted:'Hay', wantedAt:0
+};
+const world = { size:1, tiles:[], time:0, maze:false, drones:[], fx:[] };
+let CUR=null;
+
+function mkDrone(id,x,y){
+  return {id,x:x||0,y:y||0,dir:NORTH,vx:x||0,vy:y||0,flip:0,bump:0,t:0,prog:null,busy:0};
+}
+function newTile(){ return {g:'Grassland',e:'Grass',age:Math.random()*SPEC.Grass.grow,water:0,d:null}; }
+function buildWorld(size,keep){
+  const old=world.tiles, os=world.size;
+  world.size=size;
+  world.tiles=new Array(size*size);
+  for(let y=0;y<size;y++) for(let x=0;x<size;x++)
+    world.tiles[y*size+x] = (keep&&x<os&&y<os) ? old[y*os+x] : newTile();
+  if(!world.drones.length) world.drones=[mkDrone(0)];
+  for(const d of world.drones){
+    d.x=Math.min(d.x,size-1); d.y=Math.min(d.y,size-1); d.vx=d.x; d.vy=d.y;
+  }
+  CUR=world.drones[0];
+  world.maze=false;
+}
+const wrap=v=>((v%world.size)+world.size)%world.size;
+const tileAt=(x,y)=>world.tiles[wrap(y)*world.size+wrap(x)];
+const here=()=>tileAt(CUR.x,CUR.y);
+const isMature=t=>{
+  if(!t.e) return false;
+  if(t.e==='Dinosaur') return !!(t.d&&t.d.fed>=5);
+  if(t.e==='Apple'||t.e==='Treasure') return true;
+  if(t.e==='Hedge') return false;
+  return t.age>=SPEC[t.e].grow;
+};
+function neighbours(x,y){ return DV.map(d=>tileAt(x+d.x,y+d.y)); }
+function growthRate(t,x,y){
+  let r = t.g==='Soil' ? 0.35+0.65*Math.min(1,t.water) : 1;
+  if(t.e==='Tree'){
+    let n=0;
+    for(const q of neighbours(x,y)) if(q.e==='Tree') n++;
+    r *= Math.pow(0.5,n);
+  }
+  return r;
+}
+function companionOk(t,x,y){
+  if(!t.d||!t.d.comp) return false;
+  for(const q of neighbours(x,y)) if(q.e===t.d.comp) return true;
+  return false;
+}
+function pickCompanion(){
+  if(!state.unlocked.poly) return null;
+  const pool=PLANTABLE.filter(e=>state.unlocked[SPEC[e].need]);
+  return pool.length?pool[Math.floor(Math.random()*pool.length)]:null;
+}
+
+function advanceWorld(dt){
+  if(dt<=0) return;
+  world.time+=dt;
+  const n=world.size, T=world.tiles;
+  const cap=TANK[state.tankLvl];
+  state.tank=Math.min(cap,state.tank+dt*cap/240);
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++){
+    const t=T[y*n+x];
+    if(t.water>0) t.water=Math.max(0,t.water-dt*0.0022);
+    if(!t.e){
+      if(!state.unlocked.plant&&t.g==='Grassland'){ t.e='Grass'; t.age=0; t.d=null; }
+      continue;
+    }
+    if(t.e==='Apple'){
+      t.age+=dt;
+      if(t.age>APPLE_ROT){ t.e=null; t.age=0; t.d=null; }
+      continue;
+    }
+    const sp=SPEC[t.e];
+    if(sp.grow>0 && t.age<sp.grow){ t.age=Math.min(sp.grow,t.age+dt*growthRate(t,x,y)); continue; }
+    if(t.e==='Tree'&&state.unlocked.apples){
+      t.d=t.d||{};
+      t.d.fruit=(t.d.fruit||0)+dt;
+      if(t.d.fruit>=APPLE_EVERY){ t.d.fruit=0; dropApple(); }
+    }
+  }
+  if(world.time-state.wantedAt>420){
+    state.wantedAt=world.time;
+    const pool=Object.keys(TRADE_VALUE).filter(k=>state.items[k]>0||k==='Hay');
+    state.wanted=pool[Math.floor(Math.random()*pool.length)]||'Hay';
+  }
+}
+function dropApple(){
+  const free=[];
+  for(let y=0;y<world.size;y++) for(let x=0;x<world.size;x++){
+    const t=tileAt(x,y);
+    if(!t.e) free.push(t);
+  }
+  if(!free.length) return;
+  const t=free[Math.floor(Math.random()*free.length)];
+  t.e='Apple'; t.age=0; t.d=null;
+}
+function give(item,n){ state.items[item]=(state.items[item]||0)+n; UI.bump(item); }
+function fx(x,y,text,color){
+  world.fx.push({x,y,text,color,t:0});
+  if(world.fx.length>50) world.fx.shift();
+  if(typeof burst==='function'&&text[0]==='+') burst(x,y,color,10);
+}
+
+/* ------------------------------ actions --------------------------------- */
+function requireUnlock(id,what){
+  if(!state.unlocked[id]) err('LockedError',what+' is locked — buy it in the Shop tab.');
+}
+const COST={move:1,harvest:1,plant:1,till:2,water:1,measure:1,swap:2,trade:2,flip:2,feed:1};
+
+function dirOf(v,fname){
+  if(v&&v.__sym&&v.kind==='Dir') v=v.v;
+  if(typeof v!=='number'||v<0||v>3) err('TypeError',fname+'() needs North, East, South or West');
+  return v|0;
+}
+function* a_move(args){
+  const d=dirOf(args[0],'move');
+  const D=CUR;
+  const nx=wrap(D.x+DV[d].x), ny=wrap(D.y+DV[d].y);
+  D.dir=d;
+  const dest=tileAt(nx,ny);
+  yield COST.move;
+  if(dest.e==='Hedge'){ D.bump=1; return false; }
+  D.x=nx; D.y=ny;
+  return true;
+}
+function* a_harvest(){
+  const t=here(), D=CUR;
+  yield COST.harvest;
+  if(!t.e) return false;
+  if(t.e==='Hedge'){ t.e=null; t.age=0; return true; }
+  if(!isMature(t)){
+    // cut too early: the plant is lost. Wait with do_a_flip() instead.
+    const lost=t.e;
+    t.e=null; t.age=0; t.d=null;
+    fx(D.x,D.y,lost==='Dinosaur'?'lost':'unripe','#E0603F');
+    if(typeof sfx==='function') sfx('kill');
+    return false;
+  }
+  const boost = companionOk(t,D.x,D.y) ? 2 : 1;
+  const clear=()=>{ t.e=null; t.age=0; t.d=null; };
+  const pay=(item,n,col)=>{
+    give(item,n*boost);
+    fx(D.x,D.y,'+'+(n*boost),col);
+    if(typeof sfx==='function') sfx('harvest');
+    if(typeof shakeNow==='function') shakeNow(Math.min(0.32,0.05+n*boost*0.012));
+  };
+  switch(t.e){
+    case 'Grass': clear(); pay('Hay',1,'#DCB84E'); return true;
+    case 'Bush':   clear(); pay('Wood',1,'#96633A'); return true;
+    case 'Tree':   clear(); pay('Wood',4,'#96633A'); return true;
+    case 'Carrot': clear(); pay('Carrot',1,'#E77B2C'); return true;
+    case 'Apple':  clear(); give('Apple',1); fx(D.x,D.y,'+1','#D9483F'); return true;
+    case 'Pumpkin':{
+      const group=floodPumpkin(D.x,D.y);
+      const n=group.length, side=Math.round(Math.sqrt(n));
+      const amount=(side*side===n?n*side:n)*boost;
+      for(const i of group){ const q=world.tiles[i]; q.e=null; q.age=0; q.d=null; }
+      give('Pumpkin',amount); fx(D.x,D.y,'+'+amount,'#E89430');
+      if(typeof sfx==='function') sfx('coin');
+      if(typeof shakeNow==='function') shakeNow(Math.min(0.45,0.1+amount*0.006));
+      return true;
+    }
+    case 'Sunflower':{
+      let best=0;
+      for(const q of world.tiles) if(q.e==='Sunflower'&&isMature(q)) best=Math.max(best,q.d.petals);
+      const p=t.d.petals;
+      clear();
+      if(p>=best){ pay('Power',p*2,'#5CC3D6'); return true; }
+      fx(D.x,D.y,'wilt','#E0603F'); return false;
+    }
+    case 'Cactus':{
+      const list=[];
+      for(let y=0;y<world.size;y++) for(let k=0;k<world.size;k++){
+        const x = y%2===0 ? k : world.size-1-k;
+        const c=tileAt(x,y);
+        if(c.e==='Cactus') list.push(c);
+      }
+      const ripe=list.every(isMature);
+      let sorted=true;
+      for(let i=1;i<list.length;i++) if(list[i].d.size<list[i-1].d.size) sorted=false;
+      if(ripe&&sorted){
+        const n=list.length;
+        for(const c of list){ c.e=null; c.age=0; c.d=null; }
+        give('Cactus',n); fx(D.x,D.y,'+'+n,'#63A85C');
+        if(typeof sfx==='function') sfx('coin');
+        if(typeof shakeNow==='function') shakeNow(0.3);
+        return true;
+      }
+      clear(); fx(D.x,D.y,'unsorted','#E0603F'); return false;
+    }
+    case 'Dinosaur': clear(); give('Bone',6); fx(D.x,D.y,'+6','#E4DAC6'); return true;
+    case 'Treasure':{
+      clear(); give('Gold',1); fx(D.x,D.y,'+1 gold','#F5CE58');
+      if(typeof sfx==='function') sfx('treasure');
+      if(typeof shakeNow==='function') shakeNow(0.4);
+      state.treasures++;
+      if(state.treasures%5===0) buildMaze(); else placeTreasure();
+      return true;
+    }
+  }
+  return false;
+}
+function floodPumpkin(x,y){
+  const seen=new Set(), out=[], st=[[wrap(x),wrap(y)]];
+  while(st.length){
+    const [cx,cy]=st.pop(), i=cy*world.size+cx;
+    if(seen.has(i)) continue;
+    const t=world.tiles[i];
+    if(!t||t.e!=='Pumpkin'||!isMature(t)) continue;
+    seen.add(i); out.push(i);
+    for(const d of DV) st.push([wrap(cx+d.x),wrap(cy+d.y)]);
+  }
+  return out;
+}
+function* a_plant(args){
+  const e=args[0];
+  if(!e||!e.__sym||e.kind!=='Entities') err('TypeError','plant() needs an Entities value, e.g. Entities.Grass');
+  const name=e.name, sp=SPEC[name];
+  if(name==='Treasure'||name==='Apple') err('ValueError','you cannot plant '+name.toLowerCase());
+  requireUnlock(sp.need,name);
+  const t=here();
+  yield COST.plant;
+  if(name==='Hedge'){ buildMaze(); return true; }
+  if(t.e) return false;
+  if(t.g!==sp.ground) return false;
+  t.e=name; t.age=0; t.pop=performance.now();
+  if(typeof sfx==='function') sfx('plant');
+  const comp=sp.comp?pickCompanion():null;
+  if(name==='Sunflower') t.d={petals:1+Math.floor(Math.random()*7),comp};
+  else if(name==='Cactus') t.d={size:1+Math.floor(Math.random()*9)};
+  else if(name==='Dinosaur') t.d={fed:0,want:FEED_ITEMS[Math.floor(Math.random()*FEED_ITEMS.length)]};
+  else t.d=comp?{comp}:null;
+  return true;
+}
+function* a_till(){
+  requireUnlock('till','till()');
+  const t=here();
+  yield COST.till;
+  if(t.e) return false;
+  t.g = t.g==='Soil' ? 'Grassland' : 'Soil';
+  if(t.g==='Grassland') t.water=0;
+  return true;
+}
+function* a_use_item(args){
+  const it=args[0];
+  if(!it||!it.__sym||it.kind!=='Items') err('TypeError','use_item() needs an Items value');
+  const t=here(), D=CUR;
+  if(it.name==='Water'){
+    requireUnlock('water','use_item(Items.Water)');
+    yield COST.water;
+    if(t.g!=='Soil'||state.tank<1) return false;
+    state.tank-=1; t.water=1; fx(D.x,D.y,'water','#5CC3D6'); return true;
+  }
+  if(it.name==='Fertilizer'){
+    requireUnlock('fertilizer','fertilizer');
+    yield COST.water;
+    if(!t.e||!SPEC[t.e].grow||state.items.Fertilizer<1) return false;
+    state.items.Fertilizer--; UI.bump('Fertilizer');
+    t.age=SPEC[t.e].grow; fx(D.x,D.y,'ripe','#A98BE0'); return true;
+  }
+  yield COST.feed;
+  if(t.e!=='Dinosaur'||!t.d) return false;
+  if(t.d.want!==it.name||(state.items[it.name]||0)<1) return false;
+  state.items[it.name]--; UI.bump(it.name);
+  t.d.fed++;
+  t.d.want=FEED_ITEMS[Math.floor(Math.random()*FEED_ITEMS.length)];
+  fx(D.x,D.y,t.d.fed+'/5','#9BD642');
+  return true;
+}
+function* a_measure(args){
+  requireUnlock('sensors','measure()');
+  const t = args.length ? tileAt(CUR.x+DV[dirOf(args[0],'measure')].x, CUR.y+DV[dirOf(args[0],'measure')].y) : here();
+  yield COST.measure;
+  if(!t.e) return null;
+  if(t.e==='Sunflower') return t.d.petals;
+  if(t.e==='Cactus') return t.d.size;
+  if(t.e==='Dinosaur') return Items.props[t.d.want];
+  if(t.e==='Treasure') return true;
+  if(t.e==='Apple') return Math.round((APPLE_ROT-t.age)*10)/10;
+  return null;
+}
+function* a_swap(args){
+  requireUnlock('cactus','swap()');
+  const d=dirOf(args[0],'swap');
+  const a=here(), b=tileAt(CUR.x+DV[d].x,CUR.y+DV[d].y);
+  yield COST.swap;
+  if(a.g!==b.g) return false;
+  const e=a.e,ag=a.age,dd=a.d;
+  a.e=b.e; a.age=b.age; a.d=b.d;
+  b.e=e; b.age=ag; b.d=dd;
+  return true;
+}
+function* a_trade(args){
+  requireUnlock('trade','trade()');
+  const it=args[0];
+  const n=args.length>1?Math.trunc(numOf(args[1],'trade')):1;
+  if(!it||!it.__sym||it.kind!=='Items') err('TypeError','trade() needs an Items value');
+  const v=TRADE_VALUE[it.name];
+  yield COST.trade;
+  if(!v||n<1||(state.items[it.name]||0)<n) return false;
+  state.items[it.name]-=n; UI.bump(it.name);
+  state.credit += n*v*(state.wanted===it.name?3:1);
+  const gold=Math.floor(state.credit/100);
+  if(gold>0){ state.credit-=gold*100; give('Gold',gold); fx(CUR.x,CUR.y,'+'+gold+'g','#F5CE58');
+    if(typeof sfx==='function') sfx('coin'); }
+  return true;
+}
+function* a_flip(){
+  yield COST.flip;
+  if(CUR.flip<=0){ CUR.flip=1; if(typeof sfx==='function') sfx('flip'); }
+  return true;
+}
+
+function* a_spawn(args){
+  requireUnlock('drones','spawn_drone()');
+  const f=args[0];
+  if(!(f instanceof PyFunc)) err('TypeError','spawn_drone() needs a function, e.g. spawn_drone(work)');
+  yield COST.plant;
+  if(world.drones.length>=maxDrones()) return false;
+  const d=mkDrone(world.drones.length,CUR.x,CUR.y);
+  world.drones.push(d);
+  startDroneProgram(d,f);
+  fx(d.x,d.y,'drone '+d.id,'#5CC3D6');
+  return true;
+}
+const maxDrones=()=>1+state.bay;
+
+/* -------------------------------- maze ---------------------------------- */
+function buildMaze(){
+  requireUnlock('maze','the hedge maze');
+  const n=world.size;
+  if(n<5) err('ValueError','the maze needs a farm of at least 5x5');
+  for(const t of world.tiles){ t.e='Hedge'; t.age=0; t.g='Grassland'; t.d=null; t.water=0; }
+  const set=(x,y)=>{ if(x>=0&&y>=0&&x<n&&y<n) world.tiles[y*n+x].e=null; };
+  const seen=new Set(['0,0']), stack=[[0,0]];
+  set(0,0);
+  while(stack.length){
+    const [x,y]=stack[stack.length-1], opts=[];
+    for(const d of DV){
+      const nx=x+d.x*2, ny=y+d.y*2;
+      if(nx>=0&&ny>=0&&nx<n&&ny<n&&!seen.has(nx+','+ny)) opts.push([nx,ny,x+d.x,y+d.y]);
+    }
+    if(!opts.length){ stack.pop(); continue; }
+    const [nx,ny,mx,my]=opts[Math.floor(Math.random()*opts.length)];
+    seen.add(nx+','+ny); set(mx,my); set(nx,ny); stack.push([nx,ny]);
+  }
+  for(let i=0;i<n;i++){
+    const x=1+Math.floor(Math.random()*(n-2)), y=1+Math.floor(Math.random()*(n-2));
+    set(x,y);
+  }
+  world.maze=true;
+  for(const d of world.drones){ d.x=0; d.y=0; d.vx=0; d.vy=0; }
+  placeTreasure();
+}
+function placeTreasure(){
+  const open=[];
+  for(let y=0;y<world.size;y++) for(let x=0;x<world.size;x++){
+    const t=tileAt(x,y);
+    if(!t.e&&(x!==CUR.x||y!==CUR.y)) open.push([x,y,Math.abs(x-CUR.x)+Math.abs(y-CUR.y)]);
+  }
+  if(!open.length) return;
+  open.sort((a,b)=>b[2]-a[2]);
+  const pick=open[Math.floor(Math.random()*Math.max(1,Math.floor(open.length/3)))];
+  tileAt(pick[0],pick[1]).e='Treasure';
+}
+</script>
+<script>
+/* ============================ builtins & globals ========================= */
+function* B_sorted(a,kw){ return yield* sortArr(toList(a[0]),kw); }
+function* B_map(a){ const o=[]; for(const x of toList(a[1])) o.push(yield* callValue(a[0],[x],{})); return o; }
+function* B_filter(a){ const o=[]; for(const x of toList(a[1])) if(truthy(yield* callValue(a[0],[x],{}))) o.push(x); return o; }
+function* B_minmax(a,kw,big){
+  const seq=a.length===1?toList(a[0]):a;
+  if(!seq.length) err('ValueError','min()/max() got an empty sequence');
+  const key=kw&&kw.key?kw.key:null;
+  let best=seq[0], bk=key?yield* callValue(key,[seq[0]],{}):seq[0];
+  for(let i=1;i<seq.length;i++){
+    const k=key?yield* callValue(key,[seq[i]],{}):seq[i];
+    const c=cmpVals(k,bk);
+    if(big?c>0:c<0){ best=seq[i]; bk=k; }
+  }
+  return best;
+}
+function buildGlobals(){
+  const g=new Map();
+  const def=(n,fn,gen)=>g.set(n,nat(n,fn,gen));
+  const tag=()=>world.drones.length>1?'['+CUR.id+'] ':'';
+
+  def('print',a=>{ UI.log(tag()+a.map(pyStr).join(' ')); return null; });
+  def('quick_print',a=>{ UI.log(tag()+a.map(pyStr).join(' '),'',true); return null; });
+  def('clear',()=>{ UI.clearLog(); return null; });
+  def('len',a=>pyLen(a[0]));
+  def('range',a=>{
+    const x=a.map(v=>Math.trunc(numOf(v,'range')));
+    const r=x.length===1?new PyRange(0,x[0],1):(x.length===2?new PyRange(x[0],x[1],1):new PyRange(x[0],x[1],x[2]));
+    if(r.step===0) err('ValueError','range() step must not be zero');
+    if(r.length>4e6) err('MemoryError','range() is too large');
+    return r;
+  });
+  def('abs',a=>Math.abs(numOf(a[0],'abs')));
+  def('round',a=>{ const d=a.length>1?a[1]:0, m=Math.pow(10,d);
+    return Math.round(numOf(a[0],'round')*m*(1+1e-12))/m; });
+  def('int',a=>{ if(!a.length) return 0;
+    if(typeof a[0]==='string'){ const v=parseInt(a[0].trim(),a.length>1?a[1]:10);
+      if(Number.isNaN(v)) err('ValueError','invalid literal for int(): '+pyRepr(a[0])); return v; }
+    return Math.trunc(numOf(a[0],'int')); });
+  def('float',a=>{ if(typeof a[0]==='string'){ const v=parseFloat(a[0]);
+      if(Number.isNaN(v)) err('ValueError','could not convert string to float'); return v; }
+    return numOf(a[0],'float'); });
+  def('str',a=>a.length?pyStr(a[0]):'');
+  def('repr',a=>pyRepr(a[0]));
+  def('bool',a=>a.length?truthy(a[0]):false);
+  def('list',a=>a.length?toList(a[0]):[]);
+  def('tuple',a=>tup(a.length?toList(a[0]):[]));
+  def('set',a=>a.length?new PySet(toList(a[0])):new PySet());
+  def('dict',a=>{ const d=new PyDict();
+    if(a.length){ if(a[0] instanceof PyDict) for(const e of a[0].m.values()) d.set(e[0],e[1]);
+      else for(const p of toList(a[0])) d.set(p[0],p[1]); }
+    return d; });
+  def('sum',a=>{ let s=a.length>1?a[1]:0; for(const x of toList(a[0])) s=binop('+',s,x); return s; });
+  def('any',a=>toList(a[0]).some(truthy));
+  def('all',a=>toList(a[0]).every(truthy));
+  def('reversed',a=>toList(a[0]).reverse());
+  def('enumerate',a=>{ const st=a.length>1?a[1]:0; return toList(a[0]).map((x,i)=>tup([i+st,x])); });
+  def('zip',a=>{ const ls=a.map(toList), n=Math.min(...ls.map(l=>l.length)), o=[];
+    for(let i=0;i<n;i++) o.push(tup(ls.map(l=>l[i]))); return o; });
+  def('type',a=>typeName(a[0]));
+  def('isinstance',a=>{ const t=a[1], names=Array.isArray(t)?t.map(pyStr):[pyStr(t)];
+    return names.includes(typeName(a[0])); });
+  def('chr',a=>String.fromCharCode(numOf(a[0],'chr')));
+  def('ord',a=>String(a[0]).charCodeAt(0));
+  def('min',function*(a,kw){ return yield* B_minmax(a,kw,false); },true);
+  def('max',function*(a,kw){ return yield* B_minmax(a,kw,true); },true);
+  def('sorted',B_sorted,true);
+  def('map',B_map,true);
+  def('filter',B_filter,true);
+  def('random',a=>{
+    if(!a.length) return Math.random();
+    if(a.length===1) return Math.floor(Math.random()*numOf(a[0],'random'));
+    const lo=Math.ceil(numOf(a[0],'random')), hi=Math.floor(numOf(a[1],'random'));
+    return lo+Math.floor(Math.random()*(hi-lo+1));
+  });
+  def('random_int',a=>{ const lo=Math.ceil(numOf(a[0],'random_int')), hi=Math.floor(numOf(a[1],'random_int'));
+    return lo+Math.floor(Math.random()*(hi-lo+1)); });
+  def('sqrt',a=>Math.sqrt(numOf(a[0],'sqrt')));
+  def('floor',a=>Math.floor(numOf(a[0],'floor')));
+  def('ceil',a=>Math.ceil(numOf(a[0],'ceil')));
+
+  /* ---- world API ---- */
+  def('move',a_move,true);
+  def('harvest',a_harvest,true);
+  def('plant',a_plant,true);
+  def('till',a_till,true);
+  def('use_item',a_use_item,true);
+  def('measure',a_measure,true);
+  def('swap',a_swap,true);
+  def('trade',a_trade,true);
+  def('do_a_flip',a_flip,true);
+  def('spawn_drone',a_spawn,true);
+  def('max_drones',()=>maxDrones());
+  def('num_drones',()=>world.drones.length);
+  def('get_drone_id',()=>CUR.id);
+  def('get_pos_x',()=>CUR.x);
+  def('get_pos_y',()=>CUR.y);
+  def('get_world_size',()=>world.size);
+  def('get_time',()=>Math.round(world.time*100)/100);
+  def('num_items',a=>{
+    const it=a[0];
+    if(!it||!it.__sym||it.kind!=='Items') err('TypeError','num_items() needs an Items value');
+    if(it.name==='Water') return Math.floor(state.tank);
+    return state.items[it.name]||0;
+  });
+  def('num_unlocked',a=>{
+    const u=a[0];
+    const id=u&&u.__sym?u.name:pyStr(u);
+    if(id==='expand') return state.expand;
+    if(id==='speed') return state.speed;
+    if(id==='drones') return state.bay;
+    return state.unlocked[id]?1:0;
+  });
+  def('can_harvest',()=>{ const t=here();
+    return !!(t.e&&(t.e==='Hedge'||isMature(t))); });
+  def('get_entity_type',()=>{ requireUnlock('sensors','get_entity_type()');
+    const t=here(); return t.e?Entities.props[t.e]:null; });
+  def('get_ground_type',()=>{ requireUnlock('sensors','get_ground_type()'); return Grounds.props[here().g]; });
+  def('get_water',()=>{ requireUnlock('water','get_water()'); return Math.round(here().water*1000)/1000; });
+  def('get_companion',()=>{ requireUnlock('poly','get_companion()');
+    const t=here(); return t.d&&t.d.comp?Entities.props[t.d.comp]:null; });
+  def('get_trade_request',()=>{ requireUnlock('trade','get_trade_request()'); return Items.props[state.wanted]; });
+  def('unlocked',a=>{ const u=a[0]; return !!state.unlocked[u&&u.__sym?u.name:pyStr(u)]; });
+
+  g.set('North',NORTH); g.set('East',EAST); g.set('South',SOUTH); g.set('West',WEST);
+  g.set('Items',Items); g.set('Entities',Entities); g.set('Grounds',Grounds); g.set('Unlocks',Unlocks);
+  g.set('True',true); g.set('False',false); g.set('None',null); g.set('pi',Math.PI);
+  for(const n of ['ValueError','TypeError','IndexError','KeyError','NameError','ZeroDivisionError',
+    'RuntimeError','AssertionError','LockedError','MemoryError','RecursionError','Exception'])
+    g.set(n,{__exType:true,name:n});
+  return g;
+}
+
+/* ============================== the runner =============================== */
+const OPCOST=0.002;   // one loop turn or call of farm time; a flip buys 1000x more
+const runner={ running:false, label:'' };
+let GLOBALS=buildGlobals();
+
+function resetGlobals(){ GLOBALS=buildGlobals(); UI.log('globals reset — your functions were cleared','i'); }
+function tpsNow(){ return TPS[Math.min(state.speedPref,state.speed)]; }
+
+function startDroneProgram(d,fn){
+  const sc=new Scope(null,GLOBALS);
+  sc.v=new Map();
+  d.t=world.time;
+  d.prog=(function*(){ yield* callValue(fn,[],{}); })();
+}
+function startRun(src,label){
+  if(runner.running) stopRun(true);
+  let ast;
+  try{ ast=parse(src); }
+  catch(e){
+    UI.log((e.syntax?'SyntaxError':'Error')+': '+e.message+(e.line?'   (line '+e.line+')':''),'e');
+    UI.flag('error'); return false;
+  }
+  world.drones=[mkDrone(0,world.drones[0]?world.drones[0].x:0,world.drones[0]?world.drones[0].y:0)];
+  CUR=world.drones[0];
+  CUR.vx=CUR.x; CUR.vy=CUR.y; CUR.t=world.time;
+  const sc=new Scope(null,GLOBALS);
+  sc.v=GLOBALS;
+  RT={line:0,depth:0,last:null};
+  CUR.prog=(function*(){ yield* execBlock(ast.body,sc); })();
+  runner.running=true; runner.label=label;
+  UI.flag('running'); UI.setRunning(true);
+  UI.log('▶ '+label,'s');
+  return true;
+}
+function stopRun(quiet){
+  runner.running=false;
+  world.drones=[world.drones[0]||mkDrone(0)];
+  world.drones[0].prog=null;
+  CUR=world.drones[0];
+  UI.setRunning(false); UI.flag('idle');
+  if(!quiet) UI.log('■ stopped','i');
+}
+function droneError(d,e){
+  d.prog=null;
+  if(typeof sfx==='function') sfx('error');
+  const where=world.drones.length>1?' [drone '+d.id+']':'';
+  if(e instanceof PyEx) UI.log(e.type+': '+e.msg+'   (line '+RT.line+')'+where,'e');
+  else if(e instanceof Ret) UI.log('SyntaxError: return outside a function'+where,'e');
+  else if(e===BRK||e===CNT) UI.log('SyntaxError: break or continue outside a loop'+where,'e');
+  else UI.log('InternalError: '+(e&&e.message?e.message:String(e))+'   (line '+RT.line+')'+where,'e');
+  if(d.id===0){ stopRun(true); UI.flag('error'); }
+}
+function stepProgram(dt){
+  const target=world.time+tpsNow()*dt;
+  const cap=36000;
+  let ops=0, worked=true;
+  while(worked&&ops<cap){
+    worked=false;
+    for(const d of world.drones){
+      if(!d.prog||d.t>=target) continue;
+      worked=true; CUR=d;
+      let r;
+      try{ r=d.prog.next(); }
+      catch(e){ droneError(d,e); break; }
+      if(r.done){ d.prog=null; continue; }   // helpers may still be flying
+      d.t += r.value>0 ? r.value : OPCOST;
+      if(++ops>=cap) break;
+    }
+  }
+  let far=world.time;
+  for(const d of world.drones) if(d.t>far) far=d.t;
+  advanceWorld(Math.min(target,far)-world.time);
+  CUR=world.drones[0];
+  for(let i=world.drones.length-1;i>0;i--) if(!world.drones[i].prog) world.drones.splice(i,1);
+  if(runner.running&&!world.drones.some(d=>d.prog)){
+    runner.running=false;
+    UI.setRunning(false); UI.flag('done'); UI.log('✔ finished','s'); UI.refreshShop();
+  }
+  UI.refreshStats();
+}
+</script>
+<script>
+/* ============================== rendering ================================
+   Three passes: a shadow map from the sun, the lit scene into a supersampled
+   framebuffer, then a post pass that downsamples, grades and vignettes.
+   Geometry is real: every plant is a mesh with baked contact shading and a
+   sway weight so wind moves the tops and leaves the roots still.
+   ======================================================================== */
+const cv=document.getElementById('field');
+const fxc=document.createElement('canvas');
+fxc.id='fxlayer';
+fxc.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none';
+cv.parentNode.insertBefore(fxc,cv.nextSibling);
+const fgx=fxc.getContext('2d');
+const glo={antialias:false,alpha:false,depth:true,powerPreference:'high-performance'};
+const gl=cv.getContext('webgl',glo)||cv.getContext('experimental-webgl',glo);
+let CW=0,CH=0,DPR=1,SS=1.3;
+const SS_STEPS=[1.3,1.0,0.75];
+let ssLevel=0,frameAvg=16,sinceStep=0;
+const hash=(x,y)=>{ const s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); };
+const lerp=(a,b,t)=>a+(b-a)*t;
+const LIGHT=[0.44,0.80,0.41];
+(function(){ const l=Math.hypot(LIGHT[0],LIGHT[1],LIGHT[2]); LIGHT[0]/=l; LIGHT[1]/=l; LIGHT[2]/=l; })();
+
+/* ------------------------------- colours -------------------------------- */
+function rgb(h){ return [parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255]; }
+function mixc(a,b,t){ return [lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)]; }
+const C={
+  grass:rgb('#6FA83F'), grass2:rgb('#7CB44A'), grassEdge:rgb('#5A8A34'),
+  soil:rgb('#8E6038'), soilWet:rgb('#5C3D22'), side:rgb('#6B4A2B'), sideG:rgb('#7A5C33'),
+  rock2:rgb('#7A6A55'), root:rgb('#5E4B33'),
+  blade:rgb('#74B247'), bladeDeep:rgb('#4F8A33'), bladeTip:rgb('#A8DC6A'),
+  hay:rgb('#D6B052'), hayDeep:rgb('#B58F3C'), hay2:rgb('#F2D688'),
+  leaf:rgb('#3F7A2C'), leaf2:rgb('#559A3B'), leaf3:rgb('#74BA55'),
+  trunk:rgb('#6E4A2A'), trunk2:rgb('#8A6038'),
+  carrot:rgb('#E07C24'), carrot2:rgb('#F79E45'),
+  pump:rgb('#E8912A'), pumpRib:rgb('#C0700F'), pumpRaw:rgb('#8CA344'),
+  petal:rgb('#F5CE41'), petal2:rgb('#FCE894'), head:rgb('#6B4820'),
+  cact:rgb('#579B4E'), cact2:rgb('#71B665'), spine:rgb('#F0E9CE'),
+  dino:rgb('#6FA553'), dino2:rgb('#98C67A'), dinoDark:rgb('#4C7838'),
+  apple:rgb('#D24A38'), apple2:rgb('#EE6E55'),
+  hedge:rgb('#33552A'), hedge2:rgb('#446B36'),
+  chest:rgb('#8A6329'), gold:rgb('#F2CE5C'),
+  body:rgb('#525C68'), body2:rgb('#78838F'), dome:rgb('#8CE0EE'), rotor:rgb('#C3D2DC'),
+  fence:rgb('#A88C5C'), rock:rgb('#8C7B63'), cloud:rgb('#F4F6EE'),
+  dark:rgb('#2A2118'), bone:rgb('#EDE3C8')
+};
+
+/* --------------------------- mesh primitives ----------------------------- */
+let SW=0, AO=0;
+function push(A,x,y,z,nx,ny,nz,c){
+  let r=c[0],g2=c[1],b=c[2];
+  if(AO>0){
+    const k=1-AO*Math.max(0,1-Math.max(0,y)*3.4);
+    r*=k; g2*=k; b*=k;
+  }
+  A.push(x,y,z,nx,ny,nz,r,g2,b,SW*Math.max(0,y));
+}
+function face(A,p,q,r,s,c,n){
+  if(!n){
+    const ux=q[0]-p[0],uy=q[1]-p[1],uz=q[2]-p[2];
+    const vx=r[0]-p[0],vy=r[1]-p[1],vz=r[2]-p[2];
+    let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx;
+    const l=Math.hypot(nx,ny,nz)||1; n=[nx/l,ny/l,nz/l];
+  }
+  push(A,p[0],p[1],p[2],n[0],n[1],n[2],c);
+  push(A,q[0],q[1],q[2],n[0],n[1],n[2],c);
+  push(A,r[0],r[1],r[2],n[0],n[1],n[2],c);
+  if(s){
+    push(A,p[0],p[1],p[2],n[0],n[1],n[2],c);
+    push(A,r[0],r[1],r[2],n[0],n[1],n[2],c);
+    push(A,s[0],s[1],s[2],n[0],n[1],n[2],c);
+  }
+}
+const rotY=(p,a)=>{ const s=Math.sin(a),c=Math.cos(a); return [p[0]*c-p[2]*s,p[1],p[0]*s+p[2]*c]; };
+function box(A,x,y,z,sx,sy,sz,c,ang){
+  const h=[sx/2,sy/2,sz/2], V=[];
+  for(const g of [[-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,1],[-1,1,-1],[1,1,-1],[1,1,1],[-1,1,1]]){
+    let p=[g[0]*h[0],g[1]*h[1],g[2]*h[2]];
+    if(ang) p=rotY(p,ang);
+    V.push([p[0]+x,p[1]+y,p[2]+z]);
+  }
+  face(A,V[4],V[5],V[6],V[7],c); face(A,V[1],V[0],V[3],V[2],c);
+  face(A,V[3],V[2],V[6],V[7],c); face(A,V[1],V[5],V[4],V[0],c);
+  face(A,V[2],V[1],V[5],V[6],c); face(A,V[0],V[4],V[7],V[3],c);
+}
+function sphere(A,x,y,z,rx,ry,rz,seg,ring,c,c2){
+  for(let i=0;i<ring;i++){
+    const t0=Math.PI*i/ring, t1=Math.PI*(i+1)/ring;
+    for(let j=0;j<seg;j++){
+      const a0=2*Math.PI*j/seg, a1=2*Math.PI*(j+1)/seg;
+      const U=(t,a)=>[Math.sin(t)*Math.cos(a),Math.cos(t),Math.sin(t)*Math.sin(a)];
+      const u=[U(t0,a0),U(t1,a0),U(t1,a1),U(t0,a1)];
+      const p=u.map(v=>[x+v[0]*rx,y+v[1]*ry,z+v[2]*rz]);
+      const col=c2&&(j%2===0)?c2:c;
+      for(const k of [0,1,2,0,2,3])
+        push(A,p[k][0],p[k][1],p[k][2],u[k][0],u[k][1],u[k][2],col);
+    }
+  }
+}
+function cyl(A,x,y,z,r0,r1,h,sides,c,cap){
+  for(let i=0;i<sides;i++){
+    const a0=2*Math.PI*i/sides, a1=2*Math.PI*(i+1)/sides;
+    const c0=Math.cos(a0),s0=Math.sin(a0),c1=Math.cos(a1),s1=Math.sin(a1);
+    const p=[[x+c0*r0,y,z+s0*r0],[x+c1*r0,y,z+s1*r0],[x+c1*r1,y+h,z+s1*r1],[x+c0*r1,y+h,z+s0*r1]];
+    const nA=[c0,0.22,s0], nB=[c1,0.22,s1];
+    push(A,p[0][0],p[0][1],p[0][2],nA[0],nA[1],nA[2],c);
+    push(A,p[1][0],p[1][1],p[1][2],nB[0],nB[1],nB[2],c);
+    push(A,p[2][0],p[2][1],p[2][2],nB[0],nB[1],nB[2],c);
+    push(A,p[0][0],p[0][1],p[0][2],nA[0],nA[1],nA[2],c);
+    push(A,p[2][0],p[2][1],p[2][2],nB[0],nB[1],nB[2],c);
+    push(A,p[3][0],p[3][1],p[3][2],nA[0],nA[1],nA[2],c);
+    if(cap!==false&&r1>0.001)
+      face(A,[x,y+h,z],[x+c0*r1,y+h,z+s0*r1],[x+c1*r1,y+h,z+s1*r1],null,c,[0,1,0]);
+  }
+}
+function blade(A,x,z,h,lean,c,c2,w0,sg){
+  const dx=Math.cos(lean), dz=Math.sin(lean), w=w0||0.026, segs=sg||3;
+  const nx=-dz, nz=dx, pts=[];
+  for(let i=0;i<=segs;i++){
+    const t=i/segs, bend=t*t*0.62;
+    pts.push([x+dx*h*bend,h*t,z+dz*h*bend,w*(1-t*0.82)]);
+  }
+  for(let i=0;i<segs;i++){
+    const a=pts[i], b=pts[i+1];
+    const p0=[a[0]-nx*a[3],a[1],a[2]-nz*a[3]], p1=[a[0]+nx*a[3],a[1],a[2]+nz*a[3]];
+    const p2=[b[0]+nx*b[3],b[1],b[2]+nz*b[3]], p3=[b[0]-nx*b[3],b[1],b[2]-nz*b[3]];
+    const col=mixc(c,c2||c,(i+1)/segs);
+    const n=[nx*0.28,0.95,nz*0.28];
+    face(A,p0,p1,p2,p3,col,n);
+    face(A,p3,p2,p1,p0,col,[-n[0],n[1]*0.55,-n[2]]);
+  }
+}
+function tilt(A,angX,ox,oy,oz,fn){
+  const T=[];
+  fn(T);
+  const ca=Math.cos(angX), sa=Math.sin(angX);
+  for(let i=0;i<T.length;i+=10){
+    const y=T[i+1], z=T[i+2];
+    T[i+1]=y*ca-z*sa; T[i+2]=y*sa+z*ca;
+    const ny=T[i+4], nz=T[i+5];
+    T[i+4]=ny*ca-nz*sa; T[i+5]=ny*sa+nz*ca;
+    T[i]+=ox; T[i+1]+=oy; T[i+2]+=oz;
+    for(let k=0;k<10;k++) A.push(T[i+k]);
+  }
+}
+
+/* --------------------------- mesh templates ----------------------------- */
+const meshes=new Map();
+function mesh(key,sway,ao,fn){
+  let m=meshes.get(key);
+  if(!m){
+    const A=[]; SW=sway; AO=ao;
+    fn(A);
+    SW=0; AO=0;
+    m=new Float32Array(A);
+    if(meshes.size>460) meshes.clear();
+    meshes.set(key,m);
+  }
+  return m;
+}
+let LOD=2;
+const SEG=()=>LOD>=2?12:(LOD===1?9:6);
+const RING=()=>LOD>=2?7:(LOD===1?5:4);
+
+function plantMesh(t,stage){
+  const e=t.e, seg=SEG(), ring=RING();
+  let extra='';
+  if(e==='Sunflower') extra=t.d?t.d.petals:1;
+  else if(e==='Cactus') extra=t.d?t.d.size:1;
+  else if(e==='Dinosaur') extra=t.d?t.d.fed:0;
+  else if(e==='Tree') extra=(t.d&&t.d.fruit>APPLE_EVERY*0.5)?'f':'';
+  else if(e==='Apple') extra=t.age>APPLE_ROT*0.72?'r':'';
+  const sway=e==='Grass'?1.5:(e==='Tree'?0.5:(e==='Hedge'||e==='Treasure'?0:0.9));
+  return mesh('P'+e+stage+extra+LOD,sway,e==='Hedge'||e==='Treasure'?0.12:0.34,A=>{
+    const f=stage/4;
+    switch(e){
+      case 'Grass':{
+        const ripe=stage>=4, h=0.18+0.32*f;
+        const nb=LOD>=2?20:(LOD===1?11:5), sg=LOD>=2?4:3;
+        for(let i=0;i<nb;i++){
+          const a=i*2.3994+hash(i,3)*0.5, r=0.035+hash(i*3,i)*0.19;
+          const bh=h*(0.6+hash(i,i*5)*0.62);
+          const v=hash(i*7,i*11);
+          const c1=ripe?mixc(C.hay,C.hayDeep,v):mixc(C.blade,C.bladeDeep,v);
+          const c2=ripe?C.hay2:mixc(C.bladeTip,C.blade,v*0.5);
+          blade(A,Math.cos(a)*r,Math.sin(a)*r,bh,a+0.6+v*0.8,c1,c2,0.019+v*0.008,sg);
+          if(ripe&&LOD>=1&&i%3===0)
+            box(A,Math.cos(a)*(r+bh*0.3),bh*0.92,Math.sin(a)*(r+bh*0.3),0.02,0.042,0.02,C.hay2,-a);
+        }
+        break;
+      }
+      case 'Bush':{
+        const r=0.13+0.17*f;
+        sphere(A,0,r*0.95,0,r*1.28,r,r*1.28,seg,ring,C.leaf);
+        sphere(A,-r*0.52,r*1.32,r*0.22,r*0.82,r*0.82,r*0.82,seg,ring,C.leaf2);
+        sphere(A,r*0.56,r*1.16,-r*0.26,r*0.72,r*0.72,r*0.72,seg,ring,C.leaf3);
+        if(stage>=4)
+          for(let i=0;i<4;i++)
+            sphere(A,Math.cos(i*1.6)*r*0.95,r*1.15,Math.sin(i*1.6)*r*0.95,0.04,0.04,0.04,6,4,C.trunk2);
+        break;
+      }
+      case 'Tree':{
+        const th=0.18+0.54*f, cr=0.13+0.27*f;
+        cyl(A,0,0,0,0.058,0.04,th,LOD?8:5,C.trunk);
+        sphere(A,0,th+cr*0.6,0,cr,cr*0.92,cr,seg,ring,C.leaf);
+        sphere(A,-cr*0.58,th+cr*0.28,cr*0.22,cr*0.68,cr*0.62,cr*0.68,seg,ring,C.leaf2);
+        sphere(A,cr*0.52,th+cr*0.38,-cr*0.3,cr*0.62,cr*0.58,cr*0.62,seg,ring,C.leaf2);
+        sphere(A,cr*0.1,th+cr*1.12,cr*0.08,cr*0.52,cr*0.48,cr*0.52,seg,ring,C.leaf3);
+        if(extra==='f')
+          for(let i=0;i<5;i++)
+            sphere(A,Math.cos(i*1.3)*cr*0.9,th+cr*0.5+Math.sin(i*2.2)*cr*0.35,Math.sin(i*1.3)*cr*0.9,
+              0.05,0.05,0.05,7,5,C.apple);
+        break;
+      }
+      case 'Carrot':{
+        const h=0.13+0.22*f;
+        for(let i=0;i<7;i++){
+          const a=i*0.9+0.4;
+          blade(A,Math.cos(a)*0.055,Math.sin(a)*0.055,h*(0.72+(i%3)*0.16),a,C.leaf2,C.leaf3);
+        }
+        if(stage>=3){
+          const r=0.05+0.028*f;
+          cyl(A,0,-0.16,0,0.004,r,0.2,LOD?8:5,C.carrot);
+          sphere(A,0,0.035,0,r,r*0.55,r,seg,4,C.carrot2);
+        }
+        break;
+      }
+      case 'Pumpkin':{
+        const r=0.08+0.2*f, ripe=stage>=4;
+        const base=ripe?C.pump:C.pumpRaw, rib=ripe?C.pumpRib:mixc(C.pumpRaw,C.dark,0.28);
+        sphere(A,0,r*0.88,0,r,r*0.84,r,LOD>=2?14:8,ring,base,rib);
+        cyl(A,0,r*1.62,0,0.03,0.024,0.07,6,C.leaf);
+        break;
+      }
+      case 'Sunflower':{
+        const h=0.22+0.5*f;
+        cyl(A,0,0,0,0.028,0.021,h,LOD?7:4,C.leaf2);
+        if(stage>=2){
+          blade(A,0.02,0,h*0.46,0.9,C.leaf2,C.leaf3,0.045);
+          blade(A,-0.02,0,h*0.38,3.9,C.leaf2,C.leaf3,0.045);
+        }
+        if(stage>=4){
+          const n=t.d?t.d.petals:1, hr=0.088;
+          tilt(A,-0.6,0,h,0.02,T=>{
+            for(let i=0;i<n;i++){
+              const a=i/n*Math.PI*2;
+              box(T,Math.cos(a)*hr*1.8,0.012,Math.sin(a)*hr*1.8,hr*2,0.024,hr*0.74,
+                i%2?C.petal:C.petal2,-a);
+            }
+            cyl(T,0,-0.014,0,hr,hr*0.95,0.058,LOD?10:6,C.head);
+          });
+        }else sphere(A,0,h,0,0.042,0.036,0.042,7,4,C.leaf);
+        break;
+      }
+      case 'Cactus':{
+        const sz=t.d?t.d.size:1;
+        const h=(0.17+0.046*sz)*(0.45+0.55*f), r=0.078;
+        cyl(A,0,0,0,r,r*0.92,h,LOD>=2?11:6,C.cact);
+        sphere(A,0,h,0,r*0.92,r*0.72,r*0.92,seg,4,C.cact2);
+        if(sz>3){
+          cyl(A,-r*1.55,h*0.34,0,r*0.5,r*0.46,h*0.46,LOD?8:5,C.cact);
+          sphere(A,-r*1.55,h*0.8,0,r*0.46,r*0.4,r*0.46,7,4,C.cact2);
+        }
+        if(sz>6){
+          cyl(A,r*1.55,h*0.5,0,r*0.5,r*0.46,h*0.42,LOD?8:5,C.cact);
+          sphere(A,r*1.55,h*0.92,0,r*0.46,r*0.4,r*0.46,7,4,C.cact2);
+        }
+        if(LOD>=2)
+          for(let i=0;i<6;i++){
+            const a=i*1.15;
+            box(A,Math.cos(a)*r,h*(0.18+i*0.13),Math.sin(a)*r,0.032,0.008,0.008,C.spine,-a);
+          }
+        if(stage>=4) sphere(A,0,h+0.035,0,0.038,0.032,0.038,7,4,rgb('#E07AA0'));
+        break;
+      }
+      case 'Dinosaur':{
+        const fed=t.d?t.d.fed:0, s=0.64+0.075*fed;
+        sphere(A,0,0.18*s,0,0.2*s,0.155*s,0.155*s,seg,ring,C.dino);
+        sphere(A,0,0.14*s,0.1*s,0.15*s,0.1*s,0.09*s,seg,4,C.dino2);
+        cyl(A,0.18*s,0.15*s,0,0.052*s,0.006,0.24*s,6,C.dinoDark);
+        sphere(A,-0.21*s,0.31*s,0,0.104*s,0.1*s,0.1*s,seg,ring,C.dino);
+        sphere(A,-0.29*s,0.29*s,0.05*s,0.022,0.022,0.022,6,4,C.dark);
+        for(const dx of [-0.08,0.08]) for(const dz of [-0.07,0.07])
+          box(A,dx*s,0.05*s,dz*s,0.058*s,0.1*s,0.058*s,C.dinoDark);
+        for(let i=0;i<3;i++)
+          box(A,(0.06-i*0.07)*s,0.31*s,0,0.042*s,0.062*s,0.022,C.dino2,0.4);
+        if(fed<5)
+          for(let i=0;i<5;i++)
+            box(A,(-0.1+i*0.05)*s,0.47*s,0,0.036,0.036,0.036,
+              i<fed?C.petal:mixc(C.dark,C.bone,0.3));
+        break;
+      }
+      case 'Apple':{
+        const rot=extra==='r';
+        sphere(A,0,0.078,0,0.075,0.07,0.075,seg,ring,rot?mixc(C.apple,C.dark,0.42):C.apple);
+        sphere(A,-0.022,0.104,-0.022,0.032,0.03,0.032,7,4,rot?mixc(C.apple2,C.dark,0.42):C.apple2);
+        cyl(A,0,0.135,0,0.009,0.009,0.05,5,C.trunk);
+        break;
+      }
+      case 'Hedge':{
+        box(A,0,0.44,0,0.96,0.88,0.96,C.hedge);
+        for(let i=0;i<8;i++){
+          const a=hash(i,7)*6.28, r=hash(i*3,2)*0.36;
+          sphere(A,Math.cos(a)*r,0.88,Math.sin(a)*r,0.17,0.11,0.17,7,4,C.hedge2);
+        }
+        break;
+      }
+      case 'Treasure':{
+        box(A,0,0.1,0,0.44,0.2,0.32,C.chest);
+        cyl(A,0,0.2,0,0.16,0.16,0.44,LOD>=2?12:7,C.chest);
+        box(A,0,0.21,0,0.46,0.035,0.34,C.gold);
+        box(A,0,0.11,0.17,0.075,0.1,0.025,C.gold);
+        break;
+      }
+    }
+  });
+}
+const droneMesh=()=>mesh('drone'+LOD,0,0,A=>{
+  box(A,0,0,0,0.3,0.13,0.3,C.body);
+  box(A,0,0.055,0,0.21,0.06,0.21,C.body2);
+  sphere(A,0,0.085,0,0.082,0.072,0.082,10,6,C.dome);
+  for(const [dx,dz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){
+    box(A,dx*0.16,0,dz*0.16,0.27,0.035,0.05,C.body2,dx*dz>0?0.78:-0.78);
+    cyl(A,dx*0.24,0.015,dz*0.24,0.038,0.032,0.055,6,C.body);
+  }
+});
+
+/* ------------------------------- matrices -------------------------------- */
+function m4mul(a,b){
+  const o=new Float32Array(16);
+  for(let i=0;i<4;i++) for(let j=0;j<4;j++){
+    let s=0;
+    for(let k=0;k<4;k++) s+=a[k*4+j]*b[i*4+k];
+    o[i*4+j]=s;
+  }
+  return o;
+}
+function m4persp(f0,asp,near,far){
+  const f=1/Math.tan(f0/2), o=new Float32Array(16);
+  o[0]=f/asp; o[5]=f; o[10]=(far+near)/(near-far); o[11]=-1; o[14]=2*far*near/(near-far);
+  return o;
+}
+function m4ortho(r,t,near,far){
+  const o=new Float32Array(16);
+  o[0]=1/r; o[5]=1/t; o[10]=-2/(far-near); o[14]=-(far+near)/(far-near); o[15]=1;
+  return o;
+}
+function m4look(e,c,up){
+  const z=[e[0]-c[0],e[1]-c[1],e[2]-c[2]];
+  let l=Math.hypot(z[0],z[1],z[2])||1; z[0]/=l; z[1]/=l; z[2]/=l;
+  const x=[up[1]*z[2]-up[2]*z[1],up[2]*z[0]-up[0]*z[2],up[0]*z[1]-up[1]*z[0]];
+  l=Math.hypot(x[0],x[1],x[2])||1; x[0]/=l; x[1]/=l; x[2]/=l;
+  const y=[z[1]*x[2]-z[2]*x[1],z[2]*x[0]-z[0]*x[2],z[0]*x[1]-z[1]*x[0]];
+  return new Float32Array([x[0],y[0],z[0],0, x[1],y[1],z[1],0, x[2],y[2],z[2],0,
+    -(x[0]*e[0]+x[1]*e[1]+x[2]*e[2]), -(y[0]*e[0]+y[1]*e[1]+y[2]*e[2]),
+    -(z[0]*e[0]+z[1]*e[1]+z[2]*e[2]), 1]);
+}
+const cam={yaw:-0.58,pitch:0.82,dist:6};
+function fitCam(){ cam.dist=Math.max(4.2,world.size*1.28+3.4); }
+let MVP=null, LMVP=null, EYE=[0,0,0], TIME=0, shake=0;
+function shakeNow(a){ shake=Math.min(0.5,Math.max(shake,a)); }
+const outBack=a=>1+2.6*Math.pow(a-1,3)+1.6*Math.pow(a-1,2);
+
+/* --------------------------------- GL ------------------------------------ */
+const WIND=`
+vec3 windPos(vec3 p,float sway,float t){
+  float w=sin(t*1.25+p.x*0.85+p.z*1.15)*0.5+sin(t*2.1+p.x*1.7)*0.22;
+  return p+vec3(w*0.05*sway,0.0,w*0.028*sway);
+}`;
+const PACK=`
+vec4 packD(float v){
+  vec4 e=vec4(1.0,255.0,65025.0,16581375.0)*v;
+  e=fract(e);
+  e-=e.yzww*vec4(1.0/255.0,1.0/255.0,1.0/255.0,0.0);
+  return e;
+}
+float unpackD(vec4 c){ return dot(c,vec4(1.0,1.0/255.0,1.0/65025.0,1.0/16581375.0)); }`;
+
+let P_main=null,P_depth=null,P_sky=null,P_post=null;
+let vbo=null,quadBuf=null;
+let shadowFB=null,shadowTex=null,shadowDepth=null,SHADOW=1024;
+let sceneFB=null,sceneTex=null,sceneDepth=null,sceneW=0,sceneH=0;
+let VB=new Float32Array(10*3*24000), vn=0;
+let statVBO=null, statN=0, statKey='';
+let GL_OK=false;
+
+function compile(vsrc,fsrc){
+  const mk=(t,src)=>{
+    const s=gl.createShader(t); gl.shaderSource(s,src); gl.compileShader(s);
+    if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+    return s;
+  };
+  const p=gl.createProgram();
+  gl.attachShader(p,mk(gl.VERTEX_SHADER,vsrc));
+  gl.attachShader(p,mk(gl.FRAGMENT_SHADER,fsrc));
+  gl.linkProgram(p);
+  if(!gl.getProgramParameter(p,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  const o={p,a:{},u:{}};
+  const na=gl.getProgramParameter(p,gl.ACTIVE_ATTRIBUTES);
+  for(let i=0;i<na;i++){ const n=gl.getActiveAttrib(p,i).name; o.a[n]=gl.getAttribLocation(p,n); }
+  const nu=gl.getProgramParameter(p,gl.ACTIVE_UNIFORMS);
+  for(let i=0;i<nu;i++){ const n=gl.getActiveUniform(p,i).name.replace('[0]',''); o.u[n]=gl.getUniformLocation(p,n); }
+  return o;
+}
+function makeTex(w,h,filter){
+  const t=gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D,t);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,filter);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,filter);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  return t;
+}
+function makeFB(w,h,filter){
+  const fb=gl.createFramebuffer(), tex=makeTex(w,h,filter), rb=gl.createRenderbuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER,fb);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,tex,0);
+  gl.bindRenderbuffer(gl.RENDERBUFFER,rb);
+  gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_COMPONENT16,w,h);
+  gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,rb);
+  const ok=gl.checkFramebufferStatus(gl.FRAMEBUFFER)===gl.FRAMEBUFFER_COMPLETE;
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+  return ok?{fb,tex,rb}:null;
+}
+function initGL(){
+  if(!gl) return false;
+  try{
+    P_main=compile(
+`attribute vec3 aPos;attribute vec3 aNrm;attribute vec3 aCol;attribute float aSway;
+uniform mat4 uMVP,uLMVP;uniform float uTime;
+varying vec3 vN,vC,vW;varying vec4 vS;
+${WIND}
+void main(){
+  vec3 p=windPos(aPos,aSway,uTime);
+  gl_Position=uMVP*vec4(p,1.0);
+  vN=aNrm; vC=aCol; vW=p; vS=uLMVP*vec4(p,1.0);
+}`,
+`precision highp float;
+uniform sampler2D uShadow;uniform vec3 uLight;uniform vec3 uEye;
+varying vec3 vN,vC,vW;varying vec4 vS;
+${PACK}
+float shade(){
+  vec3 q=vS.xyz/vS.w*0.5+0.5;
+  if(q.x<0.001||q.x>0.999||q.y<0.001||q.y>0.999||q.z>1.0) return 1.0;
+  float bias=0.0022;
+  float s=0.0;
+  for(int i=-1;i<=1;i++)
+    for(int j=-1;j<=1;j++){
+      vec2 o=vec2(float(i),float(j))/1024.0;
+      s+=(q.z-bias>unpackD(texture2D(uShadow,q.xy+o)))?0.0:1.0;
+    }
+  return s/9.0;
+}
+void main(){
+  vec3 n=normalize(vN);
+  float sh=mix(0.42,1.0,shade());
+  float key=max(dot(n,uLight),0.0)*sh;
+  float fill=max(dot(n,normalize(vec3(-0.6,0.35,-0.5))),0.0);
+  float sky=n.y*0.5+0.5;
+  vec3 amb=mix(vec3(0.30,0.33,0.26),vec3(0.46,0.56,0.62),sky);
+  vec3 c=vC*(amb+vec3(1.06,1.0,0.86)*key*0.95+vec3(0.18,0.21,0.24)*fill*0.5);
+  vec3 h=normalize(uLight+normalize(uEye-vW));
+  c+=vec3(0.5,0.52,0.46)*pow(max(dot(n,h),0.0),22.0)*0.16*sh;
+  float fog=clamp((length(vW)-13.0)/30.0,0.0,1.0);
+  c=mix(c,vec3(0.62,0.75,0.86),fog*0.62);
+  gl_FragColor=vec4(c,1.0);
+}`);
+    P_depth=compile(
+`attribute vec3 aPos;attribute float aSway;
+uniform mat4 uMVP;uniform float uTime;
+${WIND}
+void main(){ gl_Position=uMVP*vec4(windPos(aPos,aSway,uTime),1.0); }`,
+`precision highp float;
+${PACK}
+void main(){ gl_FragColor=packD(gl_FragCoord.z); }`);
+    P_sky=compile(
+`attribute vec2 aXY;varying vec2 vUV;
+void main(){ vUV=aXY*0.5+0.5; gl_Position=vec4(aXY,0.999999,1.0); }`,
+`precision mediump float;varying vec2 vUV;
+void main(){
+  float t=vUV.y;
+  vec3 top=vec3(0.24,0.47,0.72), mid=vec3(0.52,0.71,0.85), low=vec3(0.79,0.85,0.86);
+  vec3 c=t>0.42?mix(mid,top,(t-0.42)/0.58):mix(low,mid,t/0.42);
+  gl_FragColor=vec4(c,1.0);
+}`);
+    P_post=compile(
+`attribute vec2 aXY;varying vec2 vUV;
+void main(){ vUV=aXY*0.5+0.5; gl_Position=vec4(aXY,0.0,1.0); }`,
+`precision mediump float;
+uniform sampler2D uTex;uniform vec2 uTexel;varying vec2 vUV;
+void main(){
+  vec3 c=texture2D(uTex,vUV).rgb*0.4;
+  c+=texture2D(uTex,vUV+vec2(uTexel.x,uTexel.y)*0.6).rgb*0.15;
+  c+=texture2D(uTex,vUV+vec2(-uTexel.x,uTexel.y)*0.6).rgb*0.15;
+  c+=texture2D(uTex,vUV+vec2(uTexel.x,-uTexel.y)*0.6).rgb*0.15;
+  c+=texture2D(uTex,vUV+vec2(-uTexel.x,-uTexel.y)*0.6).rgb*0.15;
+  c=pow(c,vec3(0.94));
+  c=mix(vec3(dot(c,vec3(0.299,0.587,0.114))),c,1.12);
+  c*=vec3(1.02,1.0,0.97);
+  vec2 d=vUV-0.5;
+  c*=1.0-dot(d,d)*0.55;
+  gl_FragColor=vec4(c,1.0);
+}`);
+  }catch(e){ return false; }
+  vbo=gl.createBuffer();
+  statVBO=gl.createBuffer();
+  quadBuf=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,quadBuf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+  const sm=makeFB(SHADOW,SHADOW,gl.NEAREST);
+  if(!sm) return false;
+  shadowFB=sm.fb; shadowTex=sm.tex;
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthFunc(gl.LEQUAL);
+  gl.enable(gl.CULL_FACE);
+  gl.cullFace(gl.BACK);
+  return true;
+}
+GL_OK=initGL();
+
+function room(need){
+  if(vn*10+need<=VB.length) return;
+  const n=new Float32Array(Math.max(VB.length*2,(vn*10+need)*1.3));
+  n.set(VB.subarray(0,vn*10));
+  VB=n;
+}
+function W(x,y,z,nx,ny,nz,c,sw){
+  const i=vn*10;
+  VB[i]=x; VB[i+1]=y; VB[i+2]=z;
+  VB[i+3]=nx; VB[i+4]=ny; VB[i+5]=nz;
+  VB[i+6]=c[0]; VB[i+7]=c[1]; VB[i+8]=c[2]; VB[i+9]=sw||0;
+  vn++;
+}
+function Wquad(p,q,r,s,c,n){
+  room(60);
+  W(p[0],p[1],p[2],n[0],n[1],n[2],c); W(q[0],q[1],q[2],n[0],n[1],n[2],c);
+  W(r[0],r[1],r[2],n[0],n[1],n[2],c); W(p[0],p[1],p[2],n[0],n[1],n[2],c);
+  W(r[0],r[1],r[2],n[0],n[1],n[2],c); W(s[0],s[1],s[2],n[0],n[1],n[2],c);
+}
+function blit(m,tx,ty,tz,sc){
+  room(m.length);
+  const base=vn*10, s=sc===undefined?1:sc;
+  if(s===1){
+    VB.set(m,base);
+    for(let i=0;i<m.length;i+=10){ VB[base+i]+=tx; VB[base+i+1]+=ty; VB[base+i+2]+=tz; }
+  }else{
+    for(let i=0;i<m.length;i+=10){
+      VB[base+i]=m[i]*s+tx; VB[base+i+1]=m[i+1]*s+ty; VB[base+i+2]=m[i+2]*s+tz;
+      VB[base+i+3]=m[i+3]; VB[base+i+4]=m[i+4]; VB[base+i+5]=m[i+5];
+      VB[base+i+6]=m[i+6]; VB[base+i+7]=m[i+7]; VB[base+i+8]=m[i+8];
+      VB[base+i+9]=m[i+9]*s;
+    }
+  }
+  vn+=m.length/10;
+}
+function blitTilt(m,tx,ty,tz,ax,az){
+  room(m.length);
+  const base=vn*10;
+  const ca=Math.cos(ax),sa=Math.sin(ax),cb=Math.cos(az),sb=Math.sin(az);
+  for(let i=0;i<m.length;i+=10){
+    let x=m[i],y=m[i+1],z=m[i+2];
+    let y1=y*ca-z*sa, z1=y*sa+z*ca;
+    let x1=x*cb-y1*sb; y1=x*sb+y1*cb;
+    VB[base+i]=x1+tx; VB[base+i+1]=y1+ty; VB[base+i+2]=z1+tz;
+    let nx=m[i+3],ny=m[i+4],nz=m[i+5];
+    let ny1=ny*ca-nz*sa, nz1=ny*sa+nz*ca;
+    let nx1=nx*cb-ny1*sb; ny1=nx*sb+ny1*cb;
+    VB[base+i+3]=nx1; VB[base+i+4]=ny1; VB[base+i+5]=nz1;
+    VB[base+i+6]=m[i+6]; VB[base+i+7]=m[i+7]; VB[base+i+8]=m[i+8]; VB[base+i+9]=0;
+  }
+  vn+=m.length/10;
+}
+
+function resizeCanvas(){
+  const r=cv.getBoundingClientRect();
+  DPR=Math.min(2,window.devicePixelRatio||1);
+  CW=Math.max(80,Math.round(r.width)); CH=Math.max(80,Math.round(r.height));
+  cv.width=Math.round(CW*DPR); cv.height=Math.round(CH*DPR);
+  fxc.width=cv.width; fxc.height=cv.height;
+  fgx.setTransform(DPR,0,0,DPR,0,0);
+  if(!GL_OK) return;
+  const w=Math.min(2200,Math.round(cv.width*SS)), h=Math.min(2200,Math.round(cv.height*SS));
+  if(w!==sceneW||h!==sceneH){
+    const f=makeFB(w,h,gl.LINEAR);
+    if(f){ sceneFB=f.fb; sceneTex=f.tex; sceneW=w; sceneH=h; }
+  }
+}
+new ResizeObserver(resizeCanvas).observe(cv);
+
+/* ------------------------------ particles -------------------------------- */
+const parts=[];
+function burst(x,y,col,n){
+  const c=typeof col==='string'?rgb(col):col;
+  for(let i=0;i<(n||9);i++){
+    const a=Math.random()*6.28, sp=0.6+Math.random()*1.5;
+    parts.push({x,y:0.45,z:y,vx:Math.cos(a)*sp*0.5,vy:1.4+Math.random()*1.5,
+      vz:Math.sin(a)*sp*0.5,life:0,max:0.55+Math.random()*0.35,c,s:0.035+Math.random()*0.03});
+  }
+  if(parts.length>320) parts.splice(0,parts.length-320);
+}
+
+/* ------------------------------ the scene -------------------------------- */
+const UP=[0,1,0];
+let frame=0;
+function buildScene(dt){
+  const n=world.size;
+  LOD=n<=10?2:(n<=16?1:0);
+  vn=0;
+
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++){
+    const t=world.tiles[y*n+x];
+    const X=x-n/2, Z=(n-1-y)-n/2;
+    const soil=t.g==='Soil';
+    const th=soil?0.22:0.32, bot=-0.34;
+    const g=0.035;
+    const x0=X+g, x1=X+1-g, z0=Z+g, z1=Z+1-g;
+    const jit=hash(x,y)*0.03-0.015;
+    let col=soil?mixc(C.soil,C.soilWet,Math.min(1,t.water)):mixc(C.grass,C.grass2,hash(x*3,y*5));
+    col=[col[0]+jit,col[1]+jit*0.8,col[2]+jit*0.5];
+    const earth=mixc(C.soil,C.dark,0.28), under=mixc(C.soil,C.dark,0.55);
+    Wquad([x0,th,z1],[x1,th,z1],[x1,th,z0],[x0,th,z0],col,UP);
+    Wquad([x0,bot,z1],[x1,bot,z1],[x1,th,z1],[x0,th,z1],earth,[0,0,1]);
+    Wquad([x1,bot,z0],[x0,bot,z0],[x0,th,z0],[x1,th,z0],earth,[0,0,-1]);
+    Wquad([x1,bot,z1],[x1,bot,z0],[x1,th,z0],[x1,th,z1],earth,[1,0,0]);
+    Wquad([x0,bot,z0],[x0,bot,z1],[x0,th,z1],[x0,th,z0],earth,[-1,0,0]);
+    Wquad([x0,bot,z0],[x1,bot,z0],[x1,bot,z1],[x0,bot,z1],under,[0,-1,0]);
+    if(!soil&&LOD>=2)
+      blit(mesh('turf'+LOD,1.5,0.3,A=>{
+        for(let i=0;i<9;i++){
+          const a=hash(i,71)*6.28, r=0.06+hash(i*3,73)*0.28, v=hash(i*5,79);
+          blade(A,Math.cos(a)*r,Math.sin(a)*r,0.05+v*0.07,a,
+            mixc(C.blade,C.bladeDeep,v),C.bladeTip,0.014,2);
+        }
+      }),X+0.5,th,Z+0.5);
+  }
+
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++){
+    const t=world.tiles[y*n+x];
+    if(!t.e) continue;
+    const sp=SPEC[t.e];
+    const raw=sp.grow>0?Math.min(1,t.age/sp.grow):1;
+    const stage=Math.round(raw*4);
+    const th=t.g==='Soil'?0.2:0.3;
+    let smooth=sp.grow>0?0.9+0.1*Math.min(1,(raw*4-stage+0.5)):1;
+    if(t.pop){
+      const a=(performance.now()-t.pop)/400;
+      if(a<1) smooth*=Math.max(0.05,outBack(a)); else t.pop=0;
+    }
+    if(isMature(t)) smooth*=1+0.03*Math.sin(TIME*3.2+x*1.7+y*2.3);
+    blit(plantMesh(t,stage),x-n/2+0.5,th,(n-1-y)-n/2+0.5,smooth);
+    if(state.unlocked.poly&&t.d&&t.d.comp){
+      const ok=companionOk(t,x,y);
+      blit(mesh('comp'+ok,0,0,A=>sphere(A,0,0.045,0,0.05,0.05,0.05,8,5,
+        ok?rgb('#B6EE62'):rgb('#8A8474'))), x-n/2+0.84, th, (n-1-y)-n/2+0.84);
+    }
+  }
+
+  const dm=droneMesh();
+  for(const D of world.drones){
+    const k=Math.min(1,dt*Math.max(9,tpsNow()*0.85));
+    if(Math.abs(D.vx-D.x)>n/2) D.vx += (D.vx>D.x?-n:n);
+    if(Math.abs(D.vy-D.y)>n/2) D.vy += (D.vy>D.y?-n:n);
+    const px=D.vx, pz=D.vy;
+    D.vx=lerp(D.vx,D.x,k); D.vy=lerp(D.vy,D.y,k);
+    const velx=(D.vx-px)/Math.max(dt,0.001), velz=(D.vy-pz)/Math.max(dt,0.001);
+    D.tx=lerp(D.tx||0,Math.max(-0.5,Math.min(0.5,velz*0.05)),Math.min(1,dt*8));
+    D.tz=lerp(D.tz||0,Math.max(-0.5,Math.min(0.5,-velx*0.05)),Math.min(1,dt*8));
+    if(D.flip>0) D.flip=Math.max(0,D.flip-dt*2.4);
+    if(D.bump>0) D.bump=Math.max(0,D.bump-dt*4);
+    const X=D.vx-n/2+0.5, Z=(n-1-D.vy)-n/2+0.5;
+    const hov=0.8+Math.sin(TIME*2.1+D.id)*0.028;
+    const flipping=D.flip>0;
+    const spinAng=flipping?(1-D.flip)*6.2831853:0;
+    blitTilt(dm,X,hov,Z,flipping?spinAng:D.tx,flipping?0:D.tz);
+    const spin=TIME*22+D.id;
+    room(4*6*6*10);
+    for(const [dx,dz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){
+      const cxr=X+dx*0.24, czr=Z+dz*0.24, ry=hov+0.055;
+      for(let i=0;i<6;i++){
+        const a0=spin+i*1.047, a1=spin+(i+1)*1.047;
+        Wquad([cxr,ry,czr],[cxr+Math.cos(a0)*0.16,ry,czr+Math.sin(a0)*0.16],
+              [cxr+Math.cos(a1)*0.16,ry,czr+Math.sin(a1)*0.16],[cxr,ry,czr],C.rotor,UP);
+      }
+    }
+  }
+
+  for(let i=parts.length-1;i>=0;i--){
+    const p=parts[i];
+    p.life+=dt;
+    if(p.life>p.max){ parts.splice(i,1); continue; }
+    p.vy-=dt*5.2;
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.z+=p.vz*dt;
+    if(p.y<0.34){ p.y=0.34; p.vy*=-0.35; p.vx*=0.6; p.vz*=0.6; }
+    const s=p.s*(1-p.life/p.max*0.55);
+    const X=p.x-n/2+0.5, Z=(n-1-p.z)-n/2+0.5;
+    room(220);
+    const q=[[X-s,p.y,Z-s],[X+s,p.y,Z-s],[X+s,p.y,Z+s],[X-s,p.y,Z+s]];
+    Wquad(q[0],q[1],q[2],q[3],p.c,UP);
+    Wquad([X-s,p.y-s*1.6,Z-s],[X+s,p.y-s*1.6,Z-s],[X+s,p.y+s*0.4,Z+s],[X-s,p.y+s*0.4,Z+s],p.c,[0,0.5,-0.86]);
+  }
+}
+
+function bindGeom(P,buf){
+  gl.bindBuffer(gl.ARRAY_BUFFER,buf||vbo);
+  gl.enableVertexAttribArray(P.a.aPos);
+  gl.vertexAttribPointer(P.a.aPos,3,gl.FLOAT,false,40,0);
+  if(P.a.aNrm!==undefined){ gl.enableVertexAttribArray(P.a.aNrm); gl.vertexAttribPointer(P.a.aNrm,3,gl.FLOAT,false,40,12); }
+  if(P.a.aCol!==undefined){ gl.enableVertexAttribArray(P.a.aCol); gl.vertexAttribPointer(P.a.aCol,3,gl.FLOAT,false,40,24); }
+  gl.enableVertexAttribArray(P.a.aSway);
+  gl.vertexAttribPointer(P.a.aSway,1,gl.FLOAT,false,40,36);
+}
+function fullscreen(P){
+  gl.bindBuffer(gl.ARRAY_BUFFER,quadBuf);
+  gl.enableVertexAttribArray(P.a.aXY);
+  gl.vertexAttribPointer(P.a.aXY,2,gl.FLOAT,false,0,0);
+  gl.drawArrays(gl.TRIANGLES,0,3);
+}
+function adaptQuality(dt,cost){
+  frameAvg=frameAvg*0.9+cost*0.1;
+  sinceStep+=dt;
+  if(sinceStep<1.5) return;
+  if(frameAvg>26&&ssLevel<SS_STEPS.length-1){
+    ssLevel++; SS=SS_STEPS[ssLevel]; sinceStep=0; frameAvg=16; sceneW=0; resizeCanvas();
+  }else if(frameAvg<10&&ssLevel>0){
+    ssLevel--; SS=SS_STEPS[ssLevel]; sinceStep=0; frameAvg=16; sceneW=0; resizeCanvas();
+  }
+}
+function draw(dt){
+  frame++; TIME+=dt;
+  if(!GL_OK){ draw2D(dt); return; }
+  const t0=performance.now();
+  buildScene(dt);
+  gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
+  gl.bufferData(gl.ARRAY_BUFFER,VB.subarray(0,vn*10),gl.DYNAMIC_DRAW);
+
+  const n=world.size, R=n*0.78+3.4;
+  const ld=Math.max(12,n*1.6);
+  LMVP=m4mul(m4ortho(R,R,0.5,ld*2.4),
+    m4look([LIGHT[0]*ld,LIGHT[1]*ld,LIGHT[2]*ld],[0,0,0],UP));
+  gl.bindFramebuffer(gl.FRAMEBUFFER,shadowFB);
+  gl.viewport(0,0,SHADOW,SHADOW);
+  gl.clearColor(1,1,1,1);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  gl.useProgram(P_depth.p);
+  gl.uniformMatrix4fv(P_depth.u.uMVP,false,LMVP);
+  gl.uniform1f(P_depth.u.uTime,TIME);
+  gl.cullFace(gl.FRONT);
+  bindGeom(P_depth,statVBO);
+  gl.drawArrays(gl.TRIANGLES,0,statN);
+  bindGeom(P_depth);
+  gl.drawArrays(gl.TRIANGLES,0,vn);
+  gl.cullFace(gl.BACK);
+
+  const asp=cv.width/cv.height;
+  const cp=Math.cos(cam.pitch), sp=Math.sin(cam.pitch);
+  EYE=[Math.sin(cam.yaw)*cp*cam.dist, sp*cam.dist, Math.cos(cam.yaw)*cp*cam.dist];
+  let look=[0,0,0];
+  if(shake>0.001){
+    const s2=shake*0.35;
+    look=[(Math.random()-0.5)*s2,(Math.random()-0.5)*s2,(Math.random()-0.5)*s2];
+    shake*=Math.pow(0.0016,dt);
+  }
+  MVP=m4mul(m4persp(0.8,asp,0.1,260),m4look(EYE,look,UP));
+  gl.bindFramebuffer(gl.FRAMEBUFFER,sceneFB);
+  gl.viewport(0,0,sceneW,sceneH);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  gl.depthMask(false);
+  gl.useProgram(P_sky.p);
+  fullscreen(P_sky);
+  gl.depthMask(true);
+  gl.useProgram(P_main.p);
+  gl.uniformMatrix4fv(P_main.u.uMVP,false,MVP);
+  gl.uniformMatrix4fv(P_main.u.uLMVP,false,LMVP);
+  gl.uniform3fv(P_main.u.uLight,LIGHT);
+  gl.uniform3fv(P_main.u.uEye,EYE);
+  gl.uniform1f(P_main.u.uTime,TIME);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D,shadowTex);
+  gl.uniform1i(P_main.u.uShadow,0);
+  bindGeom(P_main,statVBO);
+  gl.drawArrays(gl.TRIANGLES,0,statN);
+  bindGeom(P_main);
+  gl.drawArrays(gl.TRIANGLES,0,vn);
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+  gl.viewport(0,0,cv.width,cv.height);
+  gl.useProgram(P_post.p);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D,sceneTex);
+  gl.uniform1i(P_post.u.uTex,0);
+  gl.uniform2f(P_post.u.uTexel,1/sceneW,1/sceneH);
+  gl.disable(gl.DEPTH_TEST);
+  fullscreen(P_post);
+  gl.enable(gl.DEPTH_TEST);
+  drawFx(dt);
+  adaptQuality(dt,performance.now()-t0);
+}
+function project(x,y,z){
+  if(!MVP) return null;
+  const w=MVP[3]*x+MVP[7]*y+MVP[11]*z+MVP[15];
+  if(w<=0.0001) return null;
+  return [((MVP[0]*x+MVP[4]*y+MVP[8]*z+MVP[12])/w*0.5+0.5)*CW,
+          (0.5-(MVP[1]*x+MVP[5]*y+MVP[9]*z+MVP[13])/w*0.5)*CH];
+}
+function drawFx(dt){
+  fgx.clearRect(0,0,CW,CH);
+  const n=world.size;
+  for(let i=world.fx.length-1;i>=0;i--){
+    const f=world.fx[i];
+    f.t+=dt;
+    if(f.t>1.2){ world.fx.splice(i,1); continue; }
+    const p=project(f.x-n/2+0.5,0.8+f.t*0.75,(n-1-f.y)-n/2+0.5);
+    if(!p) continue;
+    const a=Math.min(1,(1-f.t/1.2)*1.8);
+    fgx.globalAlpha=a;
+    fgx.font='700 14px Archivo, sans-serif';
+    fgx.textAlign='center';
+    fgx.lineWidth=3.5; fgx.strokeStyle='rgba(12,16,10,.85)';
+    fgx.strokeText(f.text,p[0],p[1]);
+    fgx.fillStyle=f.color; fgx.fillText(f.text,p[0],p[1]);
+    fgx.globalAlpha=1;
+  }
+}
+
+/* ------------------------- flat fallback (no WebGL) ---------------------- */
+const flat=(!GL_OK&&cv.getContext)?cv.getContext('2d'):null;
+const FLATC={Grass:'#8FB449',Bush:'#4F8637',Tree:'#3B6B2A',Carrot:'#D2701F',Pumpkin:'#D4801F',
+  Sunflower:'#E9C63C',Cactus:'#4E8A4A',Dinosaur:'#5E8C46',Apple:'#B93A30',Hedge:'#26411B',
+  Treasure:'#E0B84A'};
+function draw2D(dt){
+  if(!flat) return;
+  const n=world.size;
+  const cell=Math.min(Math.floor(Math.min(CW-16,CH-16)/n),56);
+  const ox=(CW-cell*n)/2, oy=(CH-cell*n)/2;
+  flat.setTransform(DPR,0,0,DPR,0,0);
+  flat.fillStyle='#3C5730'; flat.fillRect(0,0,CW,CH);
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++){
+    const t=world.tiles[y*n+x];
+    flat.fillStyle=t.g==='Soil'?'#8E6038':'#6FA83F';
+    flat.fillRect(ox+x*cell,oy+(n-1-y)*cell,cell-1,cell-1);
+    if(t.e){
+      const sp=SPEC[t.e];
+      const p=sp.grow>0?Math.min(1,t.age/sp.grow):1;
+      flat.fillStyle=FLATC[t.e]||'#fff';
+      flat.beginPath();
+      flat.arc(ox+x*cell+cell/2,oy+(n-1-y)*cell+cell/2,(cell*0.16+cell*0.2*p)/1.6,0,7);
+      flat.fill();
+    }
+  }
+  for(const D of world.drones){
+    D.vx=lerp(D.vx,D.x,Math.min(1,dt*12)); D.vy=lerp(D.vy,D.y,Math.min(1,dt*12));
+    flat.fillStyle='#8CE0EE';
+    flat.fillRect(ox+D.vx*cell+cell*0.25,oy+(n-1-D.vy)*cell+cell*0.25,cell*0.5,cell*0.5);
+  }
+}
+
+/* ------------------------------ picking ---------------------------------- */
+function pickTile(clientX,clientY){
+  const r=cv.getBoundingClientRect(), n=world.size;
+  if(!GL_OK||!MVP){
+    const cell=Math.min(Math.floor(Math.min(CW-16,CH-16)/n),56);
+    const ox=(r.width-cell*n)/2, oy=(r.height-cell*n)/2;
+    const gx=Math.floor((clientX-r.left-ox)/cell), gy=n-1-Math.floor((clientY-r.top-oy)/cell);
+    return (gx<0||gy<0||gx>=n||gy>=n)?null:{x:gx,y:gy};
+  }
+  const ndx=((clientX-r.left)/r.width)*2-1, ndy=1-((clientY-r.top)/r.height)*2;
+  const cp=Math.cos(cam.pitch), sp=Math.sin(cam.pitch);
+  const fwd=[-Math.sin(cam.yaw)*cp,-sp,-Math.cos(cam.yaw)*cp];
+  const right=[Math.cos(cam.yaw),0,-Math.sin(cam.yaw)];
+  const up=[fwd[1]*right[2]-fwd[2]*right[1],fwd[2]*right[0]-fwd[0]*right[2],fwd[0]*right[1]-fwd[1]*right[0]];
+  const th=Math.tan(0.4), asp=r.width/r.height;
+  const dir=[fwd[0]+right[0]*ndx*th*asp+up[0]*ndy*th,
+             fwd[1]+right[1]*ndx*th*asp+up[1]*ndy*th,
+             fwd[2]+right[2]*ndx*th*asp+up[2]*ndy*th];
+  if(Math.abs(dir[1])<1e-6) return null;
+  const tHit=(0.26-EYE[1])/dir[1];
+  if(tHit<0) return null;
+  const wx=EYE[0]+dir[0]*tHit, wz=EYE[2]+dir[2]*tHit;
+  const gx=Math.floor(wx+n/2), gy=n-1-Math.floor(wz+n/2);
+  return (gx<0||gy<0||gx>=n||gy>=n)?null:{x:gx,y:gy};
+}
+
+/* --------------------------- orbit / pinch ------------------------------- */
+(function controls(){
+  let drag=null,pinch=null,moved=0,downAt=0;
+  const pts=new Map();
+  cv.style.touchAction='none';
+  cv.addEventListener('pointerdown',e=>{
+    cv.setPointerCapture&&cv.setPointerCapture(e.pointerId);
+    pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===1){ drag={x:e.clientX,y:e.clientY}; moved=0; downAt=performance.now(); }
+    else if(pts.size===2){
+      const a=[...pts.values()];
+      pinch={d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y),dist:cam.dist};
+      drag=null;
+    }
+  });
+  cv.addEventListener('pointermove',e=>{
+    if(!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pinch&&pts.size>=2){
+      const a=[...pts.values()];
+      const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+      if(d>4) cam.dist=Math.max(2.2,Math.min(world.size*4+16,pinch.dist*pinch.d/d));
+      return;
+    }
+    if(!drag) return;
+    const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+    moved+=Math.abs(dx)+Math.abs(dy);
+    cam.yaw-=dx*0.008;
+    cam.pitch=Math.max(0.18,Math.min(1.45,cam.pitch+dy*0.006));
+    drag={x:e.clientX,y:e.clientY};
+  });
+  const up=e=>{
+    pts.delete(e.pointerId);
+    if(pts.size<2) pinch=null;
+    if(drag&&moved<7&&performance.now()-downAt<400) inspectAt(e.clientX,e.clientY);
+    if(pts.size===0) drag=null;
+  };
+  cv.addEventListener('pointerup',up);
+  cv.addEventListener('pointercancel',up);
+  cv.addEventListener('wheel',e=>{
+    e.preventDefault();
+    cam.dist=Math.max(2.2,Math.min(world.size*4+16,cam.dist*(1+Math.sign(e.deltaY)*0.12)));
+  },{passive:false});
+  cv.addEventListener('dblclick',()=>{ cam.yaw=-0.58; cam.pitch=0.82; fitCam(); });
+})();
+</script>
+<script>
+/* =============================== upgrades =============================== */
+const EXPAND_COST=[null,{Hay:5},{Hay:25},{Hay:90},{Wood:80},{Wood:300},{Carrot:300},
+  {Carrot:1000},{Pumpkin:700},{Power:1000},{Cactus:700},{Bone:900},{Gold:30}];
+const SPEED_COST=[null,{Hay:20},{Hay:90},{Wood:70},{Wood:280},{Carrot:250},{Carrot:900},
+  {Power:150},{Power:500},{Power:1600},{Bone:400},{Bone:1200},{Gold:12},{Gold:35},{Gold:90}];
+const TANK_COST=[null,{Carrot:200},{Pumpkin:300},{Power:500},{Bone:600},{Gold:20}];
+const BAY_COST=[null,{Power:600},{Bone:500},{Gold:15},{Gold:40},{Gold:100}];
+
+const UPGRADES=[
+  {id:'sensors',cat:'Systems',name:'Sensor Array',req:[],cost:()=>({Hay:6}),
+   desc:'get_entity_type(), get_ground_type() and measure(). can_harvest() you already have.'},
+  {id:'expand',cat:'Systems',name:'Field Expansion',req:[],lvl:()=>[state.expand,EXPAND_COST.length-1],
+   cost:s=>EXPAND_COST[s.expand+1]||{},
+   dyn:()=>'Farm is '+world.size+'x'+world.size+(SIZES[state.expand+1]?' → '+SIZES[state.expand+1]+'x'+SIZES[state.expand+1]:' (max)'),
+   desc:'More ground under the rotors.'},
+  {id:'speed',cat:'Systems',name:'Rotor Tuning',req:[],lvl:()=>[state.speed,SPEED_COST.length-1],
+   cost:s=>SPEED_COST[s.speed+1]||{},
+   dyn:()=>'Top speed '+TPS[state.speed]+' ticks/s'+(TPS[state.speed+1]?' → '+TPS[state.speed+1]:' (max)'),
+   desc:'Raises the speed cap on the run bar.'},
+  {id:'drones',cat:'Systems',name:'Drone Bay',req:['sunflower'],lvl:()=>[state.bay,BAY_COST.length-1],
+   cost:s=>BAY_COST[s.bay+1]||{},
+   dyn:()=>maxDrones()+' drone'+(maxDrones()>1?'s':'')+(BAY_COST[state.bay+1]?' → '+(maxDrones()+1):' (max)'),
+   desc:'spawn_drone(fn) starts another drone running fn. They share your variables and the clock.'},
+
+  {id:'plant',cat:'Crops',name:'Seed Hopper',req:[],cost:()=>({Hay:3}),
+   desc:'plant(Entities.Grass). Grass ripens in 3 ticks — and stops regrowing on its own.'},
+  {id:'bush',cat:'Crops',name:'Bushes',req:['plant'],cost:()=>({Hay:40}),
+   desc:'plant(Entities.Bush) → 1 wood in 9 ticks.'},
+  {id:'till',cat:'Crops',name:'Tiller',req:['bush'],cost:()=>({Wood:40}),
+   desc:'till() flips a tile between grassland and soil.'},
+  {id:'tree',cat:'Crops',name:'Trees',req:['bush'],cost:()=>({Wood:60,Hay:150}),
+   desc:'4 wood a harvest, but a tree grows at half speed for every tree touching it. Checkerboard them.'},
+  {id:'carrot',cat:'Crops',name:'Carrots',req:['till'],cost:()=>({Wood:120,Hay:150}),
+   desc:'plant(Entities.Carrot) on soil. Dry soil grows at about a third speed.'},
+  {id:'water',cat:'Crops',name:'Irrigation',req:['carrot'],cost:()=>({Carrot:150}),
+   desc:'get_water() and use_item(Items.Water), drawn from a tank that refills as time passes.'},
+  {id:'tank',cat:'Crops',name:'Water Tank',req:['water'],lvl:()=>[state.tankLvl,TANK_COST.length-1],
+   cost:s=>TANK_COST[s.tankLvl+1]||{},
+   dyn:()=>'Holds '+TANK[state.tankLvl]+(TANK[state.tankLvl+1]?' → '+TANK[state.tankLvl+1]:' (max)'),
+   desc:'A bigger tank also refills faster.'},
+  {id:'apples',cat:'Crops',name:'Orchard',req:['tree'],cost:()=>({Wood:250}),
+   desc:'Ripe trees drop apples on random empty tiles. Apples rot in 70 ticks — measure() counts down.'},
+  {id:'poly',cat:'Crops',name:'Polyculture',req:['water','apples'],cost:()=>({Carrot:300,Apple:40}),
+   desc:'Every crop now wants a neighbour. get_companion() names it; grant the wish and the harvest doubles.'},
+  {id:'pumpkin',cat:'Crops',name:'Pumpkins',req:['water'],cost:()=>({Carrot:400}),
+   desc:'Ripe pumpkins that touch merge — an n x n block pays n^3.'},
+  {id:'sunflower',cat:'Crops',name:'Sunflowers',req:['pumpkin'],cost:()=>({Pumpkin:250}),
+   desc:'measure() reads petals. Only the ripe flowers with the highest count yield power.'},
+  {id:'cactus',cat:'Crops',name:'Cacti',req:['sunflower'],cost:()=>({Power:400}),
+   desc:'swap(dir) exchanges two plants. Cacti pay only when the whole field is sorted by size.'},
+
+  {id:'dino',cat:'Livestock',name:'Dinosaurs',req:['cactus'],cost:()=>({Cactus:300,Pumpkin:800}),
+   desc:'measure() asks what it wants, use_item() feeds it. Five feeds → 6 bones.'},
+  {id:'maze',cat:'Livestock',name:'Hedge Maze',req:['dino'],cost:()=>({Bone:400}),
+   desc:'plant(Entities.Hedge) rebuilds the farm as a maze around one chest. Gold.'},
+
+  {id:'trade',cat:'Market',name:'Trading Post',req:['carrot'],cost:()=>({Wood:200,Carrot:80}),
+   desc:'trade(item, n) sells goods for gold. get_trade_request() names the item paying triple.'},
+  {id:'fertilizer',cat:'Market',name:'Fertilizer',req:['maze'],cost:()=>({Gold:15}),
+   desc:'Buy doses with gold; use_item(Items.Fertilizer) ripens a plant on the spot.'}
+];
+for(const u of UPGRADES) Unlocks.props[u.id]=sym('Unlocks',u.id);
+
+function canAfford(c){ for(const k in c) if((state.items[k]||0)<c[k]) return false; return true; }
+function pay(c){ for(const k in c){ state.items[k]-=c[k]; UI.bump(k); } }
+function reqsMet(u){ return u.req.every(r=>state.unlocked[r]); }
+function isOwned(u){ return u.lvl?false:!!state.unlocked[u.id]; }
+function isMaxed(u){ if(!u.lvl) return false; const [c,m]=u.lvl(); return c>=m; }
+function buy(u){
+  if(isOwned(u)||isMaxed(u)||!reqsMet(u)) return;
+  const c=u.cost(state);
+  if(!canAfford(c)){ UI.log('not enough for '+u.name,'e'); return; }
+  pay(c);
+  if(u.id==='expand'){ state.expand++; buildWorld(SIZES[state.expand],true); fitCam(); }
+  else if(u.id==='speed'){ state.speed++; state.speedPref=state.speed; UI.syncSpeed(); }
+  else if(u.id==='tank'){ state.tankLvl++; }
+  else if(u.id==='drones'){ state.bay++; }
+  else state.unlocked[u.id]=true;
+  UI.log('unlocked '+u.name,'s');
+  sfx('buy'); shakeNow(0.16);
+  UI.refreshShop(); UI.refreshStats(true); save();
+}
+
+/* ================================ audio ================================== */
+let actx=null, master=null, lastSfx=0;
+const audio={on:true};
+function audioInit(){
+  if(actx) return;
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC) return;
+  try{
+    actx=new AC();
+    master=actx.createGain();
+    master.gain.value=0.2;
+    master.connect(actx.destination);
+  }catch(e){ actx=null; }
+}
+function tone(type,f0,f1,dur,gain,delay){
+  const t0=actx.currentTime+(delay||0);
+  const o=actx.createOscillator(), g=actx.createGain();
+  o.type=type;
+  o.frequency.setValueAtTime(f0,t0);
+  if(f1!==f0) o.frequency.exponentialRampToValueAtTime(Math.max(1,f1),t0+dur);
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(gain,t0+0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.connect(g); g.connect(master);
+  o.start(t0); o.stop(t0+dur+0.02);
+}
+function sfx(name){
+  if(!audio.on||!actx||actx.state==='suspended') return;
+  const now=performance.now();
+  if(now-lastSfx<38) return;
+  lastSfx=now;
+  const r=Math.random()*0.12+0.94;
+  switch(name){
+    case 'harvest': tone('triangle',600*r,900*r,0.07,0.30); break;
+    case 'plant':   tone('sine',240*r,150*r,0.11,0.24); break;
+    case 'kill':    tone('sawtooth',300*r,110,0.11,0.16); break;
+    case 'coin':    tone('square',1046,1046,0.05,0.16); tone('square',1568,1568,0.07,0.14,0.05); break;
+    case 'treasure':
+      tone('triangle',659,659,0.09,0.24);
+      tone('triangle',880,880,0.09,0.24,0.08);
+      tone('triangle',1318,1318,0.18,0.22,0.16); break;
+    case 'buy':
+      tone('triangle',523,523,0.24,0.20);
+      tone('triangle',659,659,0.24,0.16,0.02);
+      tone('triangle',784,784,0.3,0.14,0.04); break;
+    case 'flip':    tone('sine',420,1300,0.16,0.13); break;
+    case 'error':   tone('sawtooth',170,80,0.22,0.16); break;
+  }
+}
+['pointerdown','keydown'].forEach(ev=>window.addEventListener(ev,()=>{
+  audioInit();
+  if(actx&&actx.state==='suspended') actx.resume();
+},{once:false,passive:true}));
+
+/* ================================= UI =================================== */
+const $=id=>document.getElementById(id);
+const STARTER='# Rootloop — press Run.\n'+
+  '# Cutting a plant before it is ripe kills it, so check first.\n'+
+  '# do_a_flip() is how you burn time while you wait.\n\n'+
+  'while True:\n'+
+  '    if can_harvest():\n'+
+  '        harvest()\n'+
+  '    else:\n'+
+  '        do_a_flip()\n';
+
+let files=[{name:'main.py',code:STARTER}];
+let active=0, logLines=[];
+
+const UI={
+  statsAt:0, bumped:{},
+  bump(item){ this.bumped[item]=performance.now(); this.statsAt=0; },
+  log(text,cls,quick){
+    if(quick&&logLines.length&&logLines[logLines.length-1].q) logLines[logLines.length-1]={t:text,c:cls,q:1};
+    else logLines.push({t:text,c:cls,q:quick?1:0});
+    if(logLines.length>300) logLines.splice(0,logLines.length-300);
+    this.renderLog();
+  },
+  clearLog(){ logLines=[]; this.renderLog(); },
+  renderLog(){
+    const el=$('log');
+    el.innerHTML=logLines.map(l=>'<div class="'+(l.c||'')+'">'+esc(l.t)+'</div>').join('');
+    el.scrollTop=el.scrollHeight;
+  },
+  flag(mode){
+    const f=$('flag');
+    f.className='flag'+(mode==='running'?' on':mode==='error'?' err':'');
+    f.textContent=mode;
+  },
+  setRunning(on){ $('runBtn').disabled=on; $('stopBtn').disabled=!on; },
+  syncSpeed(){
+    const s=$('speed');
+    s.max=String(state.speed);
+    state.speedPref=Math.min(state.speedPref,state.speed);
+    s.value=String(state.speedPref);
+    $('tps').textContent=TPS[state.speedPref]+'/s';
+  },
+  refreshStats(force){
+    const now=performance.now();
+    if(!force&&now-this.statsAt<130) return;
+    this.statsAt=now;
+    const show=ITEMS.filter(i=>{
+      if(i==='Water') return !!state.unlocked.water;
+      if(i==='Fertilizer') return !!state.unlocked.fertilizer;
+      if(i==='Hay') return true;
+      return (state.items[i]||0)>0;
+    });
+    let html=show.map(i=>{
+      const hot=now-(this.bumped[i]||0)<450;
+      const val=i==='Water'?Math.floor(state.tank)+'/'+TANK[state.tankLvl]:fmtInt(state.items[i]||0);
+      return '<span class="chip'+(hot?' pulse':'')+'"><i style="background:'+ITEM_COLOR[i]+';color:'+
+        ITEM_COLOR[i]+'"></i>'+i.toLowerCase()+' <b>'+val+'</b></span>';
+    }).join('');
+    if(world.drones.length>1)
+      html+='<span class="chip"><i style="background:#5CC3D6;color:#5CC3D6"></i>drones <b>'+world.drones.length+'</b></span>';
+    $('strip').innerHTML=html;
+    const n=UPGRADES.filter(u=>reqsMet(u)&&!isOwned(u)&&!isMaxed(u)&&canAfford(u.cost(state))).length;
+    const b=$('shopBadge');
+    if(n>0){ b.hidden=false; b.textContent=String(n); } else b.hidden=true;
+  },
+  sel:null,
+  refreshShop(){
+    const W=108,H=48,GX=10,GY=30;
+    const byId=id=>UPGRADES.find(u=>u.id===id);
+    const tier={};
+    const depth=u=>{
+      if(tier[u.id]!=null) return tier[u.id];
+      tier[u.id]=0;
+      return tier[u.id]=u.req.length?1+Math.max(...u.req.map(r=>depth(byId(r)))):0;
+    };
+    UPGRADES.forEach(depth);
+    const rows={};
+    for(const u of UPGRADES){ (rows[tier[u.id]]=rows[tier[u.id]]||[]).push(u); }
+    const CATS=['Crops','Livestock','Market','Systems'];
+    for(const t in rows) rows[t].sort((a,b)=>CATS.indexOf(a.cat)-CATS.indexOf(b.cat));
+    const tiers=Object.keys(rows).map(Number).sort((a,b)=>a-b);
+    const maxRow=Math.max(...tiers.map(t=>rows[t].length));
+    const cw=maxRow*(W+GX)+GX, ch=tiers.length*(H+GY)+GY;
+    const pos={};
+    for(const t of tiers){
+      const list=rows[t], rowW=list.length*(W+GX)-GX, x0=(cw-rowW)/2;
+      list.forEach((u,i)=>{ pos[u.id]={x:x0+i*(W+GX),y:GY/2+t*(H+GY)}; });
+    }
+    if(!this.sel||!byId(this.sel)){
+      const open=UPGRADES.filter(u=>reqsMet(u)&&!isOwned(u)&&!isMaxed(u));
+      this.sel=(open.find(u=>canAfford(u.cost(state)))||open[0]||UPGRADES[0]).id;
+    }
+    let svg='';
+    for(const u of UPGRADES) for(const r of u.req){
+      const a=pos[r], b=pos[u.id];
+      if(!a||!b) continue;
+      const ax=a.x+W/2, ay=a.y+H, bx=b.x+W/2, by=b.y;
+      svg+='<path d="M'+ax+' '+ay+' C'+ax+' '+(ay+GY*0.55)+' '+bx+' '+(by-GY*0.55)+' '+bx+' '+by+
+        '" fill="none" stroke="'+(state.unlocked[r]?'rgba(155,214,66,.5)':'rgba(130,112,92,.3)')+
+        '" stroke-width="1.5"/>';
+    }
+    let nodes='';
+    for(const u of UPGRADES){
+      const p=pos[u.id];
+      const met=reqsMet(u), owned=isOwned(u), maxed=isMaxed(u);
+      const cost=u.cost(state), afford=canAfford(cost), lvl=u.lvl?u.lvl():null;
+      const cls=owned||maxed?'owned':(!met?'locked':(afford?'ready':'short'));
+      const line=owned?'owned':maxed?'max level':
+        Object.keys(cost).map(k=>fmtInt(cost[k])+' '+k.toLowerCase()).join('  ');
+      nodes+='<button class="node '+cls+(this.sel===u.id?' sel':'')+'" data-node="'+u.id+
+        '" style="left:'+p.x+'px;top:'+p.y+'px;width:'+W+'px;height:'+H+'px"><b>'+esc(u.name)+
+        (lvl?' <span class="lvl">'+lvl[0]+'/'+lvl[1]+'</span>':'')+'</b><em>'+esc(line)+'</em></button>';
+    }
+    const u=byId(this.sel);
+    const met=reqsMet(u), owned=isOwned(u), maxed=isMaxed(u);
+    const cost=u.cost(state), afford=canAfford(cost);
+    let detail='<div class="detail"><h3>'+esc(u.name)+'</h3>';
+    detail+= owned||maxed
+      ? '<button class="btn small" disabled>'+(maxed?'max':'owned')+'</button>'
+      : '<button class="btn small'+(met&&afford?' primary':'')+'" data-buy="'+u.id+'"'+
+        (met&&afford?'':' disabled')+'>'+(met?'unlock':'locked')+'</button>';
+    detail+='<p>'+esc(u.dyn?u.dyn()+' — '+u.desc:u.desc)+'</p>';
+    if(!(owned||maxed)){
+      detail+='<div class="price">';
+      if(!met) detail+='<span class="tag short">needs '+u.req.map(nameOf).join(' + ')+'</span>';
+      for(const k in cost)
+        detail+='<span class="tag'+((state.items[k]||0)<cost[k]?' short':'')+'">'+
+          fmtInt(cost[k])+' '+k.toLowerCase()+'</span>';
+      detail+='</div>';
+    }
+    detail+='</div>';
+
+    const fertOk=state.unlocked.fertilizer&&state.items.Gold>=2;
+    const supplies='<div class="secTitle">Supplies</div><div class="buys">'+
+      '<div class="buy'+(state.unlocked.fertilizer?(fertOk?' ready':''):' locked')+'"><h3>Fertilizer x10</h3>'+
+      '<button class="btn small'+(fertOk?' primary':'')+'" data-act="fert"'+(fertOk?'':' disabled')+'>buy</button>'+
+      '<p>Ten doses of instant ripening.</p><div class="price"><span class="tag'+
+      (state.items.Gold<2?' short':'')+'">2 gold</span></div></div>'+
+      '<div class="buy"><h3>Clear the field</h3>'+
+      '<button class="btn small" data-act="clear">reset</button>'+
+      '<p>Wipes every plant back to bare grassland — the way out of a finished maze.</p></div>'+
+      '<div class="buy"><h3>Wipe save</h3>'+
+      '<button class="btn small" data-act="wipe">erase</button>'+
+      '<p>Deletes progress and code on this device. No undo.</p></div></div>';
+
+    $('shop').innerHTML=detail+'<div class="secTitle">Progression</div>'+
+      '<div class="treewrap"><div class="tree" style="width:'+cw+'px;height:'+ch+'px">'+
+      '<svg width="'+cw+'" height="'+ch+'">'+svg+'</svg>'+nodes+'</div></div>'+supplies;
+    const selEl=$('shop').querySelector('.node.sel');
+    if(selEl){
+      const w=$('shop').querySelector('.treewrap');
+      w.scrollLeft=Math.max(0,selEl.offsetLeft-w.clientWidth/2+W/2);
+    }
+  }
+};
+function nameOf(id){ const u=UPGRADES.find(x=>x.id===id); return u?u.name:id; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtInt(n){ n=Math.floor(n); return n>=10000?(n/1000).toFixed(n>=100000?0:1)+'k':String(n); }
+
+/* ---------------------------- editor ------------------------------------ */
+const API_WORDS=['move','harvest','plant','till','use_item','measure','swap','trade','do_a_flip',
+  'spawn_drone','max_drones','num_drones','get_drone_id','get_pos_x','get_pos_y','get_world_size',
+  'get_time','num_items','num_unlocked','can_harvest','get_entity_type','get_ground_type','get_water',
+  'get_companion','get_trade_request','unlocked','print','quick_print','clear','range','len','abs',
+  'int','float','str','list','dict','set','sum','min','max','sorted','random','random_int','round',
+  'enumerate','zip','reversed','any','all','map','filter','sqrt','floor','ceil','type','bool','tuple'];
+const CONST_WORDS=['True','False','None','North','East','South','West','Items','Entities','Grounds','Unlocks'];
+const KW_WORDS=['if','elif','else','while','for','in','def','return','break','continue','pass','and',
+  'or','not','global','import','from','as','try','except','finally','raise','is','lambda','del','assert'];
+const HL=new RegExp(
+  '(#[^\\n]*)'+
+  '|("""[\\s\\S]*?"""|\'\'\'[\\s\\S]*?\'\'\'|"(?:\\\\.|[^"\\\\\\n])*"|\'(?:\\\\.|[^\'\\\\\\n])*\')'+
+  '|\\b('+KW_WORDS.join('|')+')\\b'+
+  '|\\b('+CONST_WORDS.join('|')+')\\b'+
+  '|\\b('+API_WORDS.join('|')+')\\b(?=\\s*\\()'+
+  '|\\b(\\d+\\.?\\d*)\\b','g');
+function highlight(src){
+  return esc(src).replace(HL,(m,com,str,kw,cst,api,num)=>{
+    if(com) return '<span class="tk-com">'+com+'</span>';
+    if(str) return '<span class="tk-str">'+str+'</span>';
+    if(kw) return '<span class="tk-kw">'+kw+'</span>';
+    if(cst) return '<span class="tk-const">'+cst+'</span>';
+    if(api) return '<span class="tk-api">'+api+'</span>';
+    if(num) return '<span class="tk-num">'+num+'</span>';
+    return m;
+  })+'\n\n';
+}
+function syncHL(){ $('hl').innerHTML=highlight($('code').value); }
+function renderFiles(){
+  $('files').innerHTML=files.map((f,i)=>
+    '<button class="file'+(i===active?' active':'')+'" data-file="'+i+'">'+esc(f.name)+'</button>').join('')+
+    '<button class="file" data-file="new">+ new</button>'+
+    (files.length>1?'<button class="file" data-file="del">delete</button>':'')+
+    '<button class="file'+(document.body.classList.contains('wrap')?' active':'')+'" data-file="wrap">wrap</button>'+
+    '<button class="file'+(document.body.classList.contains('zen')?' active':'')+'" data-file="zen">⤢ full</button>';
+}
+function loadFile(i){ active=i; $('code').value=files[i].code; syncHL(); renderFiles(); $('code').scrollTop=0; }
+function insert(text,back){
+  const ta=$('code'), s=ta.selectionStart, e=ta.selectionEnd;
+  ta.value=ta.value.slice(0,s)+text+ta.value.slice(e);
+  ta.selectionStart=ta.selectionEnd=s+text.length-(back||0);
+  ta.focus(); onEdit();
+}
+function onEdit(){ files[active].code=$('code').value; syncHL(); saveSoon(); }
+const KEYS=[['⇥','    '],[':',':'],['(','()',1],['[','[]',1],['"','""',1],['=','='],['==','=='],
+  ['while True:','while True:\n    '],['if','if '],['else:','else:\n    '],['for','for i in range(10):\n    '],
+  ['def','def work():\n    '],['move','move(North)'],['N','North'],['E','East'],['S','South'],['W','West'],
+  ['harvest','harvest()'],['plant','plant(Entities.Grass)'],['can_harvest','can_harvest()'],
+  ['num_items','num_items(Items.Hay)'],['print','print()',1]];
+
+/* ------------------------------ save/load -------------------------------- */
+const KEY='rootloop.save.v2';
+let saveTimer=null;
+function saveSoon(){ clearTimeout(saveTimer); saveTimer=setTimeout(save,900); }
+function save(){
+  try{
+    const t=world.tiles.map(x=>[x.g==='Soil'?1:0,x.e?ENT.indexOf(x.e):-1,
+      Math.round(x.age*10)/10,Math.round(x.water*100)/100,x.d]);
+    localStorage.setItem(KEY,JSON.stringify({
+      v:2,items:state.items,unlocked:state.unlocked,expand:state.expand,speed:state.speed,
+      speedPref:state.speedPref,tankLvl:state.tankLvl,bay:state.bay,tank:state.tank,
+      credit:state.credit,treasures:state.treasures,files,active,
+      view:{wrap:document.body.classList.contains('wrap'),zen:document.body.classList.contains('zen'),sound:audio.on},
+      size:world.size,time:world.time,maze:world.maze,
+      drone:{x:world.drones[0].x,y:world.drones[0].y,dir:world.drones[0].dir},tiles:t
+    }));
+  }catch(e){}
+}
+function load(){
+  let d=null;
+  try{ d=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){}
+  if(!d){ buildWorld(SIZES[0],false); return; }
+  Object.assign(state.items,d.items||{});
+  state.unlocked=d.unlocked||{};
+  state.expand=d.expand||0; state.speed=d.speed||0;
+  state.speedPref=Math.min(d.speedPref??d.speed??0,state.speed);
+  state.tankLvl=d.tankLvl||0; state.bay=d.bay||0;
+  state.tank=d.tank??TANK[state.tankLvl];
+  state.credit=d.credit||0; state.treasures=d.treasures||0;
+  buildWorld(d.size||SIZES[state.expand],false);
+  if(d.tiles&&d.tiles.length===world.tiles.length)
+    d.tiles.forEach((s,i)=>{ const t=world.tiles[i];
+      t.g=s[0]?'Soil':'Grassland'; t.e=s[1]>=0?ENT[s[1]]:null; t.age=s[2]||0; t.water=s[3]||0; t.d=s[4]||null; });
+  world.time=d.time||0; world.maze=!!d.maze;
+  if(d.drone){ const D=world.drones[0];
+    D.x=d.drone.x|0; D.y=d.drone.y|0; D.dir=d.drone.dir|0; D.vx=D.x; D.vy=D.y; }
+  if(Array.isArray(d.files)&&d.files.length){ files=d.files; active=Math.min(d.active||0,files.length-1); }
+  if(d.view){
+    document.body.classList.toggle('wrap',!!d.view.wrap);
+    document.body.classList.toggle('zen',!!d.view.zen);
+    if(d.view.sound===false) audio.on=false;
+  }
+}
+function wipe(){
+  if(!confirm('Erase all progress and code on this device?')) return;
+  localStorage.removeItem(KEY);
+  location.reload();
+}
+</script>
+<script>
+/* ============================== the guide ================================ */
+function apiRow(sig,txt,lock){
+  const off=lock&&!state.unlocked[lock];
+  return '<div class="row'+(off?' lk':'')+'"><code>'+esc(sig)+'</code><span>'+txt+
+    (off?' <em>— locked</em>':'')+'</span></div>';
+}
+function renderGuide(){
+  $('guide').innerHTML=`
+<h2>What this is</h2>
+<p>A farm, a drone, and a Python interpreter. You never steer the drone by hand — you write a program,
+press <b>Run</b>, and watch it work. Every action costs a tick of farm time, and plants only grow while
+your code is running, so a tighter program is a faster farm.</p>
+<p>You start with a single tile of wild grass. Everything else — planting, soil, water, a second drone —
+is bought in the <b>Shop</b> with what you harvest.</p>
+
+<h2>The one rule that bites</h2>
+<p><b>Cutting a plant before it is ripe destroys it.</b> You get nothing, the tile is empty, and the
+growing time is gone. So a farm program is really a waiting problem: know when a tile is ready, and
+have something useful to do until then. <code>can_harvest()</code> answers the first part and costs you
+nothing. <code>do_a_flip()</code> answers the second — it is a pure time-burner, two ticks of farm
+clock for one instruction, and that is exactly what it is for.</p>
+
+<h2>Your first program</h2>
+<pre>while True:
+    if can_harvest():
+        harvest()
+    else:
+        do_a_flip()</pre>
+<p>Wild grass keeps coming back until you buy the <b>Seed Hopper</b>, so one tile and five lines earns
+the hay for your first upgrades. From two tiles on you have to walk — and walking is itself a way to
+wait, because by the time you come back round, the tile has ripened:</p>
+<pre>while True:
+    harvest()
+    plant(Entities.Grass)
+    move(North)</pre>
+<p class="note">That loop cuts blind on purpose: on a big enough field the lap takes longer than the
+growing time. On a small field it throws away half your crop — check with <code>can_harvest()</code>
+until the farm is wide enough to carry you.</p>
+<p>The farm wraps at the edges, so moving north forever walks one column round and round. To cover a
+square field, walk a column and step east at the end of it:</p>
+<pre>n = get_world_size()
+
+while True:
+    for col in range(n):
+        for row in range(n):
+            harvest()
+            plant(Entities.Grass)
+            move(North)
+        move(East)</pre>
+
+<p class="note">Every tile you expand onto arrives under wild grass, and <code>till()</code> refuses an
+occupied tile — so clear a tile before you re-purpose it.</p>
+
+<h2>Ticks and speed</h2>
+<p>Moving, harvesting, planting, watering, feeding and measuring cost 1 tick; tilling, swapping,
+trading and flips cost 2. Thinking is nearly free — a loop turn or a function call costs a five
+hundredth of a tick — so a busy-wait does creep forward, it is just a thousand times more work than one
+flip. The run bar sets how many ticks pass each second, and <b>Rotor Tuning</b> raises the ceiling from
+4/s to 720/s.</p>
+
+<h2>Drone commands</h2>
+<div class="api">
+${apiRow('move(North)','One step. Also East, South, West. Returns False if a hedge blocks it.')}
+${apiRow('harvest()','Take what is ripe here. True if something was taken — and if the plant was not ripe, it dies for nothing.')}
+${apiRow('plant(Entities.Grass)','Plant here. Fails on an occupied tile or the wrong ground.','plant')}
+${apiRow('till()','Toggle this tile between grassland and soil.','till')}
+${apiRow('use_item(Items.Water)','Wet the soil under the drone, one unit from the tank.','water')}
+${apiRow('use_item(Items.Carrot)','Feed the dinosaur standing here whatever it asked for.','dino')}
+${apiRow('measure()','Petals, cactus size, what a dinosaur wants, or how long an apple has left. measure(North) reads a neighbour.','sensors')}
+${apiRow('swap(North)','Exchange this plant with the neighbouring one.','cactus')}
+${apiRow('trade(Items.Hay, 100)','Sell goods for gold.','trade')}
+${apiRow('spawn_drone(fn)','Start another drone running fn(). It shares your variables and the clock.','drones')}
+${apiRow('do_a_flip()','Two ticks of farm time for one instruction. The cheapest way to wait.')}
+</div>
+
+<h2>Sensors and counters</h2>
+<div class="api">
+${apiRow('get_pos_x() / get_pos_y()','Where this drone is. (0, 0) is the bottom-left corner.')}
+${apiRow('get_world_size()','Width of the square farm.')}
+${apiRow('num_items(Items.Hay)','How much you are holding. Items.Water reads the tank.')}
+${apiRow('can_harvest()','True when something ripe is standing here. Free from the start — check before you cut.')}
+${apiRow('get_entity_type()','Entities.Grass, Entities.Apple, Entities.Treasure, … or None.','sensors')}
+${apiRow('get_ground_type()','Grounds.Grassland or Grounds.Soil.','sensors')}
+${apiRow('get_water()','Moisture here, 0.0 to 1.0.','water')}
+${apiRow('get_companion()','The neighbour this plant is asking for, or None.','poly')}
+${apiRow('get_trade_request()','The item the market pays triple for right now.','trade')}
+${apiRow('num_drones() / max_drones() / get_drone_id()','Drone bookkeeping.','drones')}
+${apiRow('num_unlocked(Unlocks.expand)','Levels bought of a shop upgrade.')}
+${apiRow('get_time()','Ticks elapsed on this farm.')}
+${apiRow('print(x) / quick_print(x)','Write to the Log tab. quick_print overwrites its own line.')}
+</div>
+
+<h2>The crops</h2>
+<p><b>Grass</b> → 1 hay in 3 ticks. <b>Bushes</b> → 1 wood in 9. Both want grassland.</p>
+<p><b>Trees</b> pay 4 wood but grow at <i>half speed for every tree touching them</i>, so a solid block
+of trees crawls and a checkerboard of trees and bushes flies:</p>
+<pre>if (get_pos_x() + get_pos_y()) % 2 == 0:
+    plant(Entities.Tree)
+else:
+    plant(Entities.Bush)</pre>
+<p><b>Soil</b> crops crawl while dry — about a third speed — so watering pays for itself. The tank
+refills as time passes, which is a budget your program has to spend well:</p>
+<pre>if get_water() &lt; 0.4 and num_items(Items.Water) &gt; 0:
+    use_item(Items.Water)</pre>
+<p><b>Apples</b> fall from ripe trees onto random empty tiles and rot after 70 ticks —
+<code>measure()</code> tells you how long an apple has left. They are worth more than wood, and
+dinosaurs like them.</p>
+<p><b>Polyculture</b> gives every crop a wish: <code>get_companion()</code> names an entity it wants
+orthogonally next to it, and granting the wish doubles that harvest. A small green dot on the tile turns
+bright when the wish is satisfied.</p>
+<p><b>Pumpkins</b> merge: ripe pumpkins that touch become one field, and harvesting an n x n block pays
+n<sup>3</sup> instead of n<sup>2</sup>. Plant the whole square, wait for the slowest one, harvest once.</p>
+<p><b>Sunflowers</b> carry 1–7 petals. Only the ripe flowers holding the <i>highest</i> petal count on
+the farm pay out; harvest anything less and it wilts for nothing. Scan the field first, then reap.</p>
+<p><b>Cacti</b> pay only when every cactus is ripe <i>and</i> sorted by size along the snake path — the
+bottom row left to right, the row above it right to left, and so on upward. Every step of that path is a
+neighbouring tile, so a bubble sort built on <code>swap()</code> is enough. Harvest an unsorted patch and
+that cactus is simply gone.</p>
+<p><b>Dinosaurs</b> ask for a random item, <code>use_item()</code> hands it over, and five feeds makes
+one worth 6 bones. Cut one early and every feed you put into it is gone.</p>
+<p><b>The maze</b>: <code>plant(Entities.Hedge)</code> rebuilds the farm as hedge walls around one chest.
+<code>move()</code> returns False into a wall, so a depth-first search with a visited set finds it. Every
+fifth chest reshuffles the walls.</p>
+
+<h2>More drones</h2>
+<p>Every drone runs its own copy of a function you hand to <code>spawn_drone</code>, and they all share
+your global variables and the same clock, so the farm gets more done per tick:</p>
+<pre>def column():
+    while True:
+        harvest()
+        plant(Entities.Grass)
+        move(North)
+
+while num_drones() &lt; max_drones():
+    spawn_drone(column)
+    move(East)
+
+column()</pre>
+<p><code>get_drone_id()</code> tells a drone which one it is, so one function can split the field
+between them.</p>
+
+<h2>The market</h2>
+<p><code>trade(item, n)</code> turns goods into gold — hay is worth the least, bones the most — and
+whatever <code>get_trade_request()</code> names pays triple until the market moves on. Gold buys the
+late upgrades.</p>
+
+<h2>The language</h2>
+<p>Real Python syntax, a practical subset of it: variables, arithmetic, <code>if/elif/else</code>,
+<code>while</code>, <code>for … in</code>, <code>def</code> with defaults and <code>*args</code>,
+<code>return</code>, <code>break</code>, <code>continue</code>, <code>global</code>, lambdas,
+comprehensions, f-strings, <code>try/except</code>, and lists, tuples, dicts, sets and strings with
+their common methods. No classes, imports, generators or file access.</p>
+<p class="note">Functions you define stay defined between runs, so one file can hold helpers that another
+calls. <b>Reset globals</b> in the Log tab clears them.</p>
+
+<h2>On a phone</h2>
+<p>The row under the editor inserts snippets and a four-space indent at the cursor. Enter keeps your
+indentation and adds a level after a colon. Everything saves to this device automatically.</p>
+<div class="foot"><span class="tag">tap a tile to inspect it</span><span class="tag">time passes only while Run is lit</span></div>`;
+}
+
+/* =============================== wiring ================================= */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===t));
+  const id=t.dataset.pane;
+  document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+id));
+  if(id==='shop') UI.refreshShop();
+  if(id==='guide') renderGuide();
+}));
+$('runBtn').addEventListener('click',()=>{
+  files[active].code=$('code').value; save();
+  startRun(files[active].code,files[active].name);
+});
+$('stopBtn').addEventListener('click',()=>stopRun(false));
+$('speed').addEventListener('input',e=>{
+  state.speedPref=Math.min(+e.target.value,state.speed);
+  e.target.value=String(state.speedPref);
+  $('tps').textContent=TPS[state.speedPref]+'/s';
+  saveSoon();
+});
+$('files').addEventListener('click',e=>{
+  const b=e.target.closest('[data-file]'); if(!b) return;
+  const v=b.dataset.file;
+  if(v==='new'){
+    const n=prompt('File name','script'+(files.length+1)+'.py');
+    if(!n) return;
+    files.push({name:n.trim(),code:'# '+n.trim()+'\n'});
+    loadFile(files.length-1); saveSoon(); return;
+  }
+  if(v==='del'){
+    if(files.length<2||!confirm('Delete '+files[active].name+'?')) return;
+    files.splice(active,1); loadFile(Math.max(0,active-1)); saveSoon(); return;
+  }
+  if(v==='wrap'){ document.body.classList.toggle('wrap'); renderFiles(); saveSoon(); return; }
+  if(v==='zen'){
+    document.body.classList.toggle('zen');
+    renderFiles(); requestAnimationFrame(resizeCanvas); saveSoon(); return;
+  }
+  loadFile(+v);
+});
+$('keys').innerHTML=KEYS.map((k,i)=>
+  '<button class="key'+(k[1].length>6?' wide':'')+'" data-k="'+i+'">'+esc(k[0])+'</button>').join('');
+$('keys').addEventListener('click',e=>{
+  const b=e.target.closest('[data-k]'); if(!b) return;
+  const k=KEYS[+b.dataset.k]; insert(k[1],k[2]||0);
+});
+const ta=$('code');
+ta.addEventListener('input',onEdit);
+ta.addEventListener('scroll',()=>{ $('hl').scrollTop=ta.scrollTop; $('hl').scrollLeft=ta.scrollLeft; });
+ta.addEventListener('keydown',e=>{
+  if(e.key==='Tab'){ e.preventDefault(); insert('    '); return; }
+  if(e.key==='Enter'){
+    const s=ta.selectionStart, line=ta.value.slice(0,s).split('\n').pop();
+    const ind=(/^[ \t]*/.exec(line)||[''])[0];
+    e.preventDefault();
+    insert('\n'+ind+(/:\s*$/.test(line)?'    ':''));
+  }
+});
+$('shop').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.node){ UI.sel=b.dataset.node; UI.refreshShop(); return; }
+  if(b.dataset.buy){ const u=UPGRADES.find(x=>x.id===b.dataset.buy); if(u) buy(u); return; }
+  const a=b.dataset.act;
+  if(a==='fert'){
+    if(state.items.Gold>=2){ state.items.Gold-=2; give('Fertilizer',10);
+      UI.log('bought 10 fertilizer','s'); UI.refreshShop(); UI.refreshStats(true); save(); }
+  }else if(a==='clear'){ clearFarm(); }
+  else if(a==='wipe') wipe();
+});
+function clearFarm(){
+  if(!confirm('Clear every plant on the farm?')) return;
+  for(const t of world.tiles){ t.e=null; t.age=0; t.d=null; }
+  world.maze=false; UI.log('field cleared','i'); save();
+}
+$('soundBtn').addEventListener('click',()=>{
+  audio.on=!audio.on;
+  $('soundBtn').textContent='sound: '+(audio.on?'on':'off');
+  if(audio.on){ audioInit(); sfx('coin'); }
+  saveSoon();
+});
+$('clearLog').addEventListener('click',()=>UI.clearLog());
+$('resetGlobals').addEventListener('click',()=>resetGlobals());
+$('clearFarm').addEventListener('click',clearFarm);
+
+let inspect=null;
+function inspectAt(clientX,clientY){
+  const hit=pickTile(clientX,clientY);
+  inspect=hit?{x:hit.x,y:hit.y,t:performance.now()}:null;
+}
+function readout(){
+  const D=world.drones[0];
+  let s='<span>x <b>'+D.x+'</b> y <b>'+D.y+'</b></span><span>t <b>'+Math.floor(world.time)+'</b></span>';
+  if(inspect&&performance.now()-inspect.t<7000){
+    const t=tileAt(inspect.x,inspect.y), sp=t.e?SPEC[t.e]:null;
+    let d=t.e?t.e.toLowerCase():'empty';
+    if(t.e==='Sunflower') d+=' '+t.d.petals+'p';
+    if(t.e==='Cactus') d+=' size '+t.d.size;
+    if(t.e==='Dinosaur') d+=' '+t.d.fed+'/5 wants '+t.d.want.toLowerCase();
+    if(t.e==='Apple') d+=' '+Math.max(0,Math.round(APPLE_ROT-t.age))+' left';
+    if(sp&&sp.grow) d+=' '+Math.floor(Math.min(1,t.age/sp.grow)*100)+'%';
+    if(t.d&&t.d.comp&&state.unlocked.poly) d+=' ♥'+t.d.comp.toLowerCase();
+    s+='<span>('+inspect.x+','+inspect.y+') '+t.g.toLowerCase()+
+      (t.g==='Soil'?' '+Math.round(t.water*100)+'%':'')+' <b>'+esc(d)+'</b></span>';
+  }
+  $('readout').innerHTML=s;
+}
+
+/* =============================== main loop =============================== */
+let lastT=0, readoutAt=0;
+function loop(ts){
+  const dt=Math.min(0.06,lastT?(ts-lastT)/1000:0.016);
+  lastT=ts;
+  if(runner.running) stepProgram(dt);
+  draw(dt);
+  if(ts-readoutAt>90){ readoutAt=ts; readout(); UI.refreshStats(); }
+  requestAnimationFrame(loop);
+}
+document.addEventListener('visibilitychange',()=>{ if(document.hidden){ files[active].code=ta.value; save(); } });
+window.addEventListener('pagehide',()=>{ files[active].code=ta.value; save(); });
+
+/* ================================= boot ================================== */
+load();
+resizeCanvas();
+fitCam();
+renderFiles();
+loadFile(active);
+UI.syncSpeed();
+$('soundBtn').textContent='sound: '+(audio.on?'on':'off');
+UI.refreshShop();
+UI.refreshStats(true);
+renderGuide();
+UI.log('Rootloop ready — one tile, one drone. Press Run.','s');
+UI.log('The Guide tab has every command.','i');
+UI.flag('idle');
+requestAnimationFrame(loop);
+</script>
