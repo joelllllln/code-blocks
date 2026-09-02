@@ -1,3 +1,10 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#120F0E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Rootloop</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -226,6 +233,21 @@ input[type=range]::-moz-range-thumb{width:15px;height:15px;border:2px solid var(
   .right{flex-direction:column;flex:1.5;min-width:0;padding-top:42px}
   .field{flex:1;height:auto;margin:8px}
   .hud{position:absolute;top:0;left:0;right:0;z-index:5}
+}
+@media (max-height:720px) and (max-width:900px){
+  .field{height:min(34dvh,78vw);min-height:150px}
+  .files{padding:6px 8px}
+  .keys{padding:6px 8px}
+  .key{padding:7px 10px}
+}
+@media (max-width:380px){
+  .runbar{gap:5px;padding:7px 6px}
+  .btn{padding:9px 10px;font-size:12.5px}
+  .speedwrap{padding:5px 8px;gap:5px}
+  .speedwrap label{display:none}
+  .tps{min-width:36px;font-size:10.5px}
+  .brand h1{font-size:12.5px;letter-spacing:.07em}
+  .tab{font-size:10.5px;letter-spacing:.06em}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -3513,6 +3535,12 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden){ files[ac
 window.addEventListener('pagehide',()=>{ files[active].code=ta.value; save(); });
 
 /* ================================= boot ================================== */
+if(!document.querySelector('meta[name=viewport]')){
+  const mv=document.createElement('meta');
+  mv.name='viewport';
+  mv.content='width=device-width,initial-scale=1,viewport-fit=cover';
+  (document.head||document.documentElement).appendChild(mv);
+}
 load();
 resizeCanvas();
 fitCam();
