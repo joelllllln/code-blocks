@@ -1355,7 +1355,10 @@ function advanceWorld(dt){
   for(let y=0;y<n;y++) for(let x=0;x<n;x++){
     const t=T[y*n+x];
     if(t.water>0) t.water=Math.max(0,t.water-dt*0.0022);
-    if(!t.e) continue;
+    if(!t.e){
+      if(!state.unlocked.plant&&t.g==='Grassland'){ t.e='Grass'; t.age=0; t.d=null; }
+      continue;
+    }
     if(t.e==='Apple'){
       t.age+=dt;
       if(t.age>APPLE_ROT){ t.e=null; t.age=0; t.d=null; }
@@ -1418,15 +1421,18 @@ function* a_harvest(){
   yield COST.harvest;
   if(!t.e) return false;
   if(t.e==='Hedge'){ t.e=null; t.age=0; return true; }
-  if(!isMature(t)) return false;
+  if(!isMature(t)){
+    // cut too early: the plant is lost. Wait with do_a_flip() instead.
+    const lost=t.e;
+    t.e=null; t.age=0; t.d=null;
+    fx(D.x,D.y,lost==='Dinosaur'?'lost':'unripe','#E0603F');
+    return false;
+  }
   const boost = companionOk(t,D.x,D.y) ? 2 : 1;
   const clear=()=>{ t.e=null; t.age=0; t.d=null; };
   const pay=(item,n,col)=>{ give(item,n*boost); fx(D.x,D.y,'+'+(n*boost),col); };
   switch(t.e){
-    case 'Grass':
-      t.age=0; t.d=null;
-      t.e = state.unlocked.plant ? null : 'Grass';
-      pay('Hay',1,'#DCB84E'); return true;
+    case 'Grass': clear(); pay('Hay',1,'#DCB84E'); return true;
     case 'Bush':   clear(); pay('Wood',1,'#96633A'); return true;
     case 'Tree':   clear(); pay('Wood',4,'#96633A'); return true;
     case 'Carrot': clear(); pay('Carrot',1,'#E77B2C'); return true;
@@ -1745,7 +1751,7 @@ function buildGlobals(){
     if(id==='drones') return state.bay;
     return state.unlocked[id]?1:0;
   });
-  def('can_harvest',()=>{ requireUnlock('sensors','can_harvest()'); const t=here();
+  def('can_harvest',()=>{ const t=here();
     return !!(t.e&&(t.e==='Hedge'||isMature(t))); });
   def('get_entity_type',()=>{ requireUnlock('sensors','get_entity_type()');
     const t=here(); return t.e?Entities.props[t.e]:null; });
@@ -1766,6 +1772,7 @@ function buildGlobals(){
 }
 
 /* ============================== the runner =============================== */
+const OPCOST=0.002;   // one loop turn or call of farm time; a flip buys 1000x more
 const runner={ running:false, label:'' };
 let GLOBALS=buildGlobals();
 
@@ -1828,7 +1835,7 @@ function stepProgram(dt){
       try{ r=d.prog.next(); }
       catch(e){ droneError(d,e); break; }
       if(r.done){ d.prog=null; continue; }   // helpers may still be flying
-      if(r.value>0) d.t+=r.value;
+      d.t += r.value>0 ? r.value : OPCOST;
       if(++ops>=cap) break;
     }
   }
@@ -2245,8 +2252,8 @@ const TANK_COST=[null,{Carrot:200},{Pumpkin:300},{Power:500},{Bone:600},{Gold:20
 const BAY_COST=[null,{Power:600},{Bone:500},{Gold:15},{Gold:40},{Gold:100}];
 
 const UPGRADES=[
-  {id:'sensors',cat:'Systems',name:'Sensor Array',req:[],cost:()=>({Hay:2}),
-   desc:'can_harvest(), get_entity_type(), get_ground_type() and measure().'},
+  {id:'sensors',cat:'Systems',name:'Sensor Array',req:[],cost:()=>({Hay:6}),
+   desc:'get_entity_type(), get_ground_type() and measure(). can_harvest() you already have.'},
   {id:'expand',cat:'Systems',name:'Field Expansion',req:[],lvl:()=>[state.expand,EXPAND_COST.length-1],
    cost:s=>EXPAND_COST[s.expand+1]||{},
    dyn:()=>'Farm is '+world.size+'x'+world.size+(SIZES[state.expand+1]?' → '+SIZES[state.expand+1]+'x'+SIZES[state.expand+1]:' (max)'),
@@ -2321,9 +2328,13 @@ function buy(u){
 /* ================================= UI =================================== */
 const $=id=>document.getElementById(id);
 const STARTER='# Rootloop — press Run.\n'+
-  '# One tile of wild grass. It regrows where you cut it.\n\n'+
+  '# Cutting a plant before it is ripe kills it, so check first.\n'+
+  '# do_a_flip() is how you burn time while you wait.\n\n'+
   'while True:\n'+
-  '    harvest()\n';
+  '    if can_harvest():\n'+
+  '        harvest()\n'+
+  '    else:\n'+
+  '        do_a_flip()\n';
 
 let files=[{name:'main.py',code:STARTER}];
 let active=0, logLines=[];
@@ -2538,16 +2549,29 @@ your code is running, so a tighter program is a faster farm.</p>
 <p>You start with a single tile of wild grass. Everything else — planting, soil, water, a second drone —
 is bought in the <b>Shop</b> with what you harvest.</p>
 
+<h2>The one rule that bites</h2>
+<p><b>Cutting a plant before it is ripe destroys it.</b> You get nothing, the tile is empty, and the
+growing time is gone. So a farm program is really a waiting problem: know when a tile is ready, and
+have something useful to do until then. <code>can_harvest()</code> answers the first part and costs you
+nothing. <code>do_a_flip()</code> answers the second — it is a pure time-burner, two ticks of farm
+clock for one instruction, and that is exactly what it is for.</p>
+
 <h2>Your first program</h2>
 <pre>while True:
-    harvest()</pre>
-<p>Wild grass regrows where you cut it, so one tile and one line earns the hay for the
-<b>Sensor Array</b>, the <b>Seed Hopper</b> and your first <b>Field Expansion</b>. From two tiles on
-you have to walk:</p>
+    if can_harvest():
+        harvest()
+    else:
+        do_a_flip()</pre>
+<p>Wild grass keeps coming back until you buy the <b>Seed Hopper</b>, so one tile and five lines earns
+the hay for your first upgrades. From two tiles on you have to walk — and walking is itself a way to
+wait, because by the time you come back round, the tile has ripened:</p>
 <pre>while True:
     harvest()
     plant(Entities.Grass)
     move(North)</pre>
+<p class="note">That loop cuts blind on purpose: on a big enough field the lap takes longer than the
+growing time. On a small field it throws away half your crop — check with <code>can_harvest()</code>
+until the farm is wide enough to carry you.</p>
 <p>The farm wraps at the edges, so moving north forever walks one column round and round. To cover a
 square field, walk a column and step east at the end of it:</p>
 <pre>n = get_world_size()
@@ -2565,13 +2589,15 @@ occupied tile — so clear a tile before you re-purpose it.</p>
 
 <h2>Ticks and speed</h2>
 <p>Moving, harvesting, planting, watering, feeding and measuring cost 1 tick; tilling, swapping,
-trading and flips cost 2. Computation is free — only the drone's hands cost time. The run bar sets how
-many ticks pass each second, and <b>Rotor Tuning</b> raises the ceiling from 4/s to 720/s.</p>
+trading and flips cost 2. Thinking is nearly free — a loop turn or a function call costs a five
+hundredth of a tick — so a busy-wait does creep forward, it is just a thousand times more work than one
+flip. The run bar sets how many ticks pass each second, and <b>Rotor Tuning</b> raises the ceiling from
+4/s to 720/s.</p>
 
 <h2>Drone commands</h2>
 <div class="api">
 ${apiRow('move(North)','One step. Also East, South, West. Returns False if a hedge blocks it.')}
-${apiRow('harvest()','Take what is ripe here. True if something was taken.')}
+${apiRow('harvest()','Take what is ripe here. True if something was taken — and if the plant was not ripe, it dies for nothing.')}
 ${apiRow('plant(Entities.Grass)','Plant here. Fails on an occupied tile or the wrong ground.','plant')}
 ${apiRow('till()','Toggle this tile between grassland and soil.','till')}
 ${apiRow('use_item(Items.Water)','Wet the soil under the drone, one unit from the tank.','water')}
@@ -2580,7 +2606,7 @@ ${apiRow('measure()','Petals, cactus size, what a dinosaur wants, or how long an
 ${apiRow('swap(North)','Exchange this plant with the neighbouring one.','cactus')}
 ${apiRow('trade(Items.Hay, 100)','Sell goods for gold.','trade')}
 ${apiRow('spawn_drone(fn)','Start another drone running fn(). It shares your variables and the clock.','drones')}
-${apiRow('do_a_flip()','Costs two ticks. Yields nothing at all.')}
+${apiRow('do_a_flip()','Two ticks of farm time for one instruction. The cheapest way to wait.')}
 </div>
 
 <h2>Sensors and counters</h2>
@@ -2588,7 +2614,7 @@ ${apiRow('do_a_flip()','Costs two ticks. Yields nothing at all.')}
 ${apiRow('get_pos_x() / get_pos_y()','Where this drone is. (0, 0) is the bottom-left corner.')}
 ${apiRow('get_world_size()','Width of the square farm.')}
 ${apiRow('num_items(Items.Hay)','How much you are holding. Items.Water reads the tank.')}
-${apiRow('can_harvest()','True when something ripe is standing here.','sensors')}
+${apiRow('can_harvest()','True when something ripe is standing here. Free from the start — check before you cut.')}
 ${apiRow('get_entity_type()','Entities.Grass, Entities.Apple, Entities.Treasure, … or None.','sensors')}
 ${apiRow('get_ground_type()','Grounds.Grassland or Grounds.Soil.','sensors')}
 ${apiRow('get_water()','Moisture here, 0.0 to 1.0.','water')}
@@ -2627,7 +2653,7 @@ bottom row left to right, the row above it right to left, and so on upward. Ever
 neighbouring tile, so a bubble sort built on <code>swap()</code> is enough. Harvest an unsorted patch and
 that cactus is simply gone.</p>
 <p><b>Dinosaurs</b> ask for a random item, <code>use_item()</code> hands it over, and five feeds makes
-one worth 6 bones.</p>
+one worth 6 bones. Cut one early and every feed you put into it is gone.</p>
 <p><b>The maze</b>: <code>plant(Entities.Hedge)</code> rebuilds the farm as hedge walls around one chest.
 <code>move()</code> returns False into a wall, so a depth-first search with a visited set finds it. Every
 fifth chest reshuffles the walls.</p>
