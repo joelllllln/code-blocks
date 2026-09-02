@@ -4,12 +4,12 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
 <style>
 :root{
-  --soil-900:#141010; --soil-850:#191413; --soil-800:#1E1917; --soil-750:#25201C;
-  --soil-700:#2E2721; --soil-600:#3B322A; --bark:#54473B;
-  --wheat:#EDDCC3; --wheat-dim:#B0A08B; --wheat-faint:#7C7062;
-  --chloro:#8FC93A; --chloro-deep:#5F8F22; --amber:#E9A23B; --water:#57B6C7;
-  --rust:#D4573A; --gold:#F0C852; --bone:#DCD2BE;
-  --r-s:6px; --r-m:10px; --r-l:16px;
+  --soil-900:#120F0E; --soil-850:#181413; --soil-800:#201B19; --soil-750:#292320;
+  --soil-700:#332B26; --soil-600:#42382F; --bark:#5C4C3E;
+  --wheat:#F2E3CB; --wheat-dim:#B9A992; --wheat-faint:#847768;
+  --chloro:#9BD642; --chloro-deep:#5F8F22; --amber:#F0A93C; --water:#5CC3D6;
+  --rust:#E0603F; --gold:#F5CE58; --bone:#E4DAC6; --violet:#A98BE0;
+  --r-s:6px; --r-m:11px; --r-l:18px;
   --f-disp:'Chakra Petch',ui-sans-serif,system-ui,sans-serif;
   --f-body:'Archivo',ui-sans-serif,system-ui,sans-serif;
   --f-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
@@ -19,8 +19,7 @@
 html,body{height:100%}
 body{
   margin:0;background:var(--soil-900);color:var(--wheat);
-  font-family:var(--f-body);font-size:14px;line-height:1.45;
-  overscroll-behavior:none;
+  font-family:var(--f-body);font-size:14px;line-height:1.45;overscroll-behavior:none;
 }
 button,input,textarea,select{font-family:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--chloro);outline-offset:2px}
@@ -28,98 +27,87 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 ::-webkit-scrollbar-thumb{background:var(--soil-600);border-radius:99px}
 ::-webkit-scrollbar-track{background:transparent}
 
-#app{display:flex;flex-direction:column;height:100dvh;max-width:1400px;margin:0 auto}
+#app{display:flex;flex-direction:column;height:100dvh;max-width:1500px;margin:0 auto}
 
 /* ---------- HUD ---------- */
 .hud{
-  display:flex;align-items:center;gap:10px;padding:8px 10px 6px;
-  background:linear-gradient(var(--soil-850),var(--soil-900));
-  border-bottom:1px solid var(--soil-700);flex:none;
+  display:flex;align-items:center;gap:9px;padding:7px 10px 5px;flex:none;
+  background:linear-gradient(var(--soil-850),var(--soil-900));border-bottom:1px solid var(--soil-700);
 }
 .brand{display:flex;align-items:center;gap:7px;flex:none}
-.mark{width:18px;height:18px;border-radius:4px;flex:none;
-  background:conic-gradient(from 45deg,var(--chloro),var(--amber),var(--chloro-deep),var(--chloro));
-  box-shadow:0 0 0 1px var(--soil-600), 0 0 12px -2px var(--chloro)}
-.brand h1{font-family:var(--f-disp);font-size:15px;font-weight:700;letter-spacing:.09em;
-  text-transform:uppercase;margin:0;white-space:nowrap}
-.strip{display:flex;gap:6px;overflow-x:auto;flex:1;padding-bottom:2px;scrollbar-width:none}
+.mark{width:17px;height:17px;border-radius:5px;flex:none;
+  background:conic-gradient(from 210deg,var(--chloro-deep),var(--chloro) 30%,var(--amber) 62%,var(--chloro-deep));
+  box-shadow:0 0 0 1px var(--soil-600),0 0 14px -3px var(--chloro)}
+.brand h1{font-family:var(--f-disp);font-size:14px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;margin:0;white-space:nowrap;color:var(--wheat)}
+.strip{display:flex;gap:5px;overflow-x:auto;flex:1;padding-bottom:2px;scrollbar-width:none}
 .strip::-webkit-scrollbar{display:none}
 .chip{
-  display:flex;align-items:center;gap:5px;flex:none;padding:3px 8px 3px 6px;
+  display:flex;align-items:center;gap:5px;flex:none;padding:3px 9px 3px 5px;
   background:var(--soil-800);border:1px solid var(--soil-700);border-radius:99px;
-  font-family:var(--f-mono);font-size:11.5px;font-weight:500;font-variant-numeric:tabular-nums;
-  color:var(--wheat-dim);white-space:nowrap;
+  font-family:var(--f-mono);font-size:11px;font-variant-numeric:tabular-nums;
+  color:var(--wheat-faint);white-space:nowrap;transition:border-color .3s ease;
 }
-.chip b{color:var(--wheat);font-weight:700}
-.chip .dot{width:8px;height:8px;border-radius:2px;flex:none}
-.chip.pulse{animation:pop .4s ease}
-@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.09);border-color:var(--chloro)}100%{transform:scale(1)}}
+.chip b{color:var(--wheat);font-weight:700;font-size:11.5px}
+.chip i{width:9px;height:9px;border-radius:3px;flex:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 8px -2px currentColor}
+.chip.pulse{border-color:var(--chloro)}
 
 /* ---------- Field ---------- */
 .field{
-  position:relative;flex:none;height:min(38dvh,88vw);min-height:180px;
-  margin:8px 8px 0;border-radius:var(--r-l);
-  background:var(--soil-850);
-  border:1px solid var(--soil-700);
-  box-shadow:inset 0 0 0 4px var(--soil-850), inset 0 2px 24px rgba(0,0,0,.6);
-  overflow:hidden;
+  position:relative;flex:none;height:min(46dvh,92vw);min-height:190px;
+  margin:8px 8px 0;border-radius:var(--r-l);overflow:hidden;
+  background:#0D0B0A;border:1px solid var(--soil-700);
+  box-shadow:inset 0 3px 30px rgba(0,0,0,.75),0 8px 26px -20px #000;
 }
-.field canvas{display:block;width:100%;height:100%;touch-action:none}
-.field::after{
-  content:"";position:absolute;inset:0;pointer-events:none;border-radius:var(--r-l);
-  background:radial-gradient(120% 90% at 50% 40%,transparent 55%,rgba(0,0,0,.45) 100%);
-}
-.readout{
-  position:absolute;left:8px;bottom:8px;display:flex;gap:6px;pointer-events:none;
-  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.03em;
-}
-.readout span{background:rgba(15,12,11,.72);border:1px solid var(--soil-700);
-  padding:2px 6px;border-radius:var(--r-s);color:var(--wheat-dim)}
+.field canvas{display:block;width:100%;height:100%;touch-action:manipulation}
+.readout{position:absolute;left:8px;bottom:8px;display:flex;gap:5px;pointer-events:none;flex-wrap:wrap;
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.02em;max-width:calc(100% - 16px)}
+.readout span{background:rgba(12,10,9,.8);border:1px solid var(--soil-700);
+  padding:2px 7px;border-radius:99px;color:var(--wheat-faint);backdrop-filter:blur(3px)}
 .readout b{color:var(--chloro);font-weight:500}
 .flag{
-  position:absolute;right:8px;top:8px;padding:3px 8px;border-radius:99px;
-  font-family:var(--f-disp);font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
-  border:1px solid var(--soil-600);background:rgba(15,12,11,.78);color:var(--wheat-faint);
+  position:absolute;right:8px;top:8px;padding:3px 9px;border-radius:99px;
+  font-family:var(--f-disp);font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  border:1px solid var(--soil-600);background:rgba(12,10,9,.8);color:var(--wheat-faint);backdrop-filter:blur(3px);
 }
-.flag.on{color:var(--chloro);border-color:var(--chloro-deep);box-shadow:0 0 14px -4px var(--chloro)}
-.flag.err{color:var(--rust);border-color:var(--rust)}
+.flag.on{color:var(--chloro);border-color:var(--chloro-deep);box-shadow:0 0 16px -5px var(--chloro)}
+.flag.err{color:var(--rust);border-color:#6b2f1e}
 
 /* ---------- Run bar ---------- */
-.runbar{
-  display:flex;align-items:center;gap:8px;padding:8px;flex:none;
-}
+.runbar{display:flex;align-items:center;gap:7px;padding:8px;flex:none}
 .btn{
   border:1px solid var(--soil-600);background:var(--soil-750);color:var(--wheat);
-  border-radius:var(--r-m);padding:9px 12px;font-size:13px;font-weight:600;cursor:pointer;
+  border-radius:var(--r-m);padding:10px 13px;font-size:13px;font-weight:600;cursor:pointer;
   display:inline-flex;align-items:center;gap:6px;transition:transform .08s ease,background .15s ease;
 }
 .btn:active{transform:translateY(1px)}
-.btn:disabled{opacity:.4;cursor:default}
-.btn.primary{background:linear-gradient(var(--chloro),var(--chloro-deep));border-color:#43690f;color:#12180a;
-  box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 6px 18px -10px var(--chloro)}
+.btn:disabled{opacity:.38;cursor:default}
+.btn.primary{background:linear-gradient(#A6E048,var(--chloro-deep));border-color:#4a7414;color:#101705;
+  box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 8px 20px -12px var(--chloro)}
 .btn.stop{color:var(--rust)}
-.btn.small{padding:5px 9px;font-size:12px;border-radius:var(--r-s)}
+.btn.small{padding:6px 10px;font-size:12px;border-radius:var(--r-s)}
 .speedwrap{display:flex;align-items:center;gap:7px;flex:1;min-width:0;
-  background:var(--soil-800);border:1px solid var(--soil-700);border-radius:var(--r-m);padding:5px 10px}
-.speedwrap label{font-family:var(--f-disp);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--wheat-faint)}
-input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:40px;height:20px;background:transparent}
+  background:var(--soil-800);border:1px solid var(--soil-700);border-radius:var(--r-m);padding:6px 11px}
+.speedwrap label{font-family:var(--f-disp);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--wheat-faint)}
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:36px;height:22px;background:transparent}
 input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:99px;background:var(--soil-600)}
 input[type=range]::-moz-range-track{height:4px;border-radius:99px;background:var(--soil-600)}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-6px;
-  border-radius:50%;background:var(--amber);border:2px solid var(--soil-900);box-shadow:0 0 10px -2px var(--amber)}
-input[type=range]::-moz-range-thumb{width:14px;height:14px;border:2px solid var(--soil-900);border-radius:50%;background:var(--amber)}
-.tps{font-family:var(--f-mono);font-size:11px;color:var(--amber);font-variant-numeric:tabular-nums;min-width:52px;text-align:right}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;margin-top:-6.5px;
+  border-radius:50%;background:var(--amber);border:2px solid var(--soil-900);box-shadow:0 0 12px -2px var(--amber)}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border:2px solid var(--soil-900);border-radius:50%;background:var(--amber)}
+.tps{font-family:var(--f-mono);font-size:11px;color:var(--amber);font-variant-numeric:tabular-nums;min-width:50px;text-align:right}
 
 /* ---------- Tabs ---------- */
 .tabs{display:flex;gap:2px;padding:0 8px;flex:none;border-bottom:1px solid var(--soil-700)}
 .tab{
-  flex:1;background:none;border:none;border-bottom:2px solid transparent;padding:9px 4px 8px;
+  flex:1;background:none;border:none;border-bottom:2px solid transparent;padding:10px 4px 9px;position:relative;
   font-family:var(--f-disp);font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
-  color:var(--wheat-faint);cursor:pointer;position:relative;
+  color:var(--wheat-faint);cursor:pointer;
 }
 .tab.active{color:var(--wheat);border-bottom-color:var(--chloro)}
-.tab .badge{position:absolute;top:4px;right:6px;min-width:15px;height:15px;border-radius:99px;
-  background:var(--amber);color:#20170a;font-family:var(--f-body);font-size:9.5px;font-weight:700;line-height:15px}
+.tab .badge{position:absolute;top:3px;right:5px;min-width:16px;height:16px;border-radius:99px;
+  background:var(--amber);color:#20170a;font-family:var(--f-body);font-size:10px;font-weight:700;line-height:16px}
 .dock{flex:1;min-height:0;position:relative}
 .pane{position:absolute;inset:0;display:none;flex-direction:column;min-height:0}
 .pane.active{display:flex}
@@ -127,94 +115,85 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:2px solid var(
 /* ---------- Code ---------- */
 .files{display:flex;gap:6px;padding:8px;overflow-x:auto;flex:none;scrollbar-width:none;align-items:center}
 .files::-webkit-scrollbar{display:none}
-.file{
-  flex:none;padding:5px 10px;border-radius:99px;border:1px solid var(--soil-700);background:var(--soil-800);
-  font-family:var(--f-mono);font-size:11.5px;color:var(--wheat-dim);cursor:pointer;white-space:nowrap;
-}
+.file{flex:none;padding:5px 11px;border-radius:99px;border:1px solid var(--soil-700);background:var(--soil-800);
+  font-family:var(--f-mono);font-size:11.5px;color:var(--wheat-dim);cursor:pointer;white-space:nowrap}
 .file.active{background:var(--soil-700);border-color:var(--bark);color:var(--wheat)}
 .editor{position:relative;flex:1;min-height:0;margin:0 8px;border-radius:var(--r-m);
-  background:var(--soil-850);border:1px solid var(--soil-700);overflow:hidden}
+  background:#141110;border:1px solid var(--soil-700);overflow:hidden}
 .editor pre,.editor textarea{
-  margin:0;padding:10px 12px;font-family:var(--f-mono);font-size:13px;line-height:1.55;
-  white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;tab-size:4;
-  border:0;background:transparent;
+  margin:0;padding:11px 13px;font-family:var(--f-mono);font-size:13px;line-height:1.6;
+  white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;tab-size:4;border:0;background:transparent;
 }
 .editor pre{position:absolute;inset:0;overflow:auto;pointer-events:none;color:var(--wheat)}
-.editor textarea{
-  position:absolute;inset:0;width:100%;height:100%;resize:none;overflow:auto;
-  color:transparent;caret-color:var(--amber);outline:none;-webkit-text-fill-color:transparent;
-}
-.editor textarea::selection{background:rgba(143,201,58,.3);-webkit-text-fill-color:transparent}
-.tk-kw{color:#E4788F}.tk-def{color:var(--amber)}.tk-num{color:var(--water)}
-.tk-str{color:var(--chloro)}.tk-com{color:var(--wheat-faint);font-style:italic}
-.tk-api{color:#9FD8E6}.tk-const{color:var(--gold)}.tk-op{color:var(--wheat-dim)}
+.editor textarea{position:absolute;inset:0;width:100%;height:100%;resize:none;overflow:auto;
+  color:transparent;caret-color:var(--amber);outline:none;-webkit-text-fill-color:transparent}
+.editor textarea::selection{background:rgba(155,214,66,.28);-webkit-text-fill-color:transparent}
+.tk-kw{color:#F2799A}.tk-num{color:#7FD3E8}.tk-str{color:#A8DC63}
+.tk-com{color:#6E6357;font-style:italic}.tk-api{color:#9FD8E6}.tk-const{color:var(--gold)}
 .keys{display:flex;gap:5px;padding:8px;overflow-x:auto;flex:none;scrollbar-width:none}
 .keys::-webkit-scrollbar{display:none}
-.key{flex:none;padding:7px 10px;border-radius:var(--r-s);border:1px solid var(--soil-700);
+.key{flex:none;padding:8px 11px;border-radius:var(--r-s);border:1px solid var(--soil-700);
   background:var(--soil-800);font-family:var(--f-mono);font-size:12px;color:var(--wheat-dim);cursor:pointer}
 .key:active{background:var(--soil-700)}
 .key.wide{color:var(--chloro)}
 
 /* ---------- Shop ---------- */
-.paneScroll{overflow-y:auto;padding:10px 8px 24px;flex:1;-webkit-overflow-scrolling:touch}
-.secTitle{font-family:var(--f-disp);font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--wheat-faint);margin:14px 4px 8px;display:flex;align-items:center;gap:8px}
+.paneScroll{overflow-y:auto;padding:10px 8px 28px;flex:1;-webkit-overflow-scrolling:touch}
+.secTitle{font-family:var(--f-disp);font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--wheat-faint);margin:16px 4px 8px;display:flex;align-items:center;gap:9px}
 .secTitle:first-child{margin-top:2px}
 .secTitle::after{content:"";flex:1;height:1px;background:var(--soil-700)}
-.buys{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
-.buy{
-  display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;
-  padding:10px 11px;border-radius:var(--r-m);background:var(--soil-800);
-  border:1px solid var(--soil-700);
-}
-.buy.owned{background:transparent;border-style:dashed;opacity:.62}
-.buy.locked{opacity:.5}
-.buy h3{grid-column:1;margin:0;font-family:var(--f-disp);font-size:13.5px;font-weight:600;letter-spacing:.02em}
-.buy p{grid-column:1/-1;margin:0;font-size:12px;color:var(--wheat-dim);line-height:1.4}
-.buy .price{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
-.tag{font-family:var(--f-mono);font-size:11px;padding:1px 6px;border-radius:var(--r-s);
+.buys{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.buy{display:grid;grid-template-columns:1fr auto;gap:5px 10px;align-items:start;
+  padding:11px 12px;border-radius:var(--r-m);background:var(--soil-800);border:1px solid var(--soil-700)}
+.buy.ready{border-color:#4a5f2a;background:linear-gradient(var(--soil-800),#1E2417)}
+.buy.owned{background:transparent;border-style:dashed;opacity:.55}
+.buy.locked{opacity:.45}
+.buy h3{grid-column:1;margin:0;font-family:var(--f-disp);font-size:13.5px;font-weight:600;line-height:1.3}
+.buy p{grid-column:1/-1;margin:0;font-size:12px;color:var(--wheat-dim);line-height:1.45}
+.buy .price{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px;margin-top:1px}
+.tag{font-family:var(--f-mono);font-size:11px;padding:1px 7px;border-radius:99px;
   background:var(--soil-750);border:1px solid var(--soil-700);color:var(--wheat-dim);font-variant-numeric:tabular-nums}
 .tag.short{color:var(--rust);border-color:#5a2a1e}
 .buy .btn{grid-row:1;grid-column:2}
-.lvl{font-family:var(--f-mono);font-size:11px;color:var(--amber)}
+.lvl{font-family:var(--f-mono);font-size:11px;color:var(--amber);font-weight:400}
 
 /* ---------- Log ---------- */
-.log{flex:1;overflow-y:auto;padding:10px 12px 20px;font-family:var(--f-mono);font-size:12px;line-height:1.6}
-.log div{white-space:pre-wrap;overflow-wrap:break-word;border-bottom:1px solid rgba(255,255,255,.03);padding:1px 0}
+.log{flex:1;overflow-y:auto;padding:10px 12px 20px;font-family:var(--f-mono);font-size:12px;line-height:1.65}
+.log div{white-space:pre-wrap;overflow-wrap:break-word;padding:1px 0;color:var(--wheat-dim)}
 .log .e{color:var(--rust)}.log .s{color:var(--chloro)}.log .i{color:var(--water)}
 
 /* ---------- Guide ---------- */
 .doc{max-width:66ch}
-.doc h2{font-family:var(--f-disp);font-size:15px;letter-spacing:.03em;margin:20px 0 6px;color:var(--wheat)}
+.doc h2{font-family:var(--f-disp);font-size:15px;letter-spacing:.03em;margin:22px 0 7px;color:var(--wheat)}
 .doc h2:first-child{margin-top:4px}
-.doc p{margin:0 0 8px;color:var(--wheat-dim);font-size:13px}
+.doc p{margin:0 0 9px;color:var(--wheat-dim);font-size:13px}
 .doc code{font-family:var(--f-mono);font-size:12px;background:var(--soil-800);border:1px solid var(--soil-700);
   padding:0 4px;border-radius:4px;color:var(--wheat)}
-.doc pre{font-family:var(--f-mono);font-size:12px;background:var(--soil-850);border:1px solid var(--soil-700);
-  border-radius:var(--r-m);padding:10px;overflow-x:auto;color:var(--wheat);line-height:1.55;margin:0 0 10px}
-.api{display:flex;flex-direction:column;gap:0;border:1px solid var(--soil-700);border-radius:var(--r-m);overflow:hidden}
-.api .row{display:grid;grid-template-columns:minmax(140px,auto) 1fr;gap:4px 12px;padding:7px 10px;
-  border-bottom:1px solid var(--soil-800);background:var(--soil-850)}
+.doc pre{font-family:var(--f-mono);font-size:12px;background:#141110;border:1px solid var(--soil-700);
+  border-radius:var(--r-m);padding:11px;overflow-x:auto;color:var(--wheat);line-height:1.6;margin:0 0 11px}
+.api{display:flex;flex-direction:column;border:1px solid var(--soil-700);border-radius:var(--r-m);overflow:hidden}
+.api .row{display:grid;grid-template-columns:minmax(130px,auto) 1fr;gap:3px 12px;padding:8px 11px;
+  border-bottom:1px solid var(--soil-800);background:#161211}
 .api .row:last-child{border-bottom:0}
-.api .row code{background:none;border:0;padding:0;color:#9FD8E6}
+.api .row code{background:none;border:0;padding:0;color:#9FD8E6;font-size:12px}
 .api .row span{font-size:12px;color:var(--wheat-dim)}
+.api .row.lk{opacity:.5}
 .api .row.lk code{color:var(--wheat-faint)}
-.note{border-left:2px solid var(--amber);padding:2px 0 2px 10px;color:var(--wheat-dim);font-size:12.5px;margin:0 0 10px}
+.note{border-left:2px solid var(--amber);padding:2px 0 2px 11px;color:var(--wheat-dim);font-size:12.5px;margin:0 0 11px}
 .foot{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
 
-@media (min-width:880px){
-  #app{flex-direction:row;gap:0;max-width:none}
-  .left{display:flex;flex-direction:column;flex:1.05;min-width:0;border-right:1px solid var(--soil-700)}
+.left,.right{display:contents}
+@media (min-width:900px){
+  #app{flex-direction:row}
+  .left,.right{display:flex}
+  .left{flex-direction:column;flex:1.1;min-width:0;border-right:1px solid var(--soil-700);padding-top:42px}
+  .right{flex-direction:column;flex:1;min-width:0;max-width:660px;padding-top:42px}
   .field{flex:1;height:auto;margin:8px}
-  .right{display:flex;flex-direction:column;flex:1;min-width:0;max-width:640px}
-  .hud{position:absolute;top:0;left:0;right:0;z-index:5;background:linear-gradient(var(--soil-900),rgba(20,16,16,.0))}
-  .left{padding-top:44px}
-  .right{padding-top:44px}
+  .hud{position:absolute;top:0;left:0;right:0;z-index:5}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
-<style>.left,.right{display:contents}
-@media (min-width:880px){.left,.right{display:flex}}</style>
 
 <div id="app">
   <header class="hud">
@@ -233,8 +212,8 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:2px solid var(
       <button class="btn stop" id="stopBtn" disabled>■ Stop</button>
       <div class="speedwrap">
         <label for="speed">Speed</label>
-        <input type="range" id="speed" min="0" max="12" step="1" value="4">
-        <span class="tps" id="tps">10/s</span>
+        <input type="range" id="speed" min="0" max="14" step="1" value="0">
+        <span class="tps" id="tps">4/s</span>
       </div>
     </div>
   </div>
@@ -256,11 +235,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:2px solid var(
         </div>
         <div class="keys" id="keys"></div>
       </section>
-
-      <section class="pane" id="pane-shop">
-        <div class="paneScroll" id="shop"></div>
-      </section>
-
+      <section class="pane" id="pane-shop"><div class="paneScroll" id="shop"></div></section>
       <section class="pane" id="pane-log">
         <div class="log" id="log"></div>
         <div class="keys">
@@ -269,10 +244,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:2px solid var(
           <button class="key" id="clearFarm">clear farm</button>
         </div>
       </section>
-
-      <section class="pane" id="pane-guide">
-        <div class="paneScroll"><div class="doc" id="guide"></div></div>
-      </section>
+      <section class="pane" id="pane-guide"><div class="paneScroll"><div class="doc" id="guide"></div></div></section>
     </main>
   </div>
 </div>
@@ -653,8 +625,7 @@ function parse(src){
   while(!at('EOF')){ const s=statement(); if(s) body.push(s); skipNL(); }
   return {k:'Module',body};
 }
-</script>
-<script>
+</script><script>
 /* ===================== runtime values & evaluator ======================== */
 class PyDict{
   constructor(){ this.m=new Map(); }
@@ -886,8 +857,7 @@ function doSlice(obj,lo,hi,step){
   else { a=Math.min(n-1,a); for(let i=a;i>b;i+=st) if(i>=0) out.push(arr[i]); }
   return isStr ? out.join('') : out;
 }
-</script>
-<script>
+</script><script>
 /* ---------------------------- attributes -------------------------------- */
 const bnd=(name,fn)=>({__nat:true,name,fn,gen:false});
 const bndg=(name,fn)=>({__nat:true,name,fn,gen:true});
@@ -1278,117 +1248,159 @@ function formatSpec(v,spec){
   if(align==='^'){ const l=Math.floor((w-s.length)/2); return ' '.repeat(l)+s+' '.repeat(w-s.length-l); }
   return align==='<' ? s.padEnd(w) : (typeof v==='number'&&!align ? s.padStart(w) : s.padEnd(w));
 }
-</script>
-<script>
+</script><script>
 /* ========================= game world & drone API ======================== */
 const NORTH=0,EAST=1,SOUTH=2,WEST=3;
 const DV=[{x:0,y:1},{x:1,y:0},{x:0,y:-1},{x:-1,y:0}];
-const DIRNAME=['North','East','South','West'];
 
-const ITEMS=['Hay','Wood','Carrot','Pumpkin','Power','Cactus','Bone','Gold','Water','Fertilizer'];
-const ITEM_COLOR={Hay:'#D8B24A',Wood:'#8A5A33',Carrot:'#E1762F',Pumpkin:'#E08A2B',
-  Power:'#57B6C7',Cactus:'#5FA05A',Bone:'#DCD2BE',Gold:'#F0C852',Water:'#3E8FB0',Fertilizer:'#9B7BD4'};
-const TRADE_VALUE={Hay:1,Wood:2,Carrot:6,Pumpkin:15,Power:25,Cactus:30,Bone:60};
+const ITEMS=['Hay','Wood','Carrot','Pumpkin','Power','Cactus','Bone','Apple','Gold','Water','Fertilizer'];
+const ITEM_COLOR={Hay:'#DCB84E',Wood:'#96633A',Carrot:'#E77B2C',Pumpkin:'#E89430',
+  Power:'#5CC3D6',Cactus:'#63A85C',Bone:'#E4DAC6',Apple:'#D9483F',Gold:'#F5CE58',
+  Water:'#4A9CC0',Fertilizer:'#A98BE0'};
+const TRADE_VALUE={Hay:1,Wood:2,Carrot:6,Apple:9,Pumpkin:15,Power:25,Cactus:30,Bone:60};
 
-const ENT=['Grass','Bush','Carrot','Pumpkin','Sunflower','Cactus','Dinosaur','Hedge','Treasure'];
+const ENT=['Grass','Bush','Tree','Carrot','Pumpkin','Sunflower','Cactus','Dinosaur','Apple','Hedge','Treasure'];
 const SPEC={
-  Grass:     {ground:'Grassland', grow:3,  need:'plant'},
-  Bush:      {ground:'Grassland', grow:9,  need:'bush'},
-  Carrot:    {ground:'Soil',      grow:14, need:'carrot'},
-  Pumpkin:   {ground:'Soil',      grow:20, need:'pumpkin'},
-  Sunflower: {ground:'Soil',      grow:22, need:'sunflower'},
+  Grass:     {ground:'Grassland', grow:3,  need:'plant',     comp:1},
+  Bush:      {ground:'Grassland', grow:9,  need:'bush',      comp:1},
+  Tree:      {ground:'Grassland', grow:26, need:'tree',      comp:1},
+  Carrot:    {ground:'Soil',      grow:14, need:'carrot',    comp:1},
+  Pumpkin:   {ground:'Soil',      grow:20, need:'pumpkin',   comp:1},
+  Sunflower: {ground:'Soil',      grow:22, need:'sunflower', comp:1},
   Cactus:    {ground:'Soil',      grow:16, need:'cactus'},
   Dinosaur:  {ground:'Soil',      grow:0,  need:'dino'},
+  Apple:     {ground:'any',       grow:0,  need:'apples'},
   Hedge:     {ground:'Grassland', grow:0,  need:'maze'},
   Treasure:  {ground:'Grassland', grow:0,  need:'maze'}
 };
-const FEED_ITEMS=['Hay','Wood','Carrot','Pumpkin'];
+const PLANTABLE=['Grass','Bush','Tree','Carrot','Pumpkin','Sunflower','Cactus'];
+const FEED_ITEMS=['Hay','Wood','Carrot','Pumpkin','Apple'];
+const APPLE_ROT=70, APPLE_EVERY=30;
 
 const Items    = ns('Items',    Object.fromEntries(ITEMS.map(n=>[n,sym('Items',n)])));
 const Entities = ns('Entities', Object.fromEntries(ENT.map(n=>[n,sym('Entities',n)])));
 const Grounds  = ns('Grounds',  {Grassland:sym('Grounds','Grassland'),Soil:sym('Grounds','Soil')});
 const Unlocks  = ns('Unlocks',  {});
 
-const SIZES=[3,4,5,6,8,10,12,14,18,22,26];
-const TPS=[4,6,9,13,19,28,42,63,95,140,210,320,480];
+const SIZES=[1,2,3,4,5,6,8,10,12,14,16,20,24];
+const TPS=[4,6,9,13,19,27,38,55,80,115,165,240,350,500,720];
+const TANK=[8,16,32,64,128,260];
 
 const state = {
   items:Object.fromEntries(ITEMS.map(i=>[i,0])),
-  unlocked:{},
-  expand:0, speed:0, speedPref:0,
-  credit:0, treasures:0,
-  wanted:'Hay', wantedAt:0
+  unlocked:{}, expand:0, speed:0, speedPref:0, tankLvl:0, bay:0,
+  tank:8, credit:0, treasures:0, wanted:'Hay', wantedAt:0
 };
-const world = {
-  size:3, tiles:[], time:0, maze:false,
-  drone:{x:0,y:0,dir:NORTH,vx:0,vy:0,flip:0,bump:0},
-  fx:[]
-};
+const world = { size:1, tiles:[], time:0, maze:false, drones:[], fx:[] };
+let CUR=null;
 
+function mkDrone(id,x,y){
+  return {id,x:x||0,y:y||0,dir:NORTH,vx:x||0,vy:y||0,flip:0,bump:0,t:0,prog:null,busy:0};
+}
 function newTile(){ return {g:'Grassland',e:'Grass',age:Math.random()*SPEC.Grass.grow,water:0,d:null}; }
 function buildWorld(size,keep){
   const old=world.tiles, os=world.size;
   world.size=size;
   world.tiles=new Array(size*size);
-  for(let y=0;y<size;y++) for(let x=0;x<size;x++){
-    world.tiles[y*size+x] = (keep && x<os && y<os) ? old[y*os+x] : newTile();
+  for(let y=0;y<size;y++) for(let x=0;x<size;x++)
+    world.tiles[y*size+x] = (keep&&x<os&&y<os) ? old[y*os+x] : newTile();
+  if(!world.drones.length) world.drones=[mkDrone(0)];
+  for(const d of world.drones){
+    d.x=Math.min(d.x,size-1); d.y=Math.min(d.y,size-1); d.vx=d.x; d.vy=d.y;
   }
-  world.drone.x=Math.min(world.drone.x,size-1);
-  world.drone.y=Math.min(world.drone.y,size-1);
-  world.drone.vx=world.drone.x; world.drone.vy=world.drone.y;
+  CUR=world.drones[0];
   world.maze=false;
 }
-const wrap=(v)=>((v%world.size)+world.size)%world.size;
+const wrap=v=>((v%world.size)+world.size)%world.size;
 const tileAt=(x,y)=>world.tiles[wrap(y)*world.size+wrap(x)];
-const here=()=>tileAt(world.drone.x,world.drone.y);
-const isMature=t=>t.e && t.age>=SPEC[t.e].grow && (t.e!=='Dinosaur'||(t.d&&t.d.fed>=5));
-
-function growthRate(t){
-  if(t.g==='Soil') return 0.35+0.65*Math.min(1,t.water);
-  return 1;
+const here=()=>tileAt(CUR.x,CUR.y);
+const isMature=t=>{
+  if(!t.e) return false;
+  if(t.e==='Dinosaur') return !!(t.d&&t.d.fed>=5);
+  if(t.e==='Apple'||t.e==='Treasure') return true;
+  if(t.e==='Hedge') return false;
+  return t.age>=SPEC[t.e].grow;
+};
+function neighbours(x,y){ return DV.map(d=>tileAt(x+d.x,y+d.y)); }
+function growthRate(t,x,y){
+  let r = t.g==='Soil' ? 0.35+0.65*Math.min(1,t.water) : 1;
+  if(t.e==='Tree'){
+    let n=0;
+    for(const q of neighbours(x,y)) if(q.e==='Tree') n++;
+    r *= Math.pow(0.5,n);
+  }
+  return r;
 }
+function companionOk(t,x,y){
+  if(!t.d||!t.d.comp) return false;
+  for(const q of neighbours(x,y)) if(q.e===t.d.comp) return true;
+  return false;
+}
+function pickCompanion(){
+  if(!state.unlocked.poly) return null;
+  const pool=PLANTABLE.filter(e=>state.unlocked[SPEC[e].need]);
+  return pool.length?pool[Math.floor(Math.random()*pool.length)]:null;
+}
+
 function advanceWorld(dt){
   if(dt<=0) return;
   world.time+=dt;
-  const T=world.tiles;
-  for(let i=0;i<T.length;i++){
-    const t=T[i];
+  const n=world.size, T=world.tiles;
+  const cap=TANK[state.tankLvl];
+  state.tank=Math.min(cap,state.tank+dt*cap/240);
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++){
+    const t=T[y*n+x];
     if(t.water>0) t.water=Math.max(0,t.water-dt*0.0022);
     if(!t.e) continue;
+    if(t.e==='Apple'){
+      t.age+=dt;
+      if(t.age>APPLE_ROT){ t.e=null; t.age=0; t.d=null; }
+      continue;
+    }
     const sp=SPEC[t.e];
-    if(sp.grow>0 && t.age<sp.grow) t.age=Math.min(sp.grow,t.age+dt*growthRate(t));
+    if(sp.grow>0 && t.age<sp.grow){ t.age=Math.min(sp.grow,t.age+dt*growthRate(t,x,y)); continue; }
+    if(t.e==='Tree'&&state.unlocked.apples){
+      t.d=t.d||{};
+      t.d.fruit=(t.d.fruit||0)+dt;
+      if(t.d.fruit>=APPLE_EVERY){ t.d.fruit=0; dropApple(); }
+    }
   }
-  if(world.time-state.wantedAt>500){
+  if(world.time-state.wantedAt>420){
     state.wantedAt=world.time;
-    const pool=Object.keys(TRADE_VALUE).filter(k=>state.unlocked[unlockForItem(k)]!==undefined||k==='Hay');
+    const pool=Object.keys(TRADE_VALUE).filter(k=>state.items[k]>0||k==='Hay');
     state.wanted=pool[Math.floor(Math.random()*pool.length)]||'Hay';
   }
 }
-function unlockForItem(k){
-  return {Hay:'plant',Wood:'bush',Carrot:'carrot',Pumpkin:'pumpkin',Power:'sunflower',Cactus:'cactus',Bone:'dino'}[k];
+function dropApple(){
+  const free=[];
+  for(let y=0;y<world.size;y++) for(let x=0;x<world.size;x++){
+    const t=tileAt(x,y);
+    if(!t.e) free.push(t);
+  }
+  if(!free.length) return;
+  const t=free[Math.floor(Math.random()*free.length)];
+  t.e='Apple'; t.age=0; t.d=null;
 }
-function give(item,n){
-  state.items[item]=(state.items[item]||0)+n;
-  UI.bump(item);
-}
+function give(item,n){ state.items[item]=(state.items[item]||0)+n; UI.bump(item); }
 function fx(x,y,text,color){
   world.fx.push({x,y,text,color,t:0});
-  if(world.fx.length>40) world.fx.shift();
+  if(world.fx.length>50) world.fx.shift();
 }
 
 /* ------------------------------ actions --------------------------------- */
 function requireUnlock(id,what){
-  if(!state.unlocked[id]) err('LockedError',what+' is locked. Buy it in the Shop tab.');
+  if(!state.unlocked[id]) err('LockedError',what+' is locked — buy it in the Shop tab.');
 }
 const COST={move:1,harvest:1,plant:1,till:2,water:1,measure:1,swap:2,trade:2,flip:2,feed:1};
 
-function* act(cost){ yield cost; }
-
+function dirOf(v,fname){
+  if(v&&v.__sym&&v.kind==='Dir') v=v.v;
+  if(typeof v!=='number'||v<0||v>3) err('TypeError',fname+'() needs North, East, South or West');
+  return v|0;
+}
 function* a_move(args){
-  let d=args.length?args[0]:null;
-  if(d&&d.__sym&&d.kind==='Dir') d=d.v;
-  if(typeof d!=='number'||d<0||d>3) err('TypeError','move() needs North, East, South or West');
-  const D=world.drone;
+  const d=dirOf(args[0],'move');
+  const D=CUR;
   const nx=wrap(D.x+DV[d].x), ny=wrap(D.y+DV[d].y);
   D.dir=d;
   const dest=tileAt(nx,ny);
@@ -1398,53 +1410,58 @@ function* a_move(args){
   return true;
 }
 function* a_harvest(){
-  const t=here();
+  const t=here(), D=CUR;
   yield COST.harvest;
   if(!t.e) return false;
   if(t.e==='Hedge'){ t.e=null; t.age=0; return true; }
   if(!isMature(t)) return false;
-  const D=world.drone;
+  const boost = companionOk(t,D.x,D.y) ? 2 : 1;
+  const clear=()=>{ t.e=null; t.age=0; t.d=null; };
+  const pay=(item,n,col)=>{ give(item,n*boost); fx(D.x,D.y,'+'+(n*boost),col); };
   switch(t.e){
     case 'Grass':
-      t.age=0;
-      t.e = state.unlocked.plant ? null : 'Grass';   // wild grass regrows until you own a seed hopper
-      give('Hay',1); fx(D.x,D.y,'+1','#D8B24A'); return true;
-    case 'Bush':    t.e=null;t.age=0; give('Wood',1); fx(D.x,D.y,'+1','#8A5A33'); return true;
-    case 'Carrot':  t.e=null;t.age=0; give('Carrot',1); fx(D.x,D.y,'+1','#E1762F'); return true;
-    case 'Pumpkin': {
+      t.age=0; t.d=null;
+      t.e = state.unlocked.plant ? null : 'Grass';
+      pay('Hay',1,'#DCB84E'); return true;
+    case 'Bush':   clear(); pay('Wood',1,'#96633A'); return true;
+    case 'Tree':   clear(); pay('Wood',4,'#96633A'); return true;
+    case 'Carrot': clear(); pay('Carrot',1,'#E77B2C'); return true;
+    case 'Apple':  clear(); give('Apple',1); fx(D.x,D.y,'+1','#D9483F'); return true;
+    case 'Pumpkin':{
       const group=floodPumpkin(D.x,D.y);
       const n=group.length, side=Math.round(Math.sqrt(n));
-      const amount = side*side===n ? n*side : n;
-      for(const i of group){ world.tiles[i].e=null; world.tiles[i].age=0; }
-      give('Pumpkin',amount); fx(D.x,D.y,'+'+amount,'#E08A2B'); return true;
+      const amount=(side*side===n?n*side:n)*boost;
+      for(const i of group){ const q=world.tiles[i]; q.e=null; q.age=0; q.d=null; }
+      give('Pumpkin',amount); fx(D.x,D.y,'+'+amount,'#E89430'); return true;
     }
-    case 'Sunflower': {
+    case 'Sunflower':{
       let best=0;
-      for(const t2 of world.tiles) if(t2.e==='Sunflower'&&isMature(t2)) best=Math.max(best,t2.d.petals);
+      for(const q of world.tiles) if(q.e==='Sunflower'&&isMature(q)) best=Math.max(best,q.d.petals);
       const p=t.d.petals;
-      t.e=null; t.age=0;
-      if(p>=best){ const gain=p*2; give('Power',gain); fx(D.x,D.y,'+'+gain,'#57B6C7'); return true; }
-      fx(D.x,D.y,'wilt','#D4573A'); return false;
+      clear();
+      if(p>=best){ pay('Power',p*2,'#5CC3D6'); return true; }
+      fx(D.x,D.y,'wilt','#E0603F'); return false;
     }
-    case 'Cactus': {
+    case 'Cactus':{
       const list=[];
       for(let y=0;y<world.size;y++) for(let k=0;k<world.size;k++){
         const x = y%2===0 ? k : world.size-1-k;
-        const c=tileAt(x,y); if(c.e==='Cactus') list.push(c);
+        const c=tileAt(x,y);
+        if(c.e==='Cactus') list.push(c);
       }
-      const allRipe=list.every(isMature);
+      const ripe=list.every(isMature);
       let sorted=true;
       for(let i=1;i<list.length;i++) if(list[i].d.size<list[i-1].d.size) sorted=false;
-      if(allRipe&&sorted){
+      if(ripe&&sorted){
         const n=list.length;
         for(const c of list){ c.e=null; c.age=0; c.d=null; }
-        give('Cactus',n); fx(D.x,D.y,'+'+n,'#5FA05A'); return true;
+        give('Cactus',n); fx(D.x,D.y,'+'+n,'#63A85C'); return true;
       }
-      t.e=null;t.age=0;t.d=null; fx(D.x,D.y,'unsorted','#D4573A'); return false;
+      clear(); fx(D.x,D.y,'unsorted','#E0603F'); return false;
     }
-    case 'Dinosaur': t.e=null;t.age=0;t.d=null; give('Bone',6); fx(D.x,D.y,'+6','#DCD2BE'); return true;
-    case 'Treasure': {
-      t.e=null;t.age=0; give('Gold',1); fx(D.x,D.y,'+1 gold','#F0C852');
+    case 'Dinosaur': clear(); give('Bone',6); fx(D.x,D.y,'+6','#E4DAC6'); return true;
+    case 'Treasure':{
+      clear(); give('Gold',1); fx(D.x,D.y,'+1 gold','#F5CE58');
       state.treasures++;
       if(state.treasures%5===0) buildMaze(); else placeTreasure();
       return true;
@@ -1455,8 +1472,7 @@ function* a_harvest(){
 function floodPumpkin(x,y){
   const seen=new Set(), out=[], st=[[wrap(x),wrap(y)]];
   while(st.length){
-    const [cx,cy]=st.pop();
-    const i=cy*world.size+cx;
+    const [cx,cy]=st.pop(), i=cy*world.size+cx;
     if(seen.has(i)) continue;
     const t=world.tiles[i];
     if(!t||t.e!=='Pumpkin'||!isMature(t)) continue;
@@ -1466,21 +1482,22 @@ function floodPumpkin(x,y){
   return out;
 }
 function* a_plant(args){
-  let e=args[0];
+  const e=args[0];
   if(!e||!e.__sym||e.kind!=='Entities') err('TypeError','plant() needs an Entities value, e.g. Entities.Grass');
   const name=e.name, sp=SPEC[name];
-  requireUnlock(sp.need, name);
-  if(name==='Treasure') err('ValueError','you cannot plant treasure');
+  if(name==='Treasure'||name==='Apple') err('ValueError','you cannot plant '+name.toLowerCase());
+  requireUnlock(sp.need,name);
   const t=here();
   yield COST.plant;
   if(name==='Hedge'){ buildMaze(); return true; }
   if(t.e) return false;
   if(t.g!==sp.ground) return false;
   t.e=name; t.age=0;
-  if(name==='Sunflower') t.d={petals:1+Math.floor(Math.random()*7)};
+  const comp=sp.comp?pickCompanion():null;
+  if(name==='Sunflower') t.d={petals:1+Math.floor(Math.random()*7),comp};
   else if(name==='Cactus') t.d={size:1+Math.floor(Math.random()*9)};
   else if(name==='Dinosaur') t.d={fed:0,want:FEED_ITEMS[Math.floor(Math.random()*FEED_ITEMS.length)]};
-  else t.d=null;
+  else t.d=comp?{comp}:null;
   return true;
 }
 function* a_till(){
@@ -1495,53 +1512,45 @@ function* a_till(){
 function* a_use_item(args){
   const it=args[0];
   if(!it||!it.__sym||it.kind!=='Items') err('TypeError','use_item() needs an Items value');
-  const t=here(), D=world.drone;
+  const t=here(), D=CUR;
   if(it.name==='Water'){
     requireUnlock('water','use_item(Items.Water)');
     yield COST.water;
-    if(t.g!=='Soil') return false;
-    t.water=1; fx(D.x,D.y,'water','#57B6C7'); return true;
+    if(t.g!=='Soil'||state.tank<1) return false;
+    state.tank-=1; t.water=1; fx(D.x,D.y,'water','#5CC3D6'); return true;
   }
   if(it.name==='Fertilizer'){
     requireUnlock('fertilizer','fertilizer');
     yield COST.water;
-    if(!t.e||!SPEC[t.e].grow) return false;
-    if(state.items.Fertilizer<1) return false;
+    if(!t.e||!SPEC[t.e].grow||state.items.Fertilizer<1) return false;
     state.items.Fertilizer--; UI.bump('Fertilizer');
-    t.age=SPEC[t.e].grow; fx(D.x,D.y,'grown','#9B7BD4'); return true;
+    t.age=SPEC[t.e].grow; fx(D.x,D.y,'ripe','#A98BE0'); return true;
   }
   yield COST.feed;
-  if(t.e==='Dinosaur'){
-    if(t.d.want!==it.name) return false;
-    if((state.items[it.name]||0)<1) return false;
-    state.items[it.name]--; UI.bump(it.name);
-    t.d.fed++;
-    t.d.want=FEED_ITEMS[Math.floor(Math.random()*FEED_ITEMS.length)];
-    fx(D.x,D.y,'fed '+t.d.fed+'/5','#8FC93A');
-    return true;
-  }
-  return false;
+  if(t.e!=='Dinosaur'||!t.d) return false;
+  if(t.d.want!==it.name||(state.items[it.name]||0)<1) return false;
+  state.items[it.name]--; UI.bump(it.name);
+  t.d.fed++;
+  t.d.want=FEED_ITEMS[Math.floor(Math.random()*FEED_ITEMS.length)];
+  fx(D.x,D.y,t.d.fed+'/5','#9BD642');
+  return true;
 }
 function* a_measure(args){
   requireUnlock('sensors','measure()');
-  let t=here();
-  if(args.length){
-    let d=args[0]; if(d&&d.__sym&&d.kind==='Dir') d=d.v;
-    t=tileAt(world.drone.x+DV[d].x, world.drone.y+DV[d].y);
-  }
+  const t = args.length ? tileAt(CUR.x+DV[dirOf(args[0],'measure')].x, CUR.y+DV[dirOf(args[0],'measure')].y) : here();
   yield COST.measure;
   if(!t.e) return null;
   if(t.e==='Sunflower') return t.d.petals;
   if(t.e==='Cactus') return t.d.size;
   if(t.e==='Dinosaur') return Items.props[t.d.want];
   if(t.e==='Treasure') return true;
+  if(t.e==='Apple') return Math.round((APPLE_ROT-t.age)*10)/10;
   return null;
 }
 function* a_swap(args){
   requireUnlock('cactus','swap()');
-  let d=args[0]; if(d&&d.__sym&&d.kind==='Dir') d=d.v;
-  if(typeof d!=='number') err('TypeError','swap() needs a direction');
-  const a=here(), b=tileAt(world.drone.x+DV[d].x, world.drone.y+DV[d].y);
+  const d=dirOf(args[0],'swap');
+  const a=here(), b=tileAt(CUR.x+DV[d].x,CUR.y+DV[d].y);
   yield COST.swap;
   if(a.g!==b.g) return false;
   const e=a.e,ag=a.age,dd=a.d;
@@ -1556,20 +1565,28 @@ function* a_trade(args){
   if(!it||!it.__sym||it.kind!=='Items') err('TypeError','trade() needs an Items value');
   const v=TRADE_VALUE[it.name];
   yield COST.trade;
-  if(!v) return false;
-  if(n<1||(state.items[it.name]||0)<n) return false;
+  if(!v||n<1||(state.items[it.name]||0)<n) return false;
   state.items[it.name]-=n; UI.bump(it.name);
-  const mult = state.wanted===it.name?3:1;
-  state.credit += n*v*mult;
+  state.credit += n*v*(state.wanted===it.name?3:1);
   const gold=Math.floor(state.credit/100);
-  if(gold>0){ state.credit-=gold*100; give('Gold',gold); fx(world.drone.x,world.drone.y,'+'+gold+'g','#F0C852'); }
+  if(gold>0){ state.credit-=gold*100; give('Gold',gold); fx(CUR.x,CUR.y,'+'+gold+'g','#F5CE58'); }
   return true;
 }
-function* a_flip(){
-  yield COST.flip;
-  world.drone.flip=1;
+function* a_flip(){ yield COST.flip; CUR.flip=1; return true; }
+
+function* a_spawn(args){
+  requireUnlock('drones','spawn_drone()');
+  const f=args[0];
+  if(!(f instanceof PyFunc)) err('TypeError','spawn_drone() needs a function, e.g. spawn_drone(work)');
+  yield COST.plant;
+  if(world.drones.length>=maxDrones()) return false;
+  const d=mkDrone(world.drones.length,CUR.x,CUR.y);
+  world.drones.push(d);
+  startDroneProgram(d,f);
+  fx(d.x,d.y,'drone '+d.id,'#5CC3D6');
   return true;
 }
+const maxDrones=()=>1+state.bay;
 
 /* -------------------------------- maze ---------------------------------- */
 function buildMaze(){
@@ -1578,11 +1595,10 @@ function buildMaze(){
   if(n<5) err('ValueError','the maze needs a farm of at least 5x5');
   for(const t of world.tiles){ t.e='Hedge'; t.age=0; t.g='Grassland'; t.d=null; t.water=0; }
   const set=(x,y)=>{ if(x>=0&&y>=0&&x<n&&y<n) world.tiles[y*n+x].e=null; };
-  const seen=new Set(), stack=[[0,0]];
-  seen.add('0,0'); set(0,0);
+  const seen=new Set(['0,0']), stack=[[0,0]];
+  set(0,0);
   while(stack.length){
-    const [x,y]=stack[stack.length-1];
-    const opts=[];
+    const [x,y]=stack[stack.length-1], opts=[];
     for(const d of DV){
       const nx=x+d.x*2, ny=y+d.y*2;
       if(nx>=0&&ny>=0&&nx<n&&ny<n&&!seen.has(nx+','+ny)) opts.push([nx,ny,x+d.x,y+d.y]);
@@ -1592,18 +1608,18 @@ function buildMaze(){
     seen.add(nx+','+ny); set(mx,my); set(nx,ny); stack.push([nx,ny]);
   }
   for(let i=0;i<n;i++){
-    const x=Math.floor(Math.random()*n), y=Math.floor(Math.random()*n);
-    if(x>0&&y>0&&x<n-1&&y<n-1) set(x,y);
+    const x=1+Math.floor(Math.random()*(n-2)), y=1+Math.floor(Math.random()*(n-2));
+    set(x,y);
   }
   world.maze=true;
-  world.drone.x=0; world.drone.y=0;
+  for(const d of world.drones){ d.x=0; d.y=0; d.vx=0; d.vy=0; }
   placeTreasure();
 }
 function placeTreasure(){
   const open=[];
   for(let y=0;y<world.size;y++) for(let x=0;x<world.size;x++){
     const t=tileAt(x,y);
-    if(!t.e && (x!==world.drone.x||y!==world.drone.y)) open.push([x,y,Math.abs(x-world.drone.x)+Math.abs(y-world.drone.y)]);
+    if(!t.e&&(x!==CUR.x||y!==CUR.y)) open.push([x,y,Math.abs(x-CUR.x)+Math.abs(y-CUR.y)]);
   }
   if(!open.length) return;
   open.sort((a,b)=>b[2]-a[2]);
@@ -1614,37 +1630,38 @@ function placeTreasure(){
 <script>
 /* ============================ builtins & globals ========================= */
 function* B_sorted(a,kw){ return yield* sortArr(toList(a[0]),kw); }
-function* B_map(a){ const out=[]; for(const x of toList(a[1])) out.push(yield* callValue(a[0],[x],{})); return out; }
-function* B_filter(a){ const out=[]; for(const x of toList(a[1])) if(truthy(yield* callValue(a[0],[x],{}))) out.push(x); return out; }
+function* B_map(a){ const o=[]; for(const x of toList(a[1])) o.push(yield* callValue(a[0],[x],{})); return o; }
+function* B_filter(a){ const o=[]; for(const x of toList(a[1])) if(truthy(yield* callValue(a[0],[x],{}))) o.push(x); return o; }
 function* B_minmax(a,kw,big){
-  const seq = a.length===1 ? toList(a[0]) : a;
-  if(!seq.length) err('ValueError','min()/max() arg is an empty sequence');
+  const seq=a.length===1?toList(a[0]):a;
+  if(!seq.length) err('ValueError','min()/max() got an empty sequence');
   const key=kw&&kw.key?kw.key:null;
-  let best=seq[0], bestK=key?yield* callValue(key,[seq[0]],{}):seq[0];
+  let best=seq[0], bk=key?yield* callValue(key,[seq[0]],{}):seq[0];
   for(let i=1;i<seq.length;i++){
     const k=key?yield* callValue(key,[seq[i]],{}):seq[i];
-    const c=cmpVals(k,bestK);
-    if(big?c>0:c<0){ best=seq[i]; bestK=k; }
+    const c=cmpVals(k,bk);
+    if(big?c>0:c<0){ best=seq[i]; bk=k; }
   }
   return best;
 }
 function buildGlobals(){
   const g=new Map();
   const def=(n,fn,gen)=>g.set(n,nat(n,fn,gen));
+  const tag=()=>world.drones.length>1?'['+CUR.id+'] ':'';
 
-  def('print',a=>{ UI.log(a.map(pyStr).join(' ')); return null; });
-  def('quick_print',a=>{ UI.log(a.map(pyStr).join(' '),'',true); return null; });
+  def('print',a=>{ UI.log(tag()+a.map(pyStr).join(' ')); return null; });
+  def('quick_print',a=>{ UI.log(tag()+a.map(pyStr).join(' '),'',true); return null; });
   def('clear',()=>{ UI.clearLog(); return null; });
   def('len',a=>pyLen(a[0]));
   def('range',a=>{
     const x=a.map(v=>Math.trunc(numOf(v,'range')));
-    const r = x.length===1?new PyRange(0,x[0],1):(x.length===2?new PyRange(x[0],x[1],1):new PyRange(x[0],x[1],x[2]));
+    const r=x.length===1?new PyRange(0,x[0],1):(x.length===2?new PyRange(x[0],x[1],1):new PyRange(x[0],x[1],x[2]));
     if(r.step===0) err('ValueError','range() step must not be zero');
     if(r.length>4e6) err('MemoryError','range() is too large');
     return r;
   });
   def('abs',a=>Math.abs(numOf(a[0],'abs')));
-  def('round',a=>{ const d=a.length>1?a[1]:0; const m=Math.pow(10,d);
+  def('round',a=>{ const d=a.length>1?a[1]:0, m=Math.pow(10,d);
     return Math.round(numOf(a[0],'round')*m*(1+1e-12))/m; });
   def('int',a=>{ if(!a.length) return 0;
     if(typeof a[0]==='string'){ const v=parseInt(a[0].trim(),a.length>1?a[1]:10);
@@ -1667,13 +1684,11 @@ function buildGlobals(){
   def('any',a=>toList(a[0]).some(truthy));
   def('all',a=>toList(a[0]).every(truthy));
   def('reversed',a=>toList(a[0]).reverse());
-  def('enumerate',a=>{ const st=a.length>1?a[1]:0;
-    return toList(a[0]).map((x,i)=>tup([i+st,x])); });
-  def('zip',a=>{ const ls=a.map(toList); const n=Math.min(...ls.map(l=>l.length));
-    const out=[]; for(let i=0;i<n;i++) out.push(tup(ls.map(l=>l[i]))); return out; });
+  def('enumerate',a=>{ const st=a.length>1?a[1]:0; return toList(a[0]).map((x,i)=>tup([i+st,x])); });
+  def('zip',a=>{ const ls=a.map(toList), n=Math.min(...ls.map(l=>l.length)), o=[];
+    for(let i=0;i<n;i++) o.push(tup(ls.map(l=>l[i]))); return o; });
   def('type',a=>typeName(a[0]));
-  def('isinstance',a=>{ const t=a[1];
-    const names = Array.isArray(t)?t.map(pyStr):[pyStr(t)];
+  def('isinstance',a=>{ const t=a[1], names=Array.isArray(t)?t.map(pyStr):[pyStr(t)];
     return names.includes(typeName(a[0])); });
   def('chr',a=>String.fromCharCode(numOf(a[0],'chr')));
   def('ord',a=>String(a[0]).charCodeAt(0));
@@ -1704,104 +1719,124 @@ function buildGlobals(){
   def('swap',a_swap,true);
   def('trade',a_trade,true);
   def('do_a_flip',a_flip,true);
-  def('get_pos_x',()=>world.drone.x);
-  def('get_pos_y',()=>world.drone.y);
+  def('spawn_drone',a_spawn,true);
+  def('max_drones',()=>maxDrones());
+  def('num_drones',()=>world.drones.length);
+  def('get_drone_id',()=>CUR.id);
+  def('get_pos_x',()=>CUR.x);
+  def('get_pos_y',()=>CUR.y);
   def('get_world_size',()=>world.size);
   def('get_time',()=>Math.round(world.time*100)/100);
   def('num_items',a=>{
     const it=a[0];
     if(!it||!it.__sym||it.kind!=='Items') err('TypeError','num_items() needs an Items value');
+    if(it.name==='Water') return Math.floor(state.tank);
     return state.items[it.name]||0;
   });
+  def('num_unlocked',a=>{
+    const u=a[0];
+    const id=u&&u.__sym?u.name:pyStr(u);
+    if(id==='expand') return state.expand;
+    if(id==='speed') return state.speed;
+    if(id==='drones') return state.bay;
+    return state.unlocked[id]?1:0;
+  });
   def('can_harvest',()=>{ requireUnlock('sensors','can_harvest()'); const t=here();
-    return !!(t.e && (t.e==='Hedge'||t.e==='Treasure'||isMature(t))); });
+    return !!(t.e&&(t.e==='Hedge'||isMature(t))); });
   def('get_entity_type',()=>{ requireUnlock('sensors','get_entity_type()');
     const t=here(); return t.e?Entities.props[t.e]:null; });
-  def('get_ground_type',()=>{ requireUnlock('sensors','get_ground_type()');
-    return Grounds.props[here().g]; });
-  def('get_water',()=>{ requireUnlock('water','get_water()');
-    return Math.round(here().water*1000)/1000; });
-  def('get_trade_request',()=>{ requireUnlock('trade','get_trade_request()');
-    return Items.props[state.wanted]; });
-  def('get_cost',a=>{ const d=new PyDict();
-    const u=UPGRADES.find(x=>x.id===pyStr(a[0]));
-    if(u){ const c=u.cost(state); for(const k in c) d.set(Items.props[k],c[k]); }
-    return d; });
-  def('unlocked',a=>!!state.unlocked[pyStr(a[0])]);
+  def('get_ground_type',()=>{ requireUnlock('sensors','get_ground_type()'); return Grounds.props[here().g]; });
+  def('get_water',()=>{ requireUnlock('water','get_water()'); return Math.round(here().water*1000)/1000; });
+  def('get_companion',()=>{ requireUnlock('poly','get_companion()');
+    const t=here(); return t.d&&t.d.comp?Entities.props[t.d.comp]:null; });
+  def('get_trade_request',()=>{ requireUnlock('trade','get_trade_request()'); return Items.props[state.wanted]; });
+  def('unlocked',a=>{ const u=a[0]; return !!state.unlocked[u&&u.__sym?u.name:pyStr(u)]; });
 
   g.set('North',NORTH); g.set('East',EAST); g.set('South',SOUTH); g.set('West',WEST);
-  g.set('Items',Items); g.set('Entities',Entities); g.set('Grounds',Grounds);
-  g.set('True',true); g.set('False',false); g.set('None',null);
-  g.set('pi',Math.PI);
+  g.set('Items',Items); g.set('Entities',Entities); g.set('Grounds',Grounds); g.set('Unlocks',Unlocks);
+  g.set('True',true); g.set('False',false); g.set('None',null); g.set('pi',Math.PI);
   for(const n of ['ValueError','TypeError','IndexError','KeyError','NameError','ZeroDivisionError',
-    'RuntimeError','AssertionError','LockedError','Exception','StopIteration'])
+    'RuntimeError','AssertionError','LockedError','MemoryError','RecursionError','Exception'])
     g.set(n,{__exType:true,name:n});
   return g;
 }
 
 /* ============================== the runner =============================== */
-const runner={ gen:null, running:false, carry:0, scope:null, source:'' };
+const runner={ running:false, label:'' };
 let GLOBALS=buildGlobals();
 
-function resetGlobals(){
-  GLOBALS=buildGlobals();
-  UI.log('globals reset — user functions cleared','i');
-}
+function resetGlobals(){ GLOBALS=buildGlobals(); UI.log('globals reset — your functions were cleared','i'); }
 function tpsNow(){ return TPS[Math.min(state.speedPref,state.speed)]; }
 
+function startDroneProgram(d,fn){
+  const sc=new Scope(null,GLOBALS);
+  sc.v=new Map();
+  d.t=world.time;
+  d.prog=(function*(){ yield* callValue(fn,[],{}); })();
+}
 function startRun(src,label){
   if(runner.running) stopRun(true);
   let ast;
   try{ ast=parse(src); }
   catch(e){
-    UI.log((e.syntax?'SyntaxError':'Error')+': '+e.message+(e.line?'  (line '+e.line+')':''),'e');
+    UI.log((e.syntax?'SyntaxError':'Error')+': '+e.message+(e.line?'   (line '+e.line+')':''),'e');
     UI.flag('error'); return false;
   }
+  world.drones=[mkDrone(0,world.drones[0]?world.drones[0].x:0,world.drones[0]?world.drones[0].y:0)];
+  CUR=world.drones[0];
+  CUR.vx=CUR.x; CUR.vy=CUR.y; CUR.t=world.time;
   const sc=new Scope(null,GLOBALS);
   sc.v=GLOBALS;
   RT={line:0,depth:0,last:null};
-  runner.scope=sc;
-  runner.carry=0;
-  runner.gen=(function*(){ yield* execBlock(ast.body,sc); })();
-  runner.running=true;
-  UI.flag('running');
-  UI.setRunning(true);
-  UI.log('▶ run '+label,'s');
+  CUR.prog=(function*(){ yield* execBlock(ast.body,sc); })();
+  runner.running=true; runner.label=label;
+  UI.flag('running'); UI.setRunning(true);
+  UI.log('▶ '+label,'s');
   return true;
 }
 function stopRun(quiet){
-  runner.running=false; runner.gen=null;
+  runner.running=false;
+  world.drones=[world.drones[0]||mkDrone(0)];
+  world.drones[0].prog=null;
+  CUR=world.drones[0];
   UI.setRunning(false); UI.flag('idle');
   if(!quiet) UI.log('■ stopped','i');
 }
-function programError(e){
-  runner.running=false; runner.gen=null;
-  UI.setRunning(false); UI.flag('error');
-  if(e instanceof PyEx) UI.log(e.type+': '+e.msg+'   (line '+RT.line+')','e');
-  else if(e instanceof Ret) UI.log('SyntaxError: return outside function','e');
-  else if(e===BRK||e===CNT) UI.log('SyntaxError: break/continue outside loop','e');
-  else UI.log('InternalError: '+(e&&e.message?e.message:String(e))+'   (line '+RT.line+')','e');
+function droneError(d,e){
+  d.prog=null;
+  const where=world.drones.length>1?' [drone '+d.id+']':'';
+  if(e instanceof PyEx) UI.log(e.type+': '+e.msg+'   (line '+RT.line+')'+where,'e');
+  else if(e instanceof Ret) UI.log('SyntaxError: return outside a function'+where,'e');
+  else if(e===BRK||e===CNT) UI.log('SyntaxError: break or continue outside a loop'+where,'e');
+  else UI.log('InternalError: '+(e&&e.message?e.message:String(e))+'   (line '+RT.line+')'+where,'e');
+  if(d.id===0){ stopRun(true); UI.flag('error'); }
 }
 function stepProgram(dt){
-  let budget = tpsNow()*dt + runner.carry;
-  const cap = 30000;
-  let ops=0;
-  while(budget>0 && ops<cap && runner.running){
-    let r;
-    try{ r=runner.gen.next(); }
-    catch(e){ programError(e); return; }
-    if(r.done){
-      runner.running=false; runner.gen=null;
-      UI.setRunning(false); UI.flag('done');
-      UI.log('✔ finished','s');
-      UI.refreshShop();
-      return;
+  const target=world.time+tpsNow()*dt;
+  const cap=36000;
+  let ops=0, worked=true;
+  while(worked&&ops<cap){
+    worked=false;
+    for(const d of world.drones){
+      if(!d.prog||d.t>=target) continue;
+      worked=true; CUR=d;
+      let r;
+      try{ r=d.prog.next(); }
+      catch(e){ droneError(d,e); break; }
+      if(r.done){ d.prog=null; continue; }   // helpers may still be flying
+      if(r.value>0) d.t+=r.value;
+      if(++ops>=cap) break;
     }
-    const cost=r.value||0;
-    if(cost>0){ advanceWorld(cost); budget-=cost; }
-    ops++;
   }
-  runner.carry=Math.max(-4,Math.min(0,budget));
+  let far=world.time;
+  for(const d of world.drones) if(d.t>far) far=d.t;
+  advanceWorld(Math.min(target,far)-world.time);
+  CUR=world.drones[0];
+  for(let i=world.drones.length-1;i>0;i--) if(!world.drones[i].prog) world.drones.splice(i,1);
+  if(runner.running&&!world.drones.some(d=>d.prog)){
+    runner.running=false;
+    UI.setRunning(false); UI.flag('done'); UI.log('✔ finished','s'); UI.refreshShop();
+  }
   UI.refreshStats();
 }
 </script>
@@ -1810,6 +1845,7 @@ function stepProgram(dt){
 const cv=document.getElementById('field');
 const cx=cv.getContext('2d');
 let CW=0,CH=0,DPR=1;
+const sprites=new Map();
 
 function resizeCanvas(){
   const r=cv.getBoundingClientRect();
@@ -1817,341 +1853,608 @@ function resizeCanvas(){
   CW=Math.max(80,Math.round(r.width)); CH=Math.max(80,Math.round(r.height));
   cv.width=Math.round(CW*DPR); cv.height=Math.round(CH*DPR);
   cx.setTransform(DPR,0,0,DPR,0,0);
+  sprites.clear();
 }
 new ResizeObserver(resizeCanvas).observe(cv);
 
 const hash=(x,y)=>{ const s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); };
 const lerp=(a,b,t)=>a+(b-a)*t;
 function rr(g,x,y,w,h,r){
+  const k=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);
   g.beginPath();
-  const k=Math.min(r,w/2,h/2);
   g.moveTo(x+k,y); g.arcTo(x+w,y,x+w,y+h,k); g.arcTo(x+w,y+h,x,y+h,k);
   g.arcTo(x,y+h,x,y,k); g.arcTo(x,y,x+w,y,k); g.closePath();
 }
+function leaf(g,x,y,len,wid,ang,col){
+  g.save(); g.translate(x,y); g.rotate(ang); g.fillStyle=col;
+  g.beginPath(); g.moveTo(0,0);
+  g.quadraticCurveTo(wid,-len*0.45,0,-len);
+  g.quadraticCurveTo(-wid,-len*0.45,0,0);
+  g.fill(); g.restore();
+}
+function S(key,px,fn){
+  const k=key+'|'+px;
+  let c=sprites.get(k);
+  if(!c){
+    c=document.createElement('canvas'); c.width=px; c.height=px;
+    fn(c.getContext('2d'),px);
+    if(sprites.size>700) sprites.clear();
+    sprites.set(k,c);
+  }
+  return c;
+}
 
-let spin=0;
-function draw(dt){
-  spin+=dt*18;
-  const n=world.size;
-  const pad=6;
-  const cell=Math.floor(Math.min((CW-pad*2)/n,(CH-pad*2)/n));
-  const ox=Math.round((CW-cell*n)/2), oy=Math.round((CH-cell*n)/2);
-  cx.clearRect(0,0,CW,CH);
-  cx.fillStyle='#100D0C'; cx.fillRect(0,0,CW,CH);
-
-  const px=(x)=>ox+x*cell;
-  const py=(y)=>oy+(n-1-y)*cell;
-
-  for(let y=0;y<n;y++) for(let x=0;x<n;x++){
-    const t=world.tiles[y*n+x];
-    const X=px(x), Y=py(y), h=hash(x,y);
+/* ------------------------------ ground ---------------------------------- */
+function groundSprite(t,v,px){
+  const wet=t.g==='Soil'?Math.round(Math.min(1,t.water)*4):0;
+  const key=(t.g==='Soil'?'soil':'grass')+v+'_'+wet;
+  return S(key,px,(g,p)=>{
     if(t.g==='Soil'){
-      const w=t.water;
-      const base=[lerp(74,44,w),lerp(53,32,w),lerp(38,24,w)];
-      cx.fillStyle='rgb('+Math.round(base[0]+h*10)+','+Math.round(base[1]+h*8)+','+Math.round(base[2]+h*6)+')';
-      cx.fillRect(X,Y,cell,cell);
-      if(w>0.02){
-        cx.fillStyle='rgba(87,182,199,'+(0.10*w).toFixed(3)+')';
-        cx.fillRect(X,Y,cell,cell);
-      }
-      cx.fillStyle='rgba(0,0,0,.16)';
+      const w=wet/4;
+      const grd=g.createLinearGradient(0,0,p*0.8,p);
+      grd.addColorStop(0,'rgb('+Math.round(lerp(138,92,w))+','+Math.round(lerp(99,63,w))+','+Math.round(lerp(68,44,w))+')');
+      grd.addColorStop(1,'rgb('+Math.round(lerp(112,70,w))+','+Math.round(lerp(78,49,w))+','+Math.round(lerp(52,33,w))+')');
+      g.fillStyle=grd; g.fillRect(0,0,p,p);
+      g.strokeStyle='rgba(70,46,28,.30)'; g.lineWidth=Math.max(1,p*0.028);
       for(let i=0;i<3;i++){
-        const hx=hash(x*3+i,y*7), hy=hash(x*5,y*11+i);
-        cx.fillRect(X+hx*(cell-3),Y+hy*(cell-3),cell*0.16,1.5);
+        const y=p*(0.24+0.26*i)+hash(v*3+i,i)*p*0.04;
+        g.beginPath(); g.moveTo(p*0.05,y);
+        g.bezierCurveTo(p*0.35,y-p*0.02,p*0.65,y+p*0.02,p*0.95,y);
+        g.stroke();
+      }
+      for(let i=0;i<7;i++){
+        const hx=hash(v*7+i,i*3), hy=hash(i*5,v*11+i);
+        g.fillStyle=hash(i,v)>0.5?'rgba(255,228,190,.13)':'rgba(60,38,22,.20)';
+        g.beginPath(); g.arc(hx*p,hy*p,p*0.02,0,7); g.fill();
+      }
+      if(w>0.05){
+        g.fillStyle='rgba(74,140,160,'+(0.13*w).toFixed(3)+')';
+        g.fillRect(0,0,p,p);
+        g.fillStyle='rgba(190,235,245,'+(0.09*w).toFixed(3)+')';
+        g.beginPath(); g.ellipse(p*0.34,p*0.3,p*0.18,p*0.07,-0.5,0,7); g.fill();
       }
     }else{
-      const g1=48+h*14;
-      cx.fillStyle='rgb('+Math.round(38+h*10)+','+Math.round(g1)+','+Math.round(26+h*8)+')';
-      cx.fillRect(X,Y,cell,cell);
-      cx.strokeStyle='rgba(143,201,58,.10)'; cx.lineWidth=1;
-      cx.beginPath();
-      for(let i=0;i<2;i++){
-        const hx=X+hash(x+i*9,y)*cell*0.8+cell*0.1, hy=Y+hash(x,y+i*4)*cell*0.8+cell*0.1;
-        cx.moveTo(hx,hy+cell*0.12); cx.lineTo(hx+cell*0.04,hy);
+      const grd=g.createLinearGradient(0,0,p*0.7,p);
+      grd.addColorStop(0,'rgb('+(92+v*5)+','+(128+v*6)+',54)');
+      grd.addColorStop(1,'rgb('+(66+v*4)+','+(97+v*5)+',40)');
+      g.fillStyle=grd; g.fillRect(0,0,p,p);
+      g.fillStyle='rgba(122,164,66,.30)';
+      for(let i=0;i<5;i++){
+        const hx=hash(v*13+i,i*7)*p, hy=hash(i*3,v*5+i)*p;
+        g.beginPath(); g.ellipse(hx,hy,p*0.15,p*0.09,hash(i,v)*3,0,7); g.fill();
       }
-      cx.stroke();
+      for(let i=0;i<11;i++){
+        const hx=hash(v*29+i,i*11)*p*0.92+p*0.04;
+        const hy=hash(i*13,v*17+i)*p*0.86+p*0.1;
+        const h=p*(0.045+hash(i,v*3)*0.03);
+        g.strokeStyle=hash(i*2,v)>0.5?'rgba(168,208,96,.42)':'rgba(44,68,24,.34)';
+        g.lineWidth=Math.max(1,p*0.013); g.lineCap='round';
+        g.beginPath();
+        g.moveTo(hx-p*0.018,hy); g.lineTo(hx-p*0.006,hy-h);
+        g.moveTo(hx+p*0.004,hy); g.lineTo(hx+p*0.004,hy-h*1.15);
+        g.moveTo(hx+p*0.018,hy); g.lineTo(hx+p*0.028,hy-h*0.85);
+        g.stroke(); g.lineCap='butt';
+      }
     }
-    cx.strokeStyle='rgba(0,0,0,.22)'; cx.lineWidth=1;
-    cx.strokeRect(X+0.5,Y+0.5,cell-1,cell-1);
-    if(t.e) drawEntity(t,X,Y,cell,x,y);
-  }
+    const vg=g.createRadialGradient(p*0.45,p*0.4,p*0.25,p*0.5,p*0.5,p*0.82);
+    vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.13)');
+    g.fillStyle=vg; g.fillRect(0,0,p,p);
+  });
+}
 
-  // harvest-ready markers
-  cx.lineWidth=Math.max(1,cell*0.045);
+/* ----------------------------- entities --------------------------------- */
+function shadow(g,p,w){
+  g.fillStyle='rgba(0,0,0,.30)';
+  g.beginPath(); g.ellipse(p*0.52,p*0.84,w,w*0.34,0,0,7); g.fill();
+}
+function entSprite(t,v,px,stage){
+  const e=t.e;
+  let extra='';
+  if(e==='Sunflower') extra=t.d?t.d.petals:1;
+  else if(e==='Cactus') extra=t.d?t.d.size:1;
+  else if(e==='Dinosaur') extra=(t.d?t.d.fed:0)+'_'+(t.d?t.d.want:'');
+  else if(e==='Apple') extra=t.age>APPLE_ROT*0.72?'rot':'ok';
+  else if(e==='Tree') extra=(t.d&&t.d.fruit>APPLE_EVERY*0.55)?'fr':'';
+  return S('e'+e+stage+'_'+v+'_'+extra,px,(g,p)=>{
+    const f=stage/4;
+    switch(e){
+      case 'Grass':{
+        const ripe=stage===4;
+        const h=p*(0.20+0.40*f);
+        shadow(g,p,p*0.16);
+        for(let i=0;i<7;i++){
+          const off=(i-3)/3;
+          const bx=p*0.5+off*p*0.19+hash(v,i)*p*0.03;
+          const ang=off*0.55+(hash(i,v)-0.5)*0.25;
+          leaf(g,bx,p*0.86,h*(0.75+hash(i*2,v)*0.4),p*0.055,ang,
+            ripe?(i%2?'#E7C455':'#D2A93C'):(i%2?'#84B93E':'#5F9130'));
+        }
+        break;
+      }
+      case 'Bush':{
+        const r=p*(0.13+0.20*f);
+        shadow(g,p,r*1.05);
+        const lobes=[[-0.62,0.22,0.78],[0.62,0.22,0.78],[0,-0.32,0.95],[-0.2,0.05,0.8],[0.25,0.02,0.75]];
+        g.fillStyle='#2F5220';
+        for(const [lx,ly,ls] of lobes){ g.beginPath(); g.arc(p*0.5+lx*r,p*0.62+ly*r,r*ls,0,7); g.fill(); }
+        g.fillStyle='#4A7A2C';
+        for(const [lx,ly,ls] of lobes){ g.beginPath(); g.arc(p*0.5+lx*r-r*0.12,p*0.62+ly*r-r*0.16,r*ls*0.78,0,7); g.fill(); }
+        g.fillStyle='rgba(178,214,120,.5)';
+        g.beginPath(); g.arc(p*0.5-r*0.45,p*0.62-r*0.6,r*0.3,0,7); g.fill();
+        if(stage===4){
+          g.fillStyle='#8B5A2E';
+          for(let i=0;i<4;i++){
+            const a=i*1.6+v;
+            g.beginPath(); g.arc(p*0.5+Math.cos(a)*r*0.6,p*0.6+Math.sin(a)*r*0.55,r*0.17,0,7); g.fill();
+          }
+        }
+        break;
+      }
+      case 'Tree':{
+        const s=0.35+0.65*f;
+        shadow(g,p,p*0.26*s);
+        g.fillStyle='#5B3D24';
+        g.beginPath();
+        g.moveTo(p*0.44,p*0.86); g.lineTo(p*0.47,p*(0.86-0.34*s));
+        g.lineTo(p*0.57,p*(0.86-0.34*s)); g.lineTo(p*0.6,p*0.86);
+        g.closePath(); g.fill();
+        g.strokeStyle='rgba(0,0,0,.25)'; g.lineWidth=p*0.012;
+        g.beginPath(); g.moveTo(p*0.5,p*0.84); g.lineTo(p*0.52,p*(0.86-0.3*s)); g.stroke();
+        const cy=p*(0.84-0.36*s), cr=p*0.26*s;
+        const blob=(dx,dy,rr2,col)=>{ g.fillStyle=col; g.beginPath(); g.arc(p*0.52+dx,cy+dy,rr2,0,7); g.fill(); };
+        blob(0,0,cr,'#2C4E1D');
+        blob(-cr*0.62,cr*0.22,cr*0.72,'#2C4E1D');
+        blob(cr*0.62,cr*0.18,cr*0.7,'#2C4E1D');
+        blob(-cr*0.2,-cr*0.5,cr*0.72,'#3F6E27');
+        blob(cr*0.3,-cr*0.42,cr*0.62,'#3F6E27');
+        blob(-cr*0.45,-cr*0.25,cr*0.4,'#588E33');
+        g.fillStyle='rgba(190,225,130,.42)';
+        g.beginPath(); g.arc(p*0.52-cr*0.5,cy-cr*0.55,cr*0.26,0,7); g.fill();
+        if(extra==='fr'){
+          g.fillStyle='#D9483F';
+          for(let i=0;i<3;i++){
+            const a=1.1+i*1.9+v;
+            g.beginPath(); g.arc(p*0.52+Math.cos(a)*cr*0.66,cy+Math.sin(a)*cr*0.6,cr*0.17,0,7); g.fill();
+          }
+        }
+        break;
+      }
+      case 'Carrot':{
+        shadow(g,p,p*0.14);
+        const h=p*(0.14+0.26*f);
+        for(let i=0;i<5;i++){
+          const off=(i-2)/2;
+          leaf(g,p*0.5+off*p*0.05,p*0.66,h*(0.8+hash(i,v)*0.4),p*0.035,off*0.7,i%2?'#6FA83A':'#4F8129');
+        }
+        if(stage>=3){
+          const w=p*(0.10+0.06*f);
+          g.fillStyle='#E77B2C';
+          g.beginPath();
+          g.moveTo(p*0.5-w,p*0.63); g.quadraticCurveTo(p*0.5,p*0.7,p*0.5+w,p*0.63);
+          g.lineTo(p*0.5,p*0.86); g.closePath(); g.fill();
+          g.strokeStyle='rgba(255,190,120,.5)'; g.lineWidth=p*0.012;
+          for(let i=0;i<3;i++){
+            const yy=p*(0.68+i*0.05);
+            g.beginPath(); g.moveTo(p*0.5-w*0.5,yy); g.lineTo(p*0.5+w*0.45,yy-p*0.008); g.stroke();
+          }
+        }
+        break;
+      }
+      case 'Pumpkin':{
+        const r=p*(0.12+0.27*f);
+        shadow(g,p,r*1.05);
+        const col=stage===4?['#F0A031','#D3781F']:['#8E9C41','#6E7C33'];
+        const grd=g.createRadialGradient(p*0.44,p*0.52,r*0.15,p*0.52,p*0.6,r*1.15);
+        grd.addColorStop(0,col[0]); grd.addColorStop(1,col[1]);
+        g.fillStyle=grd;
+        g.beginPath(); g.ellipse(p*0.52,p*0.62,r,r*0.86,0,0,7); g.fill();
+        g.strokeStyle='rgba(0,0,0,.20)'; g.lineWidth=p*0.016;
+        for(const k of [-0.55,0,0.55]){
+          g.beginPath(); g.ellipse(p*0.52+k*r*0.62,p*0.62,r*0.3*(1-Math.abs(k)*0.5)+r*0.06,r*0.84,0,0,7); g.stroke();
+        }
+        g.fillStyle='rgba(255,225,170,.28)';
+        g.beginPath(); g.ellipse(p*0.4,p*0.48,r*0.24,r*0.14,-0.6,0,7); g.fill();
+        g.strokeStyle='#4E6B22'; g.lineWidth=p*0.03; g.lineCap='round';
+        g.beginPath(); g.moveTo(p*0.52,p*0.62-r*0.86);
+        g.quadraticCurveTo(p*0.58,p*0.62-r*1.2,p*0.5,p*0.62-r*1.25);
+        g.stroke(); g.lineCap='butt';
+        break;
+      }
+      case 'Sunflower':{
+        const st=p*(0.18+0.42*f);
+        shadow(g,p,p*0.12);
+        g.strokeStyle='#487A26'; g.lineWidth=p*0.035;
+        g.beginPath(); g.moveTo(p*0.5,p*0.86);
+        g.quadraticCurveTo(p*0.53,p*0.86-st*0.5,p*0.5,p*0.86-st);
+        g.stroke();
+        if(f>0.4){
+          leaf(g,p*0.5,p*0.86-st*0.42,p*0.15,p*0.06,-1.15,'#4E8429');
+          leaf(g,p*0.5,p*0.86-st*0.6,p*0.13,p*0.05,1.2,'#5E9631');
+        }
+        const hy=p*0.86-st, r=p*(0.07+0.09*f);
+        if(stage===4){
+          const n=extra;
+          for(let i=0;i<n;i++){
+            const a=i/n*Math.PI*2+v*0.4;
+            g.save(); g.translate(hy?p*0.5:p*0.5,hy); g.rotate(a);
+            g.fillStyle=i%2?'#F5CE58':'#E6B93C';
+            g.beginPath(); g.ellipse(0,-r*1.5,r*0.42,r*0.95,0,0,7); g.fill();
+            g.restore();
+          }
+        }
+        const cg=g.createRadialGradient(p*0.5-r*0.3,hy-r*0.3,r*0.1,p*0.5,hy,r);
+        cg.addColorStop(0,stage===4?'#8A5F27':'#6D9636');
+        cg.addColorStop(1,stage===4?'#54371A':'#4C6E26');
+        g.fillStyle=cg; g.beginPath(); g.arc(p*0.5,hy,r,0,7); g.fill();
+        if(stage===4){
+          g.fillStyle='rgba(0,0,0,.28)';
+          for(let i=0;i<10;i++){
+            const a=i*2.4, rad=r*0.62*Math.sqrt(i/10);
+            g.beginPath(); g.arc(p*0.5+Math.cos(a)*rad,hy+Math.sin(a)*rad,r*0.1,0,7); g.fill();
+          }
+        }
+        break;
+      }
+      case 'Cactus':{
+        const s=extra||1;
+        const h=p*(0.22+0.052*s)*(0.4+0.6*f);
+        const w=p*0.17;
+        shadow(g,p,w*0.95);
+        const body=(bx,by,bw,bh)=>{
+          const grd=g.createLinearGradient(bx,0,bx+bw,0);
+          grd.addColorStop(0,'#4C8347'); grd.addColorStop(0.35,'#69AC5F'); grd.addColorStop(1,'#3B6B39');
+          g.fillStyle=grd; rr(g,bx,by,bw,bh,bw*0.45); g.fill();
+        };
+        if(s>3) body(p*0.5-w*1.5,p*0.84-h*0.66,w*0.66,h*0.46);
+        if(s>6) body(p*0.5+w*0.85,p*0.84-h*0.78,w*0.66,h*0.54);
+        body(p*0.5-w/2,p*0.84-h,w,h);
+        g.strokeStyle='rgba(20,45,20,.35)'; g.lineWidth=p*0.01;
+        for(const k of [-0.25,0,0.25]){
+          g.beginPath(); g.moveTo(p*0.5+k*w,p*0.84-h*0.9); g.lineTo(p*0.5+k*w,p*0.82); g.stroke();
+        }
+        g.fillStyle='rgba(230,240,200,.55)';
+        for(let i=0;i<5;i++){
+          const yy=p*0.84-h*(0.15+i*0.18);
+          g.fillRect(p*0.5-w*0.42,yy,p*0.018,p*0.018);
+          g.fillRect(p*0.5+w*0.32,yy-p*0.01,p*0.018,p*0.018);
+        }
+        if(stage===4){
+          g.fillStyle='#E682A8';
+          g.beginPath(); g.arc(p*0.5,p*0.84-h-p*0.01,w*0.24,0,7); g.fill();
+          g.fillStyle='#FFD9E6';
+          g.beginPath(); g.arc(p*0.5-w*0.06,p*0.84-h-p*0.02,w*0.1,0,7); g.fill();
+        }
+        break;
+      }
+      case 'Dinosaur':{
+        const fed=t.d?t.d.fed:0, s=(0.62+0.085*fed);
+        shadow(g,p,p*0.22*s);
+        const bw=p*0.42*s, bh=p*0.27*s, bx=p*0.47, by=p*0.8;
+        g.fillStyle='#4F7A3C';
+        g.beginPath();
+        g.moveTo(bx-bw*0.42,by-bh*0.5);
+        g.quadraticCurveTo(bx-bw*1.0,by-bh*1.25,bx-bw*1.05,by-bh*0.15);
+        g.quadraticCurveTo(bx-bw*0.75,by-bh*0.35,bx-bw*0.42,by-bh*0.1);
+        g.fill();
+        const bg=g.createLinearGradient(0,by-bh,0,by);
+        bg.addColorStop(0,'#6FA355'); bg.addColorStop(1,'#43682F');
+        g.fillStyle=bg;
+        rr(g,bx-bw/2,by-bh,bw,bh,bh*0.48); g.fill();
+        g.fillStyle='#8BBB6C';
+        rr(g,bx-bw*0.34,by-bh*0.52,bw*0.66,bh*0.42,bh*0.2); g.fill();
+        g.fillStyle='#43682F';
+        rr(g,bx-bw*0.3,by-p*0.012,bw*0.2,bh*0.5,bh*0.12); g.fill();
+        rr(g,bx+bw*0.12,by-p*0.012,bw*0.2,bh*0.5,bh*0.12); g.fill();
+        g.fillStyle=bg;
+        g.beginPath(); g.arc(bx+bw*0.5,by-bh*1.28,bh*0.56,0,7); g.fill();
+        g.fillStyle='#6FA355';
+        for(let i=0;i<3;i++){
+          g.beginPath();
+          g.moveTo(bx-bw*0.3+i*bw*0.26,by-bh*0.98);
+          g.lineTo(bx-bw*0.2+i*bw*0.26,by-bh*1.35);
+          g.lineTo(bx-bw*0.08+i*bw*0.26,by-bh*0.98);
+          g.fill();
+        }
+        g.fillStyle='#14100E';
+        g.beginPath(); g.arc(bx+bw*0.66,by-bh*1.38,bh*0.11,0,7); g.fill();
+        g.fillStyle='rgba(255,255,255,.75)';
+        g.beginPath(); g.arc(bx+bw*0.69,by-bh*1.42,bh*0.04,0,7); g.fill();
+        if(fed<5&&t.d){
+          g.fillStyle='rgba(14,12,10,.6)';
+          rr(g,p*0.06,p*0.06,p*0.34,p*0.13,p*0.05); g.fill();
+          for(let i=0;i<5;i++){
+            g.fillStyle=i<fed?'#9BD642':'rgba(255,255,255,.2)';
+            g.fillRect(p*0.09+i*p*0.062,p*0.095,p*0.042,p*0.052);
+          }
+          g.fillStyle=ITEM_COLOR[t.d.want]||'#fff';
+          g.beginPath(); g.arc(p*0.86,p*0.13,p*0.065,0,7); g.fill();
+          g.strokeStyle='rgba(0,0,0,.5)'; g.lineWidth=p*0.012; g.stroke();
+        }
+        break;
+      }
+      case 'Apple':{
+        const rot=extra==='rot';
+        shadow(g,p,p*0.12);
+        const r=p*0.15;
+        const grd=g.createRadialGradient(p*0.46,p*0.58,r*0.15,p*0.5,p*0.64,r*1.2);
+        grd.addColorStop(0,rot?'#B4703A':'#E2564A'); grd.addColorStop(1,rot?'#6E4423':'#9E2A26');
+        g.fillStyle=grd;
+        g.beginPath(); g.arc(p*0.44,p*0.66,r*0.78,0,7); g.arc(p*0.56,p*0.66,r*0.78,0,7);
+        g.ellipse(p*0.5,p*0.68,r,r*0.9,0,0,7); g.fill();
+        g.strokeStyle='#5B3D24'; g.lineWidth=p*0.022; g.lineCap='round';
+        g.beginPath(); g.moveTo(p*0.5,p*0.56); g.lineTo(p*0.53,p*0.47); g.stroke(); g.lineCap='butt';
+        leaf(g,p*0.53,p*0.5,p*0.11,p*0.045,1.0,'#4E8429');
+        g.fillStyle='rgba(255,240,220,.4)';
+        g.beginPath(); g.ellipse(p*0.42,p*0.6,r*0.2,r*0.12,-0.5,0,7); g.fill();
+        break;
+      }
+      case 'Hedge':{
+        const grd=g.createLinearGradient(0,0,p*0.7,p);
+        grd.addColorStop(0,'#31502A'); grd.addColorStop(1,'#1A2E15');
+        g.fillStyle=grd;
+        rr(g,p*0.03,p*0.03,p*0.94,p*0.94,p*0.16); g.fill();
+        for(let i=0;i<9;i++){
+          const hx=hash(v*17+i,i*5), hy=hash(i*7,v*3+i);
+          g.fillStyle=hash(i,v)>0.5?'rgba(140,190,90,.14)':'rgba(0,0,0,.20)';
+          g.beginPath(); g.arc(p*0.12+hx*p*0.76,p*0.12+hy*p*0.76,p*0.1,0,7); g.fill();
+        }
+        g.fillStyle='rgba(180,220,120,.16)';
+        rr(g,p*0.08,p*0.06,p*0.84,p*0.16,p*0.08); g.fill();
+        break;
+      }
+      case 'Treasure':{
+        shadow(g,p,p*0.24);
+        g.fillStyle='#6B4620';
+        rr(g,p*0.24,p*0.5,p*0.52,p*0.3,p*0.04); g.fill();
+        g.fillStyle='#8A5D2B';
+        g.beginPath();
+        g.moveTo(p*0.24,p*0.5);
+        g.quadraticCurveTo(p*0.5,p*0.26,p*0.76,p*0.5);
+        g.closePath(); g.fill();
+        g.fillStyle='#C79441';
+        g.fillRect(p*0.24,p*0.47,p*0.52,p*0.05);
+        g.fillRect(p*0.46,p*0.34,p*0.08,p*0.46);
+        g.fillStyle='#F5CE58';
+        g.beginPath(); g.arc(p*0.5,p*0.56,p*0.035,0,7); g.fill();
+        g.fillStyle='rgba(255,230,150,.25)';
+        g.beginPath(); g.ellipse(p*0.4,p*0.44,p*0.1,p*0.05,-0.5,0,7); g.fill();
+        break;
+      }
+    }
+  });
+}
+
+/* ------------------------------ main draw -------------------------------- */
+let spin=0, bob=0;
+function draw(dt){
+  spin+=dt*20; bob+=dt*2.4;
+  const n=world.size, pad=10;
+  const roomy=Math.min(CW,CH)*0.66;
+  const cell=Math.max(8,Math.min(Math.floor(Math.min((CW-pad*2)/n,(CH-pad*2)/n)),Math.max(64,roomy)));
+  const ox=Math.round((CW-cell*n)/2), oy=Math.round((CH-cell*n)/2);
+  const px=x=>ox+x*cell, py=y=>oy+(n-1-y)*cell;
+  const spx=Math.max(16,Math.round(cell*DPR));
+
+  cx.clearRect(0,0,CW,CH);
+  cx.drawImage(S('wild',96,(g,p)=>{
+    g.fillStyle='#1B2415'; g.fillRect(0,0,p,p);
+    for(let i=0;i<46;i++){
+      const hx=hash(i*3.7,i*1.9)*p, hy=hash(i*2.3,i*5.1)*p;
+      g.fillStyle=hash(i,i*2)>0.5?'rgba(120,150,70,.10)':'rgba(0,0,0,.22)';
+      g.beginPath(); g.ellipse(hx,hy,p*0.05,p*0.03,hash(i,7)*3,0,7); g.fill();
+    }
+  }),0,0,CW,CH);
+  cx.fillStyle='rgba(6,8,4,.42)'; cx.fillRect(0,0,CW,CH);
+  cx.save();
+  cx.shadowColor='rgba(0,0,0,.75)'; cx.shadowBlur=Math.max(8,cell*0.35); cx.shadowOffsetY=Math.max(3,cell*0.1);
+  cx.fillStyle='#2A2118';
+  cx.fillRect(ox-4,oy-4,cell*n+8,cell*n+8);
+  cx.restore();
+  cx.strokeStyle='rgba(210,180,120,.20)'; cx.lineWidth=1;
+  cx.strokeRect(ox-2.5,oy-2.5,cell*n+5,cell*n+5);
+
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++){
+    const t=world.tiles[y*n+x], v=Math.floor(hash(x,y)*4);
+    cx.drawImage(groundSprite(t,v,spx),px(x),py(y),cell,cell);
+  }
   for(let y=0;y<n;y++) for(let x=0;x<n;x++){
     const t=world.tiles[y*n+x];
-    if(t.e&&t.e!=='Hedge'&&isMature(t)){
-      cx.strokeStyle='rgba(233,162,59,.55)';
-      const X=px(x),Y=py(y), m=cell*0.12;
-      cx.beginPath();
-      cx.moveTo(X+m,Y+m*1.9); cx.lineTo(X+m,Y+m); cx.lineTo(X+m*1.9,Y+m);
-      cx.moveTo(X+cell-m,Y+cell-m*1.9); cx.lineTo(X+cell-m,Y+cell-m); cx.lineTo(X+cell-m*1.9,Y+cell-m);
-      cx.stroke();
+    if(!t.e) continue;
+    const X=px(x), Y=py(y), v=Math.floor(hash(x*3+1,y*7+2)*4);
+    if(isMature(t)&&t.e!=='Hedge'){
+      const g=cx.createRadialGradient(X+cell/2,Y+cell*0.62,cell*0.05,X+cell/2,Y+cell*0.62,cell*0.55);
+      g.addColorStop(0,'rgba(245,206,88,.22)'); g.addColorStop(1,'rgba(245,206,88,0)');
+      cx.fillStyle=g; cx.fillRect(X,Y,cell,cell);
+    }
+    const sp=SPEC[t.e];
+    const stage=sp.grow>0?Math.round(Math.min(1,t.age/sp.grow)*4):4;
+    cx.drawImage(entSprite(t,v,spx,stage),X,Y,cell,cell);
+    if(state.unlocked.poly&&t.d&&t.d.comp&&cell>28){
+      const ok=companionOk(t,x,y);
+      cx.fillStyle=ok?'#9BD642':'rgba(255,255,255,.18)';
+      cx.beginPath(); cx.arc(X+cell*0.86,Y+cell*0.86,cell*0.045,0,7); cx.fill();
     }
   }
 
-  // drone
-  const D=world.drone;
-  const k=Math.min(1,dt*Math.max(8,tpsNow()*0.9));
-  let tx=D.x, ty=D.y;
-  if(Math.abs(D.vx-tx)>n/2) D.vx += (D.vx>tx? -n : n);
-  if(Math.abs(D.vy-ty)>n/2) D.vy += (D.vy>ty? -n : n);
-  D.vx=lerp(D.vx,tx,k); D.vy=lerp(D.vy,ty,k);
-  if(D.flip>0) D.flip=Math.max(0,D.flip-dt*2.6);
-  if(D.bump>0) D.bump=Math.max(0,D.bump-dt*4);
-  const dx=px(D.vx)+cell/2, dy=py(D.vy)+cell/2;
-  drawDrone(dx,dy,cell,D);
+  for(const D of world.drones){
+    const k=Math.min(1,dt*Math.max(9,tpsNow()*0.85));
+    if(Math.abs(D.vx-D.x)>n/2) D.vx += (D.vx>D.x?-n:n);
+    if(Math.abs(D.vy-D.y)>n/2) D.vy += (D.vy>D.y?-n:n);
+    D.vx=lerp(D.vx,D.x,k); D.vy=lerp(D.vy,D.y,k);
+    if(D.flip>0) D.flip=Math.max(0,D.flip-dt*2.4);
+    if(D.bump>0) D.bump=Math.max(0,D.bump-dt*4);
+    drawDrone(px(D.vx)+cell/2, py(D.vy)+cell/2, cell, D);
+  }
 
-  // floating text
   for(let i=world.fx.length-1;i>=0;i--){
     const f=world.fx[i];
     f.t+=dt;
-    if(f.t>1.1){ world.fx.splice(i,1); continue; }
-    const a=1-f.t/1.1;
+    if(f.t>1.15){ world.fx.splice(i,1); continue; }
+    const a=Math.min(1,(1-f.t/1.15)*1.6);
     cx.globalAlpha=a;
-    cx.fillStyle=f.color;
-    cx.font='600 '+Math.max(9,Math.round(cell*0.32))+'px Chakra Petch, sans-serif';
+    cx.font='700 '+Math.max(10,Math.round(cell*0.3))+'px Chakra Petch, sans-serif';
     cx.textAlign='center';
-    cx.fillText(f.text, px(f.x)+cell/2, py(f.y)+cell*0.4-f.t*cell*0.5);
+    cx.lineWidth=Math.max(2,cell*0.06); cx.strokeStyle='rgba(8,6,5,.85)';
+    const tx=px(f.x)+cell/2, ty=py(f.y)+cell*0.42-f.t*cell*0.55;
+    cx.strokeText(f.text,tx,ty);
+    cx.fillStyle=f.color; cx.fillText(f.text,tx,ty);
     cx.globalAlpha=1;
   }
   cx.textAlign='left';
-}
 
-function drawEntity(t,X,Y,c,gx,gy){
-  const sp=SPEC[t.e];
-  const p=sp.grow>0?Math.min(1,t.age/sp.grow):1;
-  const cxm=X+c/2, cym=Y+c/2;
-  switch(t.e){
-    case 'Grass':{
-      const hgt=c*(0.18+0.42*p);
-      cx.strokeStyle=p>=1?'#D8B24A':'#6FA33A';
-      cx.lineWidth=Math.max(1,c*0.07); cx.lineCap='round';
-      cx.beginPath();
-      for(let i=-1;i<=1;i++){
-        cx.moveTo(cxm+i*c*0.17,Y+c*0.82);
-        cx.quadraticCurveTo(cxm+i*c*0.22,Y+c*0.82-hgt*0.6,cxm+i*c*0.3,Y+c*0.82-hgt);
-      }
-      cx.stroke(); cx.lineCap='butt';
-      break;
-    }
-    case 'Bush':{
-      const r=c*(0.16+0.22*p);
-      cx.fillStyle=p>=1?'#4E7A2E':'#3E6327';
-      cx.beginPath();
-      cx.arc(cxm-r*0.5,cym+r*0.2,r*0.75,0,7); cx.arc(cxm+r*0.5,cym+r*0.2,r*0.75,0,7);
-      cx.arc(cxm,cym-r*0.35,r*0.85,0,7); cx.fill();
-      if(p>=1){ cx.fillStyle='#8A5A33';
-        for(let i=0;i<3;i++){ cx.beginPath();
-          cx.arc(cxm+(i-1)*r*0.6,cym+(i%2?r*0.1:-r*0.25),r*0.2,0,7); cx.fill(); } }
-      break;
-    }
-    case 'Carrot':{
-      cx.strokeStyle='#5F9B34'; cx.lineWidth=Math.max(1,c*0.06);
-      cx.beginPath();
-      for(let i=-1;i<=1;i++){ cx.moveTo(cxm,Y+c*0.62);
-        cx.lineTo(cxm+i*c*0.2,Y+c*0.62-c*(0.12+0.24*p)); }
-      cx.stroke();
-      if(p>=1){ cx.fillStyle='#E1762F'; cx.beginPath();
-        cx.moveTo(cxm-c*0.13,Y+c*0.6); cx.lineTo(cxm+c*0.13,Y+c*0.6);
-        cx.lineTo(cxm,Y+c*0.84); cx.closePath(); cx.fill(); }
-      break;
-    }
-    case 'Pumpkin':{
-      const r=c*(0.14+0.32*p);
-      cx.fillStyle=p>=1?'#E08A2B':'#7D8B36';
-      cx.beginPath(); cx.ellipse(cxm,cym+c*0.04,r,r*0.86,0,0,7); cx.fill();
-      cx.strokeStyle='rgba(0,0,0,.22)'; cx.lineWidth=Math.max(1,c*0.03);
-      cx.beginPath();
-      cx.ellipse(cxm,cym+c*0.04,r*0.35,r*0.85,0,0,7);
-      cx.stroke();
-      cx.fillStyle='#4E6B22'; cx.fillRect(cxm-c*0.03,cym-r*0.95,c*0.06,c*0.09);
-      break;
-    }
-    case 'Sunflower':{
-      const st=c*(0.2+0.4*p);
-      cx.strokeStyle='#4E7A2E'; cx.lineWidth=Math.max(1,c*0.05);
-      cx.beginPath(); cx.moveTo(cxm,Y+c*0.86); cx.lineTo(cxm,Y+c*0.86-st); cx.stroke();
-      const hy=Y+c*0.86-st, r=c*(0.09+0.11*p);
-      if(p>=1){
-        cx.fillStyle='#EFC544';
-        for(let i=0;i<t.d.petals;i++){
-          const a=i/t.d.petals*Math.PI*2;
-          cx.beginPath();
-          cx.ellipse(cxm+Math.cos(a)*r*1.25,hy+Math.sin(a)*r*1.25,r*0.7,r*0.34,a,0,7);
-          cx.fill();
-        }
-      }
-      cx.fillStyle=p>=1?'#6B4A22':'#5C7A31';
-      cx.beginPath(); cx.arc(cxm,hy,r,0,7); cx.fill();
-      if(p>=1&&c>26){
-        cx.fillStyle='#FFF3D6'; cx.font='700 '+Math.round(c*0.26)+'px JetBrains Mono, monospace';
-        cx.textAlign='center'; cx.fillText(String(t.d.petals),cxm,Y+c*0.99); cx.textAlign='left';
-      }
-      break;
-    }
-    case 'Cactus':{
-      const s=t.d?t.d.size:1;
-      const hgt=c*(0.2+0.06*s)*(0.45+0.55*p);
-      const w=c*0.19;
-      cx.fillStyle=p>=1?'#5FA05A':'#41763F';
-      rr(cx,cxm-w/2,Y+c*0.84-hgt,w,hgt,w*0.45); cx.fill();
-      if(s>3){ rr(cx,cxm-w*1.5,Y+c*0.84-hgt*0.62,w*0.8,hgt*0.42,w*0.35); cx.fill(); }
-      if(s>6){ rr(cx,cxm+w*0.7,Y+c*0.84-hgt*0.75,w*0.8,hgt*0.5,w*0.35); cx.fill(); }
-      if(c>26){
-        cx.fillStyle='rgba(255,243,214,.85)'; cx.font='700 '+Math.round(c*0.24)+'px JetBrains Mono, monospace';
-        cx.textAlign='center'; cx.fillText(String(s),cxm,Y+c*0.99); cx.textAlign='left';
-      }
-      break;
-    }
-    case 'Dinosaur':{
-      const f=t.d?t.d.fed:0, sc=0.6+0.09*f;
-      cx.fillStyle=isMature(t)?'#7FB25A':'#5E8C46';
-      const bw=c*0.4*sc, bh=c*0.26*sc, bx=cxm-bw*0.4, by=cym+c*0.08;
-      rr(cx,bx-bw/2,by-bh,bw,bh,bh*0.45); cx.fill();
-      cx.beginPath(); cx.arc(bx+bw*0.55,by-bh*1.25,bh*0.55,0,7); cx.fill();
-      cx.beginPath(); cx.moveTo(bx-bw*0.5,by-bh*0.6);
-      cx.lineTo(bx-bw*1.05,by-bh*1.1); cx.lineTo(bx-bw*0.5,by-bh*0.1); cx.fill();
-      cx.fillRect(bx-bw*0.3,by-2,bw*0.16,bh*0.5); cx.fillRect(bx+bw*0.15,by-2,bw*0.16,bh*0.5);
-      cx.fillStyle='#120E0C'; cx.beginPath(); cx.arc(bx+bw*0.72,by-bh*1.32,bh*0.12,0,7); cx.fill();
-      if(!isMature(t)&&t.d){
-        cx.fillStyle=ITEM_COLOR[t.d.want];
-        cx.beginPath(); cx.arc(X+c*0.82,Y+c*0.2,c*0.075,0,7); cx.fill();
-        cx.fillStyle='rgba(255,255,255,.55)';
-        for(let i=0;i<5;i++) cx.fillRect(X+c*0.16+i*c*0.13,Y+c*0.13,c*0.09,i<f?c*0.05:c*0.02);
-      }
-      break;
-    }
-    case 'Hedge':{
-      cx.fillStyle='#24361B';
-      rr(cx,X+1,Y+1,c-2,c-2,Math.max(2,c*0.14)); cx.fill();
-      cx.fillStyle='rgba(143,201,58,.10)';
-      for(let i=0;i<4;i++){
-        const hx=hash(gx*7+i,gy*3), hy=hash(gx,gy*5+i);
-        cx.beginPath(); cx.arc(X+c*0.2+hx*c*0.6,Y+c*0.2+hy*c*0.6,c*0.11,0,7); cx.fill();
-      }
-      break;
-    }
-    case 'Treasure':{
-      const g=0.6+0.4*Math.sin(spin*0.35);
-      cx.fillStyle='rgba(240,200,82,'+(0.14*g).toFixed(3)+')';
-      cx.beginPath(); cx.arc(cxm,cym,c*0.5,0,7); cx.fill();
-      cx.fillStyle='#7A5220'; rr(cx,cxm-c*0.26,cym-c*0.14,c*0.52,c*0.3,c*0.05); cx.fill();
-      cx.fillStyle='#A66E2A'; rr(cx,cxm-c*0.26,cym-c*0.28,c*0.52,c*0.18,c*0.07); cx.fill();
-      cx.fillStyle='#F0C852'; cx.fillRect(cxm-c*0.05,cym-c*0.2,c*0.1,c*0.22);
-      break;
-    }
-  }
+  const vg=cx.createRadialGradient(CW/2,CH*0.42,Math.min(CW,CH)*0.3,CW/2,CH/2,Math.max(CW,CH)*0.72);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.5)');
+  cx.fillStyle=vg; cx.fillRect(0,0,CW,CH);
 }
 
 function drawDrone(x,y,c,D){
-  const s=c*0.62;
+  const s=Math.max(14,c*0.66);
+  const lift=Math.sin(bob+D.id)*s*0.03;
   cx.save();
   cx.translate(x,y);
-  cx.fillStyle='rgba(0,0,0,.35)';
-  cx.beginPath(); cx.ellipse(0,s*0.55,s*0.42,s*0.14,0,0,7); cx.fill();
+  cx.fillStyle='rgba(0,0,0,.5)';
+  cx.beginPath(); cx.ellipse(s*0.06,s*0.52,s*0.42,s*0.15,0,0,7); cx.fill();
+  const gl=cx.createRadialGradient(0,s*0.2,s*0.05,0,s*0.2,s*0.75);
+  gl.addColorStop(0,'rgba(92,195,214,.16)'); gl.addColorStop(1,'rgba(92,195,214,0)');
+  cx.fillStyle=gl; cx.beginPath(); cx.arc(0,s*0.2,s*0.75,0,7); cx.fill();
+  cx.translate(0,lift);
   if(D.flip>0) cx.rotate((1-D.flip)*Math.PI*2);
-  if(D.bump>0) cx.translate(DV[D.dir].x*D.bump*c*0.12, -DV[D.dir].y*D.bump*c*0.12);
-  const arm=s*0.36;
-  cx.strokeStyle='#4A3E35'; cx.lineWidth=Math.max(1.4,s*0.09);
+  if(D.bump>0) cx.translate(DV[D.dir].x*D.bump*c*0.1,-DV[D.dir].y*D.bump*c*0.1);
+  const arm=s*0.34;
+  cx.strokeStyle='#2A2320'; cx.lineWidth=Math.max(2,s*0.11); cx.lineCap='round';
   cx.beginPath();
   cx.moveTo(-arm,-arm); cx.lineTo(arm,arm); cx.moveTo(arm,-arm); cx.lineTo(-arm,arm);
   cx.stroke();
-  for(const [ax,ay] of [[-arm,-arm],[arm,-arm],[-arm,arm],[arm,arm]]){
-    cx.strokeStyle='rgba(87,182,199,.65)'; cx.lineWidth=Math.max(1,s*0.05);
-    cx.beginPath(); cx.arc(ax,ay,s*0.2,spin%6.28,spin%6.28+3.6); cx.stroke();
-    cx.fillStyle='#2A2320'; cx.beginPath(); cx.arc(ax,ay,s*0.07,0,7); cx.fill();
+  cx.strokeStyle='#4A3E35'; cx.lineWidth=Math.max(1,s*0.05);
+  cx.beginPath();
+  cx.moveTo(-arm,-arm); cx.lineTo(arm,arm); cx.moveTo(arm,-arm); cx.lineTo(-arm,arm);
+  cx.stroke(); cx.lineCap='butt';
+  for(const [ax,ay,ph] of [[-arm,-arm,0],[arm,-arm,1.6],[-arm,arm,3.1],[arm,arm,4.7]]){
+    cx.fillStyle='rgba(92,195,214,.20)';
+    cx.beginPath(); cx.arc(ax,ay,s*0.21,0,7); cx.fill();
+    cx.strokeStyle='rgba(150,225,240,.55)'; cx.lineWidth=Math.max(1,s*0.045);
+    cx.beginPath(); cx.arc(ax,ay,s*0.2,spin+ph,spin+ph+2.4); cx.stroke();
+    cx.beginPath(); cx.arc(ax,ay,s*0.2,spin+ph+3.14,spin+ph+3.14+2.4); cx.stroke();
+    cx.fillStyle='#1B1614'; cx.beginPath(); cx.arc(ax,ay,s*0.07,0,7); cx.fill();
   }
-  cx.fillStyle='#1F1A17';
-  rr(cx,-s*0.28,-s*0.24,s*0.56,s*0.48,s*0.14); cx.fill();
-  cx.strokeStyle='#8FC93A'; cx.lineWidth=Math.max(1,s*0.045);
-  rr(cx,-s*0.28,-s*0.24,s*0.56,s*0.48,s*0.14); cx.stroke();
+  const bg=cx.createLinearGradient(0,-s*0.3,0,s*0.3);
+  bg.addColorStop(0,'#3A322C'); bg.addColorStop(1,'#1C1715');
+  cx.fillStyle=bg;
+  rr(cx,-s*0.3,-s*0.26,s*0.6,s*0.52,s*0.16); cx.fill();
+  cx.strokeStyle='#0E0C0B'; cx.lineWidth=Math.max(1.5,s*0.075);
+  rr(cx,-s*0.3,-s*0.26,s*0.6,s*0.52,s*0.16); cx.stroke();
+  cx.strokeStyle='#8A7563'; cx.lineWidth=Math.max(1,s*0.03);
+  rr(cx,-s*0.3,-s*0.26,s*0.6,s*0.52,s*0.16); cx.stroke();
+  const dm=cx.createRadialGradient(-s*0.06,-s*0.1,s*0.02,0,0,s*0.2);
+  dm.addColorStop(0,'#A8E8F5'); dm.addColorStop(1,'#2E7C8C');
+  cx.fillStyle=dm;
+  cx.beginPath(); cx.ellipse(0,-s*0.02,s*0.17,s*0.15,0,0,7); cx.fill();
+  cx.fillStyle='rgba(255,255,255,.5)';
+  cx.beginPath(); cx.ellipse(-s*0.06,-s*0.08,s*0.06,s*0.035,-0.5,0,7); cx.fill();
   const d=DV[D.dir];
-  cx.fillStyle='#E9A23B';
-  cx.beginPath(); cx.arc(d.x*s*0.2,-d.y*s*0.2,s*0.09,0,7); cx.fill();
+  cx.fillStyle='#F0A93C';
+  cx.beginPath(); cx.arc(d.x*s*0.22,-d.y*s*0.22,s*0.055,0,7); cx.fill();
   cx.restore();
 }
 </script>
 <script>
 /* =============================== upgrades =============================== */
-const EXPAND_COST=[null,{Hay:20},{Hay:120},{Wood:100},{Wood:450},{Carrot:500},
-  {Pumpkin:400},{Power:900},{Cactus:700},{Bone:900},{Gold:30}];
-const SPEED_COST=[null,{Hay:30},{Hay:150},{Wood:120},{Wood:500},{Carrot:400},{Carrot:1200},
-  {Power:200},{Power:800},{Power:2500},{Bone:600},{Gold:12},{Gold:45}];
+const EXPAND_COST=[null,{Hay:5},{Hay:25},{Hay:90},{Wood:80},{Wood:300},{Carrot:300},
+  {Carrot:1000},{Pumpkin:700},{Power:1000},{Cactus:700},{Bone:900},{Gold:30}];
+const SPEED_COST=[null,{Hay:20},{Hay:90},{Wood:70},{Wood:280},{Carrot:250},{Carrot:900},
+  {Power:150},{Power:500},{Power:1600},{Bone:400},{Bone:1200},{Gold:12},{Gold:35},{Gold:90}];
+const TANK_COST=[null,{Carrot:200},{Pumpkin:300},{Power:500},{Bone:600},{Gold:20}];
+const BAY_COST=[null,{Power:600},{Bone:500},{Gold:15},{Gold:40},{Gold:100}];
 
 const UPGRADES=[
   {id:'sensors',cat:'Systems',name:'Sensor Array',req:[],cost:()=>({Hay:2}),
    desc:'can_harvest(), get_entity_type(), get_ground_type() and measure().'},
-  {id:'plant',cat:'Crops',name:'Seed Hopper',req:[],cost:()=>({Hay:5}),
-   desc:'plant(Entities.Grass) — grass regrows into hay in 3 ticks.'},
   {id:'expand',cat:'Systems',name:'Field Expansion',req:[],lvl:()=>[state.expand,EXPAND_COST.length-1],
-   cost:s=>EXPAND_COST[s.expand+1]||{}, dyn:()=>'Farm is '+world.size+'x'+world.size+
-   (SIZES[state.expand+1]?' → '+SIZES[state.expand+1]+'x'+SIZES[state.expand+1]:' (max)'),
+   cost:s=>EXPAND_COST[s.expand+1]||{},
+   dyn:()=>'Farm is '+world.size+'x'+world.size+(SIZES[state.expand+1]?' → '+SIZES[state.expand+1]+'x'+SIZES[state.expand+1]:' (max)'),
    desc:'More ground under the rotors.'},
-  {id:'speed',cat:'Systems',name:'Rotor Tuning',req:[],lvl:()=>[state.speed,TPS.length-1],
-   cost:s=>SPEED_COST[s.speed+1]||{}, dyn:()=>'Top speed '+TPS[state.speed]+' ticks/s'+
-   (TPS[state.speed+1]?' → '+TPS[state.speed+1]:' (max)'),
+  {id:'speed',cat:'Systems',name:'Rotor Tuning',req:[],lvl:()=>[state.speed,SPEED_COST.length-1],
+   cost:s=>SPEED_COST[s.speed+1]||{},
+   dyn:()=>'Top speed '+TPS[state.speed]+' ticks/s'+(TPS[state.speed+1]?' → '+TPS[state.speed+1]:' (max)'),
    desc:'Raises the speed cap on the run bar.'},
-  {id:'bush',cat:'Crops',name:'Bushes',req:['plant'],cost:()=>({Hay:60}),
-   desc:'plant(Entities.Bush) → wood. Slower than grass, worth more.'},
+  {id:'drones',cat:'Systems',name:'Drone Bay',req:['sunflower'],lvl:()=>[state.bay,BAY_COST.length-1],
+   cost:s=>BAY_COST[s.bay+1]||{},
+   dyn:()=>maxDrones()+' drone'+(maxDrones()>1?'s':'')+(BAY_COST[state.bay+1]?' → '+(maxDrones()+1):' (max)'),
+   desc:'spawn_drone(fn) starts another drone running fn. They share your variables and the clock.'},
+
+  {id:'plant',cat:'Crops',name:'Seed Hopper',req:[],cost:()=>({Hay:3}),
+   desc:'plant(Entities.Grass). Grass ripens in 3 ticks — and stops regrowing on its own.'},
+  {id:'bush',cat:'Crops',name:'Bushes',req:['plant'],cost:()=>({Hay:40}),
+   desc:'plant(Entities.Bush) → 1 wood in 9 ticks.'},
   {id:'till',cat:'Crops',name:'Tiller',req:['bush'],cost:()=>({Wood:40}),
    desc:'till() flips a tile between grassland and soil.'},
-  {id:'carrot',cat:'Crops',name:'Carrots',req:['till'],cost:()=>({Wood:120,Hay:200}),
-   desc:'plant(Entities.Carrot) on soil. Soil grows slowly while dry.'},
+  {id:'tree',cat:'Crops',name:'Trees',req:['bush'],cost:()=>({Wood:60,Hay:150}),
+   desc:'4 wood a harvest, but a tree grows at half speed for every tree touching it. Checkerboard them.'},
+  {id:'carrot',cat:'Crops',name:'Carrots',req:['till'],cost:()=>({Wood:120,Hay:150}),
+   desc:'plant(Entities.Carrot) on soil. Dry soil grows at about a third speed.'},
   {id:'water',cat:'Crops',name:'Irrigation',req:['carrot'],cost:()=>({Carrot:150}),
-   desc:'get_water() and use_item(Items.Water). Wet soil grows ~3x faster.'},
-  {id:'trade',cat:'Market',name:'Trading Post',req:['carrot'],cost:()=>({Wood:250,Carrot:100}),
-   desc:'trade(item, n) sells goods for gold. get_trade_request() names the item paying triple.'},
+   desc:'get_water() and use_item(Items.Water), drawn from a tank that refills as time passes.'},
+  {id:'tank',cat:'Crops',name:'Water Tank',req:['water'],lvl:()=>[state.tankLvl,TANK_COST.length-1],
+   cost:s=>TANK_COST[s.tankLvl+1]||{},
+   dyn:()=>'Holds '+TANK[state.tankLvl]+(TANK[state.tankLvl+1]?' → '+TANK[state.tankLvl+1]:' (max)'),
+   desc:'A bigger tank also refills faster.'},
+  {id:'apples',cat:'Crops',name:'Orchard',req:['tree'],cost:()=>({Wood:250}),
+   desc:'Ripe trees drop apples on random empty tiles. Apples rot in 70 ticks — measure() counts down.'},
+  {id:'poly',cat:'Crops',name:'Polyculture',req:['water','apples'],cost:()=>({Carrot:300,Apple:40}),
+   desc:'Every crop now wants a neighbour. get_companion() names it; grant the wish and the harvest doubles.'},
   {id:'pumpkin',cat:'Crops',name:'Pumpkins',req:['water'],cost:()=>({Carrot:400}),
-   desc:'Ripe pumpkins touching each other merge — an n x n block pays n^3.'},
+   desc:'Ripe pumpkins that touch merge — an n x n block pays n^3.'},
   {id:'sunflower',cat:'Crops',name:'Sunflowers',req:['pumpkin'],cost:()=>({Pumpkin:250}),
-   desc:'measure() reads petals. Only the most-petalled ripe flower yields power.'},
+   desc:'measure() reads petals. Only the ripe flowers with the highest count yield power.'},
   {id:'cactus',cat:'Crops',name:'Cacti',req:['sunflower'],cost:()=>({Power:400}),
-   desc:'swap(dir) trades two plants. Cacti only pay out once the whole field is sorted by size.'},
+   desc:'swap(dir) exchanges two plants. Cacti pay only when the whole field is sorted by size.'},
+
   {id:'dino',cat:'Livestock',name:'Dinosaurs',req:['cactus'],cost:()=>({Cactus:300,Pumpkin:800}),
-   desc:'measure() asks what it wants; use_item() feeds it. Five feeds → 6 bones.'},
+   desc:'measure() asks what it wants, use_item() feeds it. Five feeds → 6 bones.'},
   {id:'maze',cat:'Livestock',name:'Hedge Maze',req:['dino'],cost:()=>({Bone:400}),
-   desc:'plant(Entities.Hedge) rebuilds the farm as a maze. Find the chest for gold.'},
+   desc:'plant(Entities.Hedge) rebuilds the farm as a maze around one chest. Gold.'},
+
+  {id:'trade',cat:'Market',name:'Trading Post',req:['carrot'],cost:()=>({Wood:200,Carrot:80}),
+   desc:'trade(item, n) sells goods for gold. get_trade_request() names the item paying triple.'},
   {id:'fertilizer',cat:'Market',name:'Fertilizer',req:['maze'],cost:()=>({Gold:15}),
-   desc:'Buy fertilizer with gold; use_item(Items.Fertilizer) ripens a plant instantly.'}
+   desc:'Buy doses with gold; use_item(Items.Fertilizer) ripens a plant on the spot.'}
 ];
 for(const u of UPGRADES) Unlocks.props[u.id]=sym('Unlocks',u.id);
 
 function canAfford(c){ for(const k in c) if((state.items[k]||0)<c[k]) return false; return true; }
 function pay(c){ for(const k in c){ state.items[k]-=c[k]; UI.bump(k); } }
 function reqsMet(u){ return u.req.every(r=>state.unlocked[r]); }
-function isOwned(u){ return u.lvl ? false : !!state.unlocked[u.id]; }
+function isOwned(u){ return u.lvl?false:!!state.unlocked[u.id]; }
 function isMaxed(u){ if(!u.lvl) return false; const [c,m]=u.lvl(); return c>=m; }
-
 function buy(u){
   if(isOwned(u)||isMaxed(u)||!reqsMet(u)) return;
   const c=u.cost(state);
-  if(!canAfford(c)){ UI.log('not enough resources for '+u.name,'e'); return; }
+  if(!canAfford(c)){ UI.log('not enough for '+u.name,'e'); return; }
   pay(c);
   if(u.id==='expand'){ state.expand++; buildWorld(SIZES[state.expand],true); }
   else if(u.id==='speed'){ state.speed++; state.speedPref=state.speed; UI.syncSpeed(); }
+  else if(u.id==='tank'){ state.tankLvl++; }
+  else if(u.id==='drones'){ state.bay++; }
   else state.unlocked[u.id]=true;
   UI.log('unlocked '+u.name,'s');
-  UI.refreshShop(); UI.refreshStats(); save();
+  UI.refreshShop(); UI.refreshStats(true); save();
 }
 
 /* ================================= UI =================================== */
 const $=id=>document.getElementById(id);
-const STARTER='# Rootloop \u2014 press Run.\n'+
-  '# Wild grass regrows by itself until you buy the Seed Hopper.\n\n'+
+const STARTER='# Rootloop — press Run.\n'+
+  '# One tile of wild grass. It regrows where you cut it.\n\n'+
   'while True:\n'+
-  '    harvest()\n'+
-  '    move(North)\n';
+  '    harvest()\n';
 
 let files=[{name:'main.py',code:STARTER}];
-let active=0;
-let logLines=[];
+let active=0, logLines=[];
 
 const UI={
   statsAt:0, bumped:{},
   bump(item){ this.bumped[item]=performance.now(); this.statsAt=0; },
   log(text,cls,quick){
-    if(quick && logLines.length && logLines[logLines.length-1].q) logLines[logLines.length-1]={t:text,c:cls,q:1};
+    if(quick&&logLines.length&&logLines[logLines.length-1].q) logLines[logLines.length-1]={t:text,c:cls,q:1};
     else logLines.push({t:text,c:cls,q:quick?1:0});
     if(logLines.length>300) logLines.splice(0,logLines.length-300);
     this.renderLog();
@@ -2177,32 +2480,38 @@ const UI={
   },
   refreshStats(force){
     const now=performance.now();
-    if(!force && now-this.statsAt<120) return;
+    if(!force&&now-this.statsAt<130) return;
     this.statsAt=now;
-    const shown=ITEMS.filter(i=>state.items[i]>0||['Hay'].includes(i)||
-      (i==='Wood'&&state.unlocked.bush)||(i==='Carrot'&&state.unlocked.carrot)||
-      (i==='Fertilizer'&&state.unlocked.fertilizer));
-    $('strip').innerHTML=shown.map(i=>{
-      const hot=now-(this.bumped[i]||0)<400;
-      return '<span class="chip'+(hot?' pulse':'')+'"><span class="dot" style="background:'+ITEM_COLOR[i]+'"></span>'+
-        i.toLowerCase()+' <b>'+fmtInt(state.items[i]||0)+'</b></span>';
+    const show=ITEMS.filter(i=>{
+      if(i==='Water') return !!state.unlocked.water;
+      if(i==='Fertilizer') return !!state.unlocked.fertilizer;
+      if(i==='Hay') return true;
+      return (state.items[i]||0)>0;
+    });
+    let html=show.map(i=>{
+      const hot=now-(this.bumped[i]||0)<450;
+      const val=i==='Water'?Math.floor(state.tank)+'/'+TANK[state.tankLvl]:fmtInt(state.items[i]||0);
+      return '<span class="chip'+(hot?' pulse':'')+'"><i style="background:'+ITEM_COLOR[i]+';color:'+
+        ITEM_COLOR[i]+'"></i>'+i.toLowerCase()+' <b>'+val+'</b></span>';
     }).join('');
+    if(world.drones.length>1)
+      html+='<span class="chip"><i style="background:#5CC3D6;color:#5CC3D6"></i>drones <b>'+world.drones.length+'</b></span>';
+    $('strip').innerHTML=html;
     const n=UPGRADES.filter(u=>reqsMet(u)&&!isOwned(u)&&!isMaxed(u)&&canAfford(u.cost(state))).length;
     const b=$('shopBadge');
     if(n>0){ b.hidden=false; b.textContent=String(n); } else b.hidden=true;
   },
   refreshShop(){
-    const cats=['Systems','Crops','Livestock','Market'];
     let html='';
-    for(const c of cats){
+    for(const c of ['Systems','Crops','Livestock','Market']){
       const list=UPGRADES.filter(u=>u.cat===c);
       if(!list.length) continue;
       html+='<div class="secTitle">'+c+'</div><div class="buys">';
       for(const u of list){
         const met=reqsMet(u), owned=isOwned(u), maxed=isMaxed(u);
-        const cost=u.cost(state), afford=canAfford(cost);
-        const lvl=u.lvl?u.lvl():null;
-        html+='<div class="buy'+(owned||maxed?' owned':met?'':' locked')+'">';
+        const cost=u.cost(state), afford=canAfford(cost), lvl=u.lvl?u.lvl():null;
+        const cls=owned||maxed?' owned':(!met?' locked':(afford?' ready':''));
+        html+='<div class="buy'+cls+'">';
         html+='<h3>'+u.name+(lvl?' <span class="lvl">lv '+lvl[0]+'/'+lvl[1]+'</span>':'')+'</h3>';
         html+= owned||maxed
           ? '<button class="btn small" disabled>'+(maxed?'max':'owned')+'</button>'
@@ -2211,7 +2520,7 @@ const UI={
         html+='<p>'+esc(u.dyn?u.dyn()+' — '+u.desc:u.desc)+'</p>';
         if(!(owned||maxed)){
           html+='<div class="price">';
-          if(!met) html+='<span class="tag short">needs '+u.req.map(r=>nameOf(r)).join(' + ')+'</span>';
+          if(!met) html+='<span class="tag short">needs '+u.req.map(nameOf).join(' + ')+'</span>';
           for(const k in cost)
             html+='<span class="tag'+((state.items[k]||0)<cost[k]?' short':'')+'">'+fmtInt(cost[k])+' '+k.toLowerCase()+'</span>';
           html+='</div>';
@@ -2220,15 +2529,15 @@ const UI={
       }
       html+='</div>';
     }
+    const fertOk=state.unlocked.fertilizer&&state.items.Gold>=2;
     html+='<div class="secTitle">Supplies</div><div class="buys">'+
-      '<div class="buy'+(state.unlocked.fertilizer?'':' locked')+'"><h3>Fertilizer x10</h3>'+
-      '<button class="btn small'+(state.unlocked.fertilizer&&state.items.Gold>=2?' primary':'')+'" data-act="fert"'+
-      (state.unlocked.fertilizer&&state.items.Gold>=2?'':' disabled')+'>buy</button>'+
+      '<div class="buy'+(state.unlocked.fertilizer?(fertOk?' ready':''):' locked')+'"><h3>Fertilizer x10</h3>'+
+      '<button class="btn small'+(fertOk?' primary':'')+'" data-act="fert"'+(fertOk?'':' disabled')+'>buy</button>'+
       '<p>Ten doses of instant ripening.</p><div class="price"><span class="tag'+
       (state.items.Gold<2?' short':'')+'">2 gold</span></div></div>'+
       '<div class="buy"><h3>Clear the field</h3>'+
       '<button class="btn small" data-act="clear">reset</button>'+
-      '<p>Wipes every plant back to bare grassland. The way out of a finished maze.</p></div>'+
+      '<p>Wipes every plant back to bare grassland — the way out of a finished maze.</p></div>'+
       '<div class="buy"><h3>Wipe save</h3>'+
       '<button class="btn small" data-act="wipe">erase</button>'+
       '<p>Deletes progress and code on this device. No undo.</p></div></div>';
@@ -2237,18 +2546,18 @@ const UI={
 };
 function nameOf(id){ const u=UPGRADES.find(x=>x.id===id); return u?u.name:id; }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function fmtInt(n){ return n>=10000 ? (n/1000).toFixed(n>=100000?0:1)+'k' : String(Math.floor(n)); }
+function fmtInt(n){ n=Math.floor(n); return n>=10000?(n/1000).toFixed(n>=100000?0:1)+'k':String(n); }
 
 /* ---------------------------- editor ------------------------------------ */
 const API_WORDS=['move','harvest','plant','till','use_item','measure','swap','trade','do_a_flip',
-  'get_pos_x','get_pos_y','get_world_size','get_time','num_items','can_harvest','get_entity_type',
-  'get_ground_type','get_water','get_trade_request','print','quick_print','clear','range','len','abs',
+  'spawn_drone','max_drones','num_drones','get_drone_id','get_pos_x','get_pos_y','get_world_size',
+  'get_time','num_items','num_unlocked','can_harvest','get_entity_type','get_ground_type','get_water',
+  'get_companion','get_trade_request','unlocked','print','quick_print','clear','range','len','abs',
   'int','float','str','list','dict','set','sum','min','max','sorted','random','random_int','round',
   'enumerate','zip','reversed','any','all','map','filter','sqrt','floor','ceil','type','bool','tuple'];
-const CONST_WORDS=['True','False','None','North','East','South','West','Items','Entities','Grounds'];
+const CONST_WORDS=['True','False','None','North','East','South','West','Items','Entities','Grounds','Unlocks'];
 const KW_WORDS=['if','elif','else','while','for','in','def','return','break','continue','pass','and',
   'or','not','global','import','from','as','try','except','finally','raise','is','lambda','del','assert'];
-
 const HL=new RegExp(
   '(#[^\\n]*)'+
   '|("""[\\s\\S]*?"""|\'\'\'[\\s\\S]*?\'\'\'|"(?:\\\\.|[^"\\\\\\n])*"|\'(?:\\\\.|[^\'\\\\\\n])*\')'+
@@ -2256,9 +2565,8 @@ const HL=new RegExp(
   '|\\b('+CONST_WORDS.join('|')+')\\b'+
   '|\\b('+API_WORDS.join('|')+')\\b(?=\\s*\\()'+
   '|\\b(\\d+\\.?\\d*)\\b','g');
-
 function highlight(src){
-  const out=esc(src).replace(HL,(m,com,str,kw,cst,api,num)=>{
+  return esc(src).replace(HL,(m,com,str,kw,cst,api,num)=>{
     if(com) return '<span class="tk-com">'+com+'</span>';
     if(str) return '<span class="tk-str">'+str+'</span>';
     if(kw) return '<span class="tk-kw">'+kw+'</span>';
@@ -2266,8 +2574,7 @@ function highlight(src){
     if(api) return '<span class="tk-api">'+api+'</span>';
     if(num) return '<span class="tk-num">'+num+'</span>';
     return m;
-  });
-  return out+'\n\n';
+  })+'\n\n';
 }
 function syncHL(){ $('hl').innerHTML=highlight($('code').value); }
 function renderFiles(){
@@ -2276,38 +2583,34 @@ function renderFiles(){
     '<button class="file" data-file="new">+ new</button>'+
     (files.length>1?'<button class="file" data-file="del">delete</button>':'');
 }
-function loadFile(i){
-  active=i; $('code').value=files[i].code; syncHL(); renderFiles();
-  $('hl').scrollTop=0; $('code').scrollTop=0;
-}
-function insert(text,caretBack){
+function loadFile(i){ active=i; $('code').value=files[i].code; syncHL(); renderFiles(); $('code').scrollTop=0; }
+function insert(text,back){
   const ta=$('code'), s=ta.selectionStart, e=ta.selectionEnd;
   ta.value=ta.value.slice(0,s)+text+ta.value.slice(e);
-  const p=s+text.length-(caretBack||0);
-  ta.selectionStart=ta.selectionEnd=p;
+  ta.selectionStart=ta.selectionEnd=s+text.length-(back||0);
   ta.focus(); onEdit();
 }
 function onEdit(){ files[active].code=$('code').value; syncHL(); saveSoon(); }
-
 const KEYS=[['⇥','    '],[':',':'],['(','()',1],['[','[]',1],['"','""',1],['=','='],['==','=='],
   ['while True:','while True:\n    '],['if','if '],['else:','else:\n    '],['for','for i in range(10):\n    '],
-  ['move','move(North)'],['N','North'],['E','East'],['S','South'],['W','West'],
+  ['def','def work():\n    '],['move','move(North)'],['N','North'],['E','East'],['S','South'],['W','West'],
   ['harvest','harvest()'],['plant','plant(Entities.Grass)'],['can_harvest','can_harvest()'],
   ['num_items','num_items(Items.Hay)'],['print','print()',1]];
 
 /* ------------------------------ save/load -------------------------------- */
-const KEY='rootloop.save.v1';
+const KEY='rootloop.save.v2';
 let saveTimer=null;
 function saveSoon(){ clearTimeout(saveTimer); saveTimer=setTimeout(save,900); }
 function save(){
   try{
-    const t=world.tiles.map(x=>[x.g==='Soil'?1:0, x.e?ENT.indexOf(x.e):-1,
-      Math.round(x.age*10)/10, Math.round(x.water*100)/100, x.d]);
+    const t=world.tiles.map(x=>[x.g==='Soil'?1:0,x.e?ENT.indexOf(x.e):-1,
+      Math.round(x.age*10)/10,Math.round(x.water*100)/100,x.d]);
     localStorage.setItem(KEY,JSON.stringify({
-      v:1, items:state.items, unlocked:state.unlocked, expand:state.expand, speed:state.speed,
-      speedPref:state.speedPref, credit:state.credit, treasures:state.treasures,
-      files, active, size:world.size, time:world.time, maze:world.maze,
-      drone:{x:world.drone.x,y:world.drone.y,dir:world.drone.dir}, tiles:t
+      v:2,items:state.items,unlocked:state.unlocked,expand:state.expand,speed:state.speed,
+      speedPref:state.speedPref,tankLvl:state.tankLvl,bay:state.bay,tank:state.tank,
+      credit:state.credit,treasures:state.treasures,files,active,
+      size:world.size,time:world.time,maze:world.maze,
+      drone:{x:world.drones[0].x,y:world.drones[0].y,dir:world.drones[0].dir},tiles:t
     }));
   }catch(e){}
 }
@@ -2319,15 +2622,16 @@ function load(){
   state.unlocked=d.unlocked||{};
   state.expand=d.expand||0; state.speed=d.speed||0;
   state.speedPref=Math.min(d.speedPref??d.speed??0,state.speed);
+  state.tankLvl=d.tankLvl||0; state.bay=d.bay||0;
+  state.tank=d.tank??TANK[state.tankLvl];
   state.credit=d.credit||0; state.treasures=d.treasures||0;
   buildWorld(d.size||SIZES[state.expand],false);
-  if(d.tiles&&d.tiles.length===world.tiles.length){
+  if(d.tiles&&d.tiles.length===world.tiles.length)
     d.tiles.forEach((s,i)=>{ const t=world.tiles[i];
       t.g=s[0]?'Soil':'Grassland'; t.e=s[1]>=0?ENT[s[1]]:null; t.age=s[2]||0; t.water=s[3]||0; t.d=s[4]||null; });
-  }
   world.time=d.time||0; world.maze=!!d.maze;
-  if(d.drone){ world.drone.x=d.drone.x|0; world.drone.y=d.drone.y|0; world.drone.dir=d.drone.dir|0;
-    world.drone.vx=world.drone.x; world.drone.vy=world.drone.y; }
+  if(d.drone){ const D=world.drones[0];
+    D.x=d.drone.x|0; D.y=d.drone.y|0; D.dir=d.drone.dir|0; D.vx=D.x; D.vy=D.y; }
   if(Array.isArray(d.files)&&d.files.length){ files=d.files; active=Math.min(d.active||0,files.length-1); }
 }
 function wipe(){
@@ -2339,111 +2643,148 @@ function wipe(){
 <script>
 /* ============================== the guide ================================ */
 function apiRow(sig,txt,lock){
-  const off = lock && !state.unlocked[lock];
+  const off=lock&&!state.unlocked[lock];
   return '<div class="row'+(off?' lk':'')+'"><code>'+esc(sig)+'</code><span>'+txt+
     (off?' <em>— locked</em>':'')+'</span></div>';
 }
 function renderGuide(){
   $('guide').innerHTML=`
 <h2>What this is</h2>
-<p>A farm, a drone, and a Python interpreter. You never move the drone by hand — you write a program,
-press <b>Run</b>, and watch it work. Every action the drone takes costs a tick of farm time, so plants
-only grow while your code is running. Faster code, faster farm.</p>
-<p>Written from scratch as a personal tribute to the coding-farm genre: the language, the sim and the
-art here are all original.</p>
+<p>A farm, a drone, and a Python interpreter. You never steer the drone by hand — you write a program,
+press <b>Run</b>, and watch it work. Every action costs a tick of farm time, and plants only grow while
+your code is running, so a tighter program is a faster farm.</p>
+<p>You start with a single tile of wild grass. Everything else — planting, soil, water, a second drone —
+is bought in the <b>Shop</b> with what you harvest.</p>
 
-<h2>Start here</h2>
+<h2>Your first program</h2>
+<pre>while True:
+    harvest()</pre>
+<p>Wild grass regrows where you cut it, so one tile and one line earns the hay for the
+<b>Sensor Array</b>, the <b>Seed Hopper</b> and your first <b>Field Expansion</b>. From two tiles on
+you have to walk:</p>
 <pre>while True:
     harvest()
+    plant(Entities.Grass)
     move(North)</pre>
-<p>The farm wraps at the edges, so moving north forever walks one column round and round. Wild grass
-regrows where you cut it, so that loop alone earns the hay for your first upgrades in the <b>Shop</b>.
-Buy the <b>Seed Hopper</b> and you take over the replanting yourself:</p>
-<pre>while True:
-    for i in range(get_world_size()):
-        for j in range(get_world_size()):
+<p>The farm wraps at the edges, so moving north forever walks one column round and round. To cover a
+square field, walk a column and step east at the end of it:</p>
+<pre>n = get_world_size()
+
+while True:
+    for col in range(n):
+        for row in range(n):
             harvest()
             plant(Entities.Grass)
             move(North)
         move(East)</pre>
-<p>That walks the whole field, column by column, forever.</p>
+
+<p class="note">Every tile you expand onto arrives under wild grass, and <code>till()</code> refuses an
+occupied tile — so clear a tile before you re-purpose it.</p>
 
 <h2>Ticks and speed</h2>
-<p>Moving, harvesting and planting cost 1 tick; tilling, swapping, trading and flips cost 2. Pure
-computation is free. The run bar sets how many ticks pass per second — <b>Rotor Tuning</b> in the shop
-raises the ceiling.</p>
+<p>Moving, harvesting, planting, watering, feeding and measuring cost 1 tick; tilling, swapping,
+trading and flips cost 2. Computation is free — only the drone's hands cost time. The run bar sets how
+many ticks pass each second, and <b>Rotor Tuning</b> raises the ceiling from 4/s to 720/s.</p>
 
 <h2>Drone commands</h2>
 <div class="api">
-${apiRow('move(North)','Step one tile. Also East, South, West. Returns False if a hedge blocks it.')}
-${apiRow('harvest()','Take whatever is ripe on this tile. Returns True if something was taken.')}
-${apiRow('plant(Entities.Grass)','Plant on the current tile. Fails if the tile is occupied or the wrong ground.','plant')}
+${apiRow('move(North)','One step. Also East, South, West. Returns False if a hedge blocks it.')}
+${apiRow('harvest()','Take what is ripe here. True if something was taken.')}
+${apiRow('plant(Entities.Grass)','Plant here. Fails on an occupied tile or the wrong ground.','plant')}
 ${apiRow('till()','Toggle this tile between grassland and soil.','till')}
-${apiRow('use_item(Items.Water)','Water the soil under the drone.','water')}
-${apiRow('use_item(Items.Carrot)','Feed the dinosaur standing here.','dino')}
-${apiRow('measure()','Petals, cactus size, or what a dinosaur wants. measure(North) reads a neighbour.','sensors')}
-${apiRow('swap(North)','Swap this plant with the neighbouring one.','cactus')}
+${apiRow('use_item(Items.Water)','Wet the soil under the drone, one unit from the tank.','water')}
+${apiRow('use_item(Items.Carrot)','Feed the dinosaur standing here whatever it asked for.','dino')}
+${apiRow('measure()','Petals, cactus size, what a dinosaur wants, or how long an apple has left. measure(North) reads a neighbour.','sensors')}
+${apiRow('swap(North)','Exchange this plant with the neighbouring one.','cactus')}
 ${apiRow('trade(Items.Hay, 100)','Sell goods for gold.','trade')}
-${apiRow('do_a_flip()','No yield whatsoever.')}
+${apiRow('spawn_drone(fn)','Start another drone running fn(). It shares your variables and the clock.','drones')}
+${apiRow('do_a_flip()','Costs two ticks. Yields nothing at all.')}
 </div>
 
 <h2>Sensors and counters</h2>
 <div class="api">
-${apiRow('get_pos_x() / get_pos_y()','Drone coordinates. (0, 0) is the bottom-left corner.')}
+${apiRow('get_pos_x() / get_pos_y()','Where this drone is. (0, 0) is the bottom-left corner.')}
 ${apiRow('get_world_size()','Width of the square farm.')}
-${apiRow('num_items(Items.Hay)','How much you are holding.')}
-${apiRow('can_harvest()','True when this tile holds something ripe.','sensors')}
-${apiRow('get_entity_type()','Entities.Grass, Entities.Treasure, … or None.','sensors')}
+${apiRow('num_items(Items.Hay)','How much you are holding. Items.Water reads the tank.')}
+${apiRow('can_harvest()','True when something ripe is standing here.','sensors')}
+${apiRow('get_entity_type()','Entities.Grass, Entities.Apple, Entities.Treasure, … or None.','sensors')}
 ${apiRow('get_ground_type()','Grounds.Grassland or Grounds.Soil.','sensors')}
 ${apiRow('get_water()','Moisture here, 0.0 to 1.0.','water')}
-${apiRow('get_trade_request()','The item the market is paying triple for.','trade')}
+${apiRow('get_companion()','The neighbour this plant is asking for, or None.','poly')}
+${apiRow('get_trade_request()','The item the market pays triple for right now.','trade')}
+${apiRow('num_drones() / max_drones() / get_drone_id()','Drone bookkeeping.','drones')}
+${apiRow('num_unlocked(Unlocks.expand)','Levels bought of a shop upgrade.')}
 ${apiRow('get_time()','Ticks elapsed on this farm.')}
 ${apiRow('print(x) / quick_print(x)','Write to the Log tab. quick_print overwrites its own line.')}
 </div>
 
 <h2>The crops</h2>
-<p><b>Grass</b> → hay in 3 ticks. <b>Bushes</b> → wood, slower. Both need grassland.</p>
-<p><b>Soil</b> crops grow at about a third speed while dry, so water pays for itself:</p>
-<pre>if get_water() < 0.5:
+<p><b>Grass</b> → 1 hay in 3 ticks. <b>Bushes</b> → 1 wood in 9. Both want grassland.</p>
+<p><b>Trees</b> pay 4 wood but grow at <i>half speed for every tree touching them</i>, so a solid block
+of trees crawls and a checkerboard of trees and bushes flies:</p>
+<pre>if (get_pos_x() + get_pos_y()) % 2 == 0:
+    plant(Entities.Tree)
+else:
+    plant(Entities.Bush)</pre>
+<p><b>Soil</b> crops crawl while dry — about a third speed — so watering pays for itself. The tank
+refills as time passes, which is a budget your program has to spend well:</p>
+<pre>if get_water() &lt; 0.4 and num_items(Items.Water) &gt; 0:
     use_item(Items.Water)</pre>
-<p><b>Pumpkins</b> merge: ripe pumpkins that touch become one field, and harvesting an n x n block
-pays n<sup>3</sup> instead of n<sup>2</sup>. Plant the whole square, wait for the last one, then harvest once.</p>
-<p><b>Sunflowers</b> carry 1–7 petals — <code>measure()</code> reads them. Only the ripe flowers holding
-the highest petal count pay out; harvest anything less and it wilts for nothing. Scan first, then reap.</p>
-<pre>best = 0
-for i in range(n * n):
-    p = measure()
-    if p != None and p > best:
-        best = p
-    step()</pre>
-<p><b>Cacti</b> only pay when every cactus is ripe <i>and</i> sorted by size along the snake path:
-the bottom row left to right, the row above it right to left, and so on upward. Every step of that path
-lands on a neighbouring tile, so a bubble sort with <code>swap(dir)</code> is enough. Harvest an unsorted
-patch and that cactus is simply gone.</p>
-<p><b>Dinosaurs</b> want a random item — <code>measure()</code> tells you which — and
-<code>use_item()</code> hands it over. Five feeds makes it ripe, and it pays 6 bones.</p>
-<p><b>The maze</b>: <code>plant(Entities.Hedge)</code> rebuilds the whole farm as hedge walls with one
-chest hidden inside. <code>move()</code> returns False into a wall, so a depth-first search with a
-visited set will find it. Every fifth chest reshuffles the maze.</p>
+<p><b>Apples</b> fall from ripe trees onto random empty tiles and rot after 70 ticks —
+<code>measure()</code> tells you how long an apple has left. They are worth more than wood, and
+dinosaurs like them.</p>
+<p><b>Polyculture</b> gives every crop a wish: <code>get_companion()</code> names an entity it wants
+orthogonally next to it, and granting the wish doubles that harvest. A small green dot on the tile turns
+bright when the wish is satisfied.</p>
+<p><b>Pumpkins</b> merge: ripe pumpkins that touch become one field, and harvesting an n x n block pays
+n<sup>3</sup> instead of n<sup>2</sup>. Plant the whole square, wait for the slowest one, harvest once.</p>
+<p><b>Sunflowers</b> carry 1–7 petals. Only the ripe flowers holding the <i>highest</i> petal count on
+the farm pay out; harvest anything less and it wilts for nothing. Scan the field first, then reap.</p>
+<p><b>Cacti</b> pay only when every cactus is ripe <i>and</i> sorted by size along the snake path — the
+bottom row left to right, the row above it right to left, and so on upward. Every step of that path is a
+neighbouring tile, so a bubble sort built on <code>swap()</code> is enough. Harvest an unsorted patch and
+that cactus is simply gone.</p>
+<p><b>Dinosaurs</b> ask for a random item, <code>use_item()</code> hands it over, and five feeds makes
+one worth 6 bones.</p>
+<p><b>The maze</b>: <code>plant(Entities.Hedge)</code> rebuilds the farm as hedge walls around one chest.
+<code>move()</code> returns False into a wall, so a depth-first search with a visited set finds it. Every
+fifth chest reshuffles the walls.</p>
+
+<h2>More drones</h2>
+<p>Every drone runs its own copy of a function you hand to <code>spawn_drone</code>, and they all share
+your global variables and the same clock, so the farm gets more done per tick:</p>
+<pre>def column():
+    while True:
+        harvest()
+        plant(Entities.Grass)
+        move(North)
+
+while num_drones() &lt; max_drones():
+    spawn_drone(column)
+    move(East)
+
+column()</pre>
+<p><code>get_drone_id()</code> tells a drone which one it is, so one function can split the field
+between them.</p>
 
 <h2>The market</h2>
-<p><code>trade(item, n)</code> converts goods to gold at a fixed rate — hay is worth the least, bones the
-most — and whatever <code>get_trade_request()</code> names pays triple until the market moves on.
-Gold buys the last upgrades.</p>
+<p><code>trade(item, n)</code> turns goods into gold — hay is worth the least, bones the most — and
+whatever <code>get_trade_request()</code> names pays triple until the market moves on. Gold buys the
+late upgrades.</p>
 
 <h2>The language</h2>
 <p>Real Python syntax, a practical subset of it: variables, arithmetic, <code>if/elif/else</code>,
 <code>while</code>, <code>for … in</code>, <code>def</code> with defaults and <code>*args</code>,
 <code>return</code>, <code>break</code>, <code>continue</code>, <code>global</code>, lambdas,
-comprehensions, f-strings, <code>try/except</code>, and the usual lists, tuples, dicts, sets, strings
-with their common methods. No classes, imports, generators or file access.</p>
-<p class="note">Functions you define stick around between runs, so you can keep a file of helpers and
-call them from another file. <b>Reset globals</b> in the Log tab clears them.</p>
+comprehensions, f-strings, <code>try/except</code>, and lists, tuples, dicts, sets and strings with
+their common methods. No classes, imports, generators or file access.</p>
+<p class="note">Functions you define stay defined between runs, so one file can hold helpers that another
+calls. <b>Reset globals</b> in the Log tab clears them.</p>
 
 <h2>On a phone</h2>
 <p>The row under the editor inserts snippets and a four-space indent at the cursor. Enter keeps your
 indentation and adds a level after a colon. Everything saves to this device automatically.</p>
-<div class="foot"><span class="tag">tap a tile to inspect it</span><span class="tag">code runs only while Run is lit</span></div>`;
+<div class="foot"><span class="tag">tap a tile to inspect it</span><span class="tag">time passes only while Run is lit</span></div>`;
 }
 
 /* =============================== wiring ================================= */
@@ -2454,10 +2795,8 @@ document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
   if(id==='shop') UI.refreshShop();
   if(id==='guide') renderGuide();
 }));
-
 $('runBtn').addEventListener('click',()=>{
-  files[active].code=$('code').value;
-  save();
+  files[active].code=$('code').value; save();
   startRun(files[active].code,files[active].name);
 });
 $('stopBtn').addEventListener('click',()=>stopRun(false));
@@ -2467,7 +2806,6 @@ $('speed').addEventListener('input',e=>{
   $('tps').textContent=TPS[state.speedPref]+'/s';
   saveSoon();
 });
-
 $('files').addEventListener('click',e=>{
   const b=e.target.closest('[data-file]'); if(!b) return;
   const v=b.dataset.file;
@@ -2483,30 +2821,24 @@ $('files').addEventListener('click',e=>{
   }
   loadFile(+v);
 });
-
 $('keys').innerHTML=KEYS.map((k,i)=>
   '<button class="key'+(k[1].length>6?' wide':'')+'" data-k="'+i+'">'+esc(k[0])+'</button>').join('');
 $('keys').addEventListener('click',e=>{
   const b=e.target.closest('[data-k]'); if(!b) return;
-  const k=KEYS[+b.dataset.k];
-  insert(k[1],k[2]||0);
+  const k=KEYS[+b.dataset.k]; insert(k[1],k[2]||0);
 });
-
 const ta=$('code');
 ta.addEventListener('input',onEdit);
 ta.addEventListener('scroll',()=>{ $('hl').scrollTop=ta.scrollTop; $('hl').scrollLeft=ta.scrollLeft; });
 ta.addEventListener('keydown',e=>{
   if(e.key==='Tab'){ e.preventDefault(); insert('    '); return; }
   if(e.key==='Enter'){
-    const s=ta.selectionStart;
-    const line=ta.value.slice(0,s).split('\n').pop();
+    const s=ta.selectionStart, line=ta.value.slice(0,s).split('\n').pop();
     const ind=(/^[ \t]*/.exec(line)||[''])[0];
-    const extra=/:\s*$/.test(line)?'    ':'';
     e.preventDefault();
-    insert('\n'+ind+extra);
+    insert('\n'+ind+(/:\s*$/.test(line)?'    ':''));
   }
 });
-
 $('shop').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
   if(b.dataset.buy){ const u=UPGRADES.find(x=>x.id===b.dataset.buy); if(u) buy(u); return; }
@@ -2514,41 +2846,39 @@ $('shop').addEventListener('click',e=>{
   if(a==='fert'){
     if(state.items.Gold>=2){ state.items.Gold-=2; give('Fertilizer',10);
       UI.log('bought 10 fertilizer','s'); UI.refreshShop(); UI.refreshStats(true); save(); }
-  } else if(a==='clear'){
-    if(!confirm('Clear every plant on the farm?')) return;
-    for(const t of world.tiles){ t.e=null; t.age=0; t.d=null; }
-    world.maze=false; UI.log('field cleared','i'); save();
-  } else if(a==='wipe') wipe();
+  }else if(a==='clear'){ clearFarm(); }
+  else if(a==='wipe') wipe();
 });
-
-$('clearLog').addEventListener('click',()=>UI.clearLog());
-$('resetGlobals').addEventListener('click',()=>resetGlobals());
-$('clearFarm').addEventListener('click',()=>{
+function clearFarm(){
+  if(!confirm('Clear every plant on the farm?')) return;
   for(const t of world.tiles){ t.e=null; t.age=0; t.d=null; }
   world.maze=false; UI.log('field cleared','i'); save();
-});
+}
+$('clearLog').addEventListener('click',()=>UI.clearLog());
+$('resetGlobals').addEventListener('click',()=>resetGlobals());
+$('clearFarm').addEventListener('click',clearFarm);
 
 let inspect=null;
 cv.addEventListener('pointerdown',e=>{
   const r=cv.getBoundingClientRect(), n=world.size;
-  const cell=Math.floor(Math.min((r.width-12)/n,(r.height-12)/n));
+  const cell=Math.max(8,Math.min(Math.floor(Math.min((r.width-16)/n,(r.height-16)/n)),130));
   const ox=(r.width-cell*n)/2, oy=(r.height-cell*n)/2;
   const gx=Math.floor((e.clientX-r.left-ox)/cell);
   const gy=n-1-Math.floor((e.clientY-r.top-oy)/cell);
-  if(gx<0||gy<0||gx>=n||gy>=n){ inspect=null; return; }
-  inspect={x:gx,y:gy,t:performance.now()};
+  inspect=(gx<0||gy<0||gx>=n||gy>=n)?null:{x:gx,y:gy,t:performance.now()};
 });
 function readout(){
-  const D=world.drone;
+  const D=world.drones[0];
   let s='<span>x <b>'+D.x+'</b> y <b>'+D.y+'</b></span><span>t <b>'+Math.floor(world.time)+'</b></span>';
-  if(inspect && performance.now()-inspect.t<6000){
-    const t=tileAt(inspect.x,inspect.y);
-    const sp=t.e?SPEC[t.e]:null;
-    let d=t.e||'empty';
+  if(inspect&&performance.now()-inspect.t<7000){
+    const t=tileAt(inspect.x,inspect.y), sp=t.e?SPEC[t.e]:null;
+    let d=t.e?t.e.toLowerCase():'empty';
     if(t.e==='Sunflower') d+=' '+t.d.petals+'p';
     if(t.e==='Cactus') d+=' size '+t.d.size;
-    if(t.e==='Dinosaur') d+=' '+t.d.fed+'/5 wants '+t.d.want;
+    if(t.e==='Dinosaur') d+=' '+t.d.fed+'/5 wants '+t.d.want.toLowerCase();
+    if(t.e==='Apple') d+=' '+Math.max(0,Math.round(APPLE_ROT-t.age))+' left';
     if(sp&&sp.grow) d+=' '+Math.floor(Math.min(1,t.age/sp.grow)*100)+'%';
+    if(t.d&&t.d.comp&&state.unlocked.poly) d+=' ♥'+t.d.comp.toLowerCase();
     s+='<span>('+inspect.x+','+inspect.y+') '+t.g.toLowerCase()+
       (t.g==='Soil'?' '+Math.round(t.water*100)+'%':'')+' <b>'+esc(d)+'</b></span>';
   }
@@ -2565,7 +2895,6 @@ function loop(ts){
   if(ts-readoutAt>90){ readoutAt=ts; readout(); UI.refreshStats(); }
   requestAnimationFrame(loop);
 }
-
 document.addEventListener('visibilitychange',()=>{ if(document.hidden){ files[active].code=ta.value; save(); } });
 window.addEventListener('pagehide',()=>{ files[active].code=ta.value; save(); });
 
@@ -2578,10 +2907,8 @@ UI.syncSpeed();
 UI.refreshShop();
 UI.refreshStats(true);
 renderGuide();
-if(!logLines.length){
-  UI.log('Rootloop ready. Press Run to start the drone.','s');
-  UI.log('Tip: the Guide tab has the full command list.','i');
-}
+UI.log('Rootloop ready — one tile, one drone. Press Run.','s');
+UI.log('The Guide tab has every command.','i');
 UI.flag('idle');
 requestAnimationFrame(loop);
 </script>
